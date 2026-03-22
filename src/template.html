@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global Guidance HR System v4.0</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #0C447C; }
+  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .login-box { background: white; border-radius: 16px; padding: 40px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .logo { text-align: center; margin-bottom: 28px; }
+  .logo h1 { font-size: 22px; font-weight: 800; color: #0C447C; margin: 8px 0 4px; }
+  .logo p { color: #6b7280; font-size: 13px; }
+  input { width: 100%; padding: 11px 14px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; margin-bottom: 14px; box-sizing: border-box; }
+  input:focus { outline: none; border-color: #0C447C; }
+  button { width: 100%; padding: 12px; background: #0C447C; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  button:hover { background: #0a3a6e; }
+  .error { color: #dc2626; font-size: 12px; margin-bottom: 10px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-box">
+    <div class="logo">
+      <div style="width:60px;height:60px;background:#0C447C;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:28px">🎓</div>
+      <h1>Global Guidance</h1>
+      <p>Education Consultancy HR System v4.0</p>
+    </div>
+    <div id="err" class="error"></div>
+    <input id="un" placeholder="Username" />
+    <input id="pw" type="password" placeholder="Password" />
+    <button onclick="doLogin()">Sign In</button>
+    <p style="text-align:center;font-size:11px;color:#9ca3af;margin-top:16px">All staff: password123</p>
+  </div>
+</div>
+<script>
+const USERS = {
+  'nashif.razzak': {name:'Nashif A. Razzak',role:'CEO',level:100,id:'GG001'},
+  'nafees.razzak': {name:'Nafees Razzak',role:'COO',level:100,id:'GG002'},
+  'thasbiha.s': {name:'Thasbiha S.',role:'Head of Admissions/HR',level:80,id:'GG003'},
+  'razan.thawus': {name:'Razan Thawus',role:'Head of BD/Visa',level:80,id:'GG006'},
+  'umair': {name:'Umair',role:'Sr. Admin Executive',level:60,id:'GG004'},
+  'mohamed.s': {name:'Mohamed Salih',role:'Comms & Exec Coord',level:60,id:'GG005'},
+  'sukaina': {name:'Sukaina',role:'Student Counsellor',level:40,id:'GG007'},
+  'binupa': {name:'Binupa',role:'Jr. Counsellor',level:40,id:'GG008'},
+  'shiran': {name:'Shiran',role:'Graphic Designer',level:40,id:'GG009'},
+};
+function doLogin() {
+  const u = document.getElementById('un').value.trim().toLowerCase();
+  const p = document.getElementById('pw').value;
+  if (USERS[u] && p === 'password123') {
+    sessionStorage.setItem('gg_user', JSON.stringify(USERS[u]));
+    window.location.href = '/dashboard';
+  } else {
+    document.getElementById('err').textContent = 'Invalid username or password';
+  }
+}
+document.getElementById('pw').addEventListener('keypress', e => { if(e.key==='Enter') doLogin(); });
+</script>
+</body>
+</html>
