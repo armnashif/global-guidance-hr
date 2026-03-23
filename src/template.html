@@ -67,30 +67,7 @@
             console.error('Unhandled promise rejection:', event.reason);
         });
         
-        // Set timeout to detect if React never mounts
-        setTimeout(() => {
-            const root = document.getElementById('root');
-            if (root && root.innerHTML.includes('Loading Application')) {
-                console.error('TIMEOUT: React failed to mount after 30 seconds');
-                root.innerHTML = `
-                    <div style="padding: 40px; text-align: center; font-family: system-ui;">
-                        <h1 style="color: #dc2626; margin-bottom: 16px;">⏱️ Loading Timeout</h1>
-                        <p style="color: #6b7280; margin-bottom: 8px;">React application took too long to initialize</p>
-                        <p style="color: #9ca3af; font-size: 14px; margin-bottom: 16px;">This might be due to slow network or browser issues</p>
-                        <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">Reload Page</button>
-                        <div style="margin-top: 20px; padding: 16px; background: #f3f4f6; border-radius: 8px; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
-                            <p style="font-weight: bold; margin-bottom: 8px;">Troubleshooting:</p>
-                            <ul style="font-size: 14px; color: #6b7280; line-height: 1.8;">
-                                <li>• Check browser console for errors (F12)</li>
-                                <li>• Try disabling browser extensions</li>
-                                <li>• Clear browser cache and reload</li>
-                                <li>• Try a different browser (Chrome/Firefox)</li>
-                            </ul>
-                        </div>
-                    </div>
-                `;
-            }
-        }, 120000); // 120 second timeout
+// 120 second timeout
     </script>
 </head>
 <body class="bg-gray-50">
