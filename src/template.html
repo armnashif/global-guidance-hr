@@ -2,36 +2,99 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Global Guidance HR System v4.0</title>
-<script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
 <style>
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: system-ui, sans-serif; }
-  ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-track { background: #f1f1f1; }
-  ::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f8f9fa}
+.sidebar{width:210px;background:#0C447C;height:100vh;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 13px;cursor:pointer;color:rgba(255,255,255,.65);font-size:11px;border-right:3px solid transparent;transition:all .12s}
+.nav-item:hover,.nav-item.active{background:rgba(255,255,255,.1);color:white}
+.nav-item.active{border-right-color:#60a5fa}
+.nav-scroll{flex:1;overflow-y:auto}
+.nav-scroll::-webkit-scrollbar{width:3px}
+.nav-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:2px}
+.badge{font-size:8px;padding:1px 4px;border-radius:5px;font-weight:700;margin-left:auto}
+.card{background:white;border:1px solid #e5e7eb;border-radius:8px}
+.stat-val{font-size:22px;font-weight:700;line-height:1.2}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState, useEffect, useCallback } = React;
 
+<!-- LOGIN PAGE -->
+<div id="login-page" style="min-height:100vh;background:linear-gradient(135deg,#0C447C 0%,#1e40af 100%);display:flex;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:40px 36px;width:390px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="width:64px;height:64px;background:#0C447C;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:28px">🎓</div>
+      <h1 style="font-size:22px;font-weight:800;color:#0C447C;margin:0 0 4px">Global Guidance</h1>
+      <p style="color:#6b7280;font-size:13px;margin:0">Education Consultancy HR System v4.0</p>
+    </div>
+    <div id="login-err" style="color:#dc2626;font-size:12px;text-align:center;margin-bottom:10px;display:none">Invalid username or password</div>
+    <input id="un" type="text" placeholder="Username" autocomplete="username"
+      style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;margin-bottom:12px;outline:none;transition:border .2s"
+      onfocus="this.style.borderColor='#0C447C'" onblur="this.style.borderColor='#e5e7eb'"
+      onkeypress="if(event.key==='Enter')doLogin()">
+    <input id="pw" type="password" placeholder="Password" autocomplete="current-password"
+      style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;margin-bottom:16px;outline:none;transition:border .2s"
+      onfocus="this.style.borderColor='#0C447C'" onblur="this.style.borderColor='#e5e7eb'"
+      onkeypress="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()" style="width:100%;padding:12px;background:#0C447C;color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s" onmouseover="this.style.background='#0a3a6e'" onmouseout="this.style.background='#0C447C'">Sign In</button>
+    <p style="text-align:center;font-size:11px;color:#9ca3af;margin-top:16px;margin-bottom:8px">All staff password: <strong>password123</strong></p>
+    <div style="background:#f9fafb;border-radius:7px;padding:9px 11px;font-size:10px;color:#6b7280;line-height:1.7">
+      <strong style="color:#374151">Logins:</strong> nashif.razzak &bull; nafees.razzak &bull; thasbiha.s &bull; razan.thawus &bull; umair &bull; mohamed.s &bull; sukaina &bull; binupa &bull; shiran
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none;flex;height:100vh;overflow:hidden">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.12)">
+      <div style="font-size:13px;font-weight:700;color:white">Global Guidance</div>
+      <div style="font-size:9px;color:#85B7EB;margin-top:1px">Education Consultancy</div>
+    </div>
+    <div id="user-area" style="padding:8px 10px;background:rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:8px"></div>
+    <div class="nav-scroll">
+      <nav id="nav"></nav>
+    </div>
+    <div style="padding:10px 12px;border-top:1px solid rgba(255,255,255,.1)">
+      <button onclick="logout()" style="width:100%;padding:7px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:white;border-radius:6px;font-size:11px;cursor:pointer">
+        <i class="fas fa-sign-out-alt" style="margin-right:5px"></i>Sign Out
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+    <div style="background:white;border-bottom:1px solid #e5e7eb;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div>
+        <div id="page-title" style="font-size:15px;font-weight:700;color:#111">Dashboard</div>
+        <div style="font-size:11px;color:#6b7280">Global Guidance HR System v4.0</div>
+      </div>
+      <div id="user-chip" style="font-size:11px;color:#6b7280"></div>
+    </div>
+    <div id="content" style="flex:1;overflow-y:auto;background:#f8f9fa;padding:16px 20px"></div>
+  </div>
+
+</div>
+
+<script>
 const USERS = {
-  'nashif.razzak': {name:'Nashif A. Razzak',role:'CEO',level:100,id:'GG001',color:'#0C447C'},
-  'nafees.razzak': {name:'Nafees Razzak',role:'COO',level:100,id:'GG002',color:'#1e40af'},
-  'thasbiha.s': {name:'Thasbiha S.',role:'Head of Admissions/HR',level:80,id:'GG003',color:'#7c2d12'},
-  'razan.thawus': {name:'Razan Thawus',role:'Head of BD/Visa',level:80,id:'GG006',color:'#9d174d'},
-  'umair': {name:'Umair',role:'Sr. Admin Executive',level:60,id:'GG004',color:'#065f46'},
-  'mohamed.s': {name:'Mohamed Salih',role:'Comms & Exec Coord',level:60,id:'GG005',color:'#3730a3'},
-  'sukaina': {name:'Sukaina',role:'Student Counsellor',level:40,id:'GG007',color:'#4338ca'},
-  'binupa': {name:'Binupa',role:'Jr. Counsellor',level:40,id:'GG008',color:'#92400e'},
-  'shiran': {name:'Shiran',role:'Graphic Designer',level:40,id:'GG009',color:'#7c3aed'},
+  'nashif.razzak':{name:'Nashif A. Razzak',role:'CEO',level:100,id:'GG001',color:'#0C447C'},
+  'nafees.razzak':{name:'Nafees Razzak',role:'COO',level:100,id:'GG002',color:'#1e40af'},
+  'thasbiha.s':{name:'Thasbiha S.',role:'Head of Admissions/HR',level:80,id:'GG003',color:'#7c2d12'},
+  'razan.thawus':{name:'Razan Thawus',role:'Head of BD/Visa',level:80,id:'GG006',color:'#9d174d'},
+  'umair':{name:'Umair',role:'Sr. Admin Executive',level:60,id:'GG004',color:'#065f46'},
+  'mohamed.s':{name:'Mohamed Salih',role:'Comms & Exec Coord',level:60,id:'GG005',color:'#3730a3'},
+  'sukaina':{name:'Sukaina',role:'Student Counsellor',level:40,id:'GG007',color:'#4338ca'},
+  'binupa':{name:'Binupa',role:'Jr. Counsellor',level:40,id:'GG008',color:'#92400e'},
+  'shiran':{name:'Shiran',role:'Graphic Designer',level:40,id:'GG009',color:'#7c3aed'}
 };
 
 const MODULES = [
@@ -50,230 +113,304 @@ const MODULES = [
   {id:'location',label:'Location Tracker',icon:'fa-map-marker-alt'},
   {id:'performance',label:'Performance',icon:'fa-trophy'},
   {id:'training',label:'Training',icon:'fa-book'},
-  {id:'comms',label:'Communication',icon:'fa-comments'},
+  {id:'comms',label:'Communication Suite',icon:'fa-comments'},
   {id:'docs',label:'Documents',icon:'fa-folder'},
   {id:'skills',label:'Skills Matrix',icon:'fa-star'},
   {id:'analytics',label:'Analytics',icon:'fa-chart-pie'},
   {id:'visa_check',label:'Visa Checklist',icon:'fa-clipboard-check'},
   {id:'email_gov',label:'Email Governance',icon:'fa-envelope'},
   {id:'settings',label:'System Settings',icon:'fa-cog'},
-  {id:'auto',label:'Automation Pipeline',icon:'fa-robot',badge:'NEW',badgeColor:'#10b981'},
-  {id:'interview',label:'Interview Prep AI',icon:'fa-microphone',badge:'AI',badgeColor:'#8b5cf6'},
-  {id:'payment',label:'Payment Tracker',icon:'fa-credit-card',badge:'NEW',badgeColor:'#10b981'},
-  {id:'sop',label:'SOP Builder AI',icon:'fa-pen-fancy',badge:'AI',badgeColor:'#8b5cf6'},
-  {id:'capture',label:'Lead Capture Portal',icon:'fa-bullseye',badge:'NEW',badgeColor:'#10b981'},
+  {id:'auto',label:'Automation Pipeline',icon:'fa-robot',badge:'NEW',bc:'#10b981'},
+  {id:'interview',label:'Interview Prep AI',icon:'fa-microphone',badge:'AI',bc:'#8b5cf6'},
+  {id:'payment',label:'Payment Tracker',icon:'fa-credit-card',badge:'NEW',bc:'#10b981'},
+  {id:'sop',label:'SOP Builder AI',icon:'fa-pen-fancy',badge:'AI',bc:'#8b5cf6'},
+  {id:'capture',label:'Lead Capture Portal',icon:'fa-bullseye',badge:'NEW',bc:'#10b981'}
 ];
 
-function LoginPage({onLogin}) {
-  const [un,setUn]=useState('');
-  const [pw,setPw]=useState('');
-  const [err,setErr]=useState('');
-  const submit=()=>{
-    const user=USERS[un.toLowerCase().trim()];
-    if(user && pw==='password123'){onLogin(user);}
-    else setErr('Invalid username or password');
-  };
-  return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#0C447C,#1e40af)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <div style={{background:'white',borderRadius:16,padding:'40px 36px',width:380,boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
-        <div style={{textAlign:'center',marginBottom:28}}>
-          <div style={{width:64,height:64,background:'#0C447C',borderRadius:14,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px',fontSize:28}}>🎓</div>
-          <h1 style={{fontSize:22,fontWeight:800,color:'#0C447C',margin:'0 0 4px'}}>Global Guidance</h1>
-          <p style={{color:'#6b7280',fontSize:13,margin:0}}>Education Consultancy HR System v4.0</p>
-        </div>
-        {err && <p style={{color:'#dc2626',fontSize:12,textAlign:'center',marginBottom:10}}>{err}</p>}
-        <input style={{width:'100%',padding:'11px 14px',border:'1px solid #e5e7eb',borderRadius:8,fontSize:14,marginBottom:12,outline:'none'}}
-          placeholder="Username" value={un} onChange={e=>setUn(e.target.value)} onKeyPress={e=>e.key==='Enter'&&submit()} />
-        <input type="password" style={{width:'100%',padding:'11px 14px',border:'1px solid #e5e7eb',borderRadius:8,fontSize:14,marginBottom:16,outline:'none'}}
-          placeholder="Password" value={pw} onChange={e=>setPw(e.target.value)} onKeyPress={e=>e.key==='Enter'&&submit()} />
-        <button onClick={submit} style={{width:'100%',padding:'12px',background:'#0C447C',color:'white',border:'none',borderRadius:8,fontSize:15,fontWeight:600,cursor:'pointer'}}>Sign In</button>
-        <p style={{textAlign:'center',fontSize:11,color:'#9ca3af',marginTop:16,marginBottom:0}}>All staff password: password123</p>
-        <div style={{marginTop:12,padding:'10px',background:'#f9fafb',borderRadius:8,fontSize:11,color:'#6b7280'}}>
-          <strong>Staff logins:</strong> nashif.razzak · nafees.razzak · thasbiha.s · razan.thawus · umair · mohamed.s · sukaina · binupa · shiran
+let currentUser = null;
+let activeModule = 'dashboard';
+
+function doLogin() {
+  const un = document.getElementById('un').value.trim().toLowerCase();
+  const pw = document.getElementById('pw').value;
+  const user = USERS[un];
+  const err = document.getElementById('login-err');
+  if(user && pw === 'password123') {
+    err.style.display = 'none';
+    currentUser = user;
+    sessionStorage.setItem('gg_user', JSON.stringify(user));
+    showApp();
+  } else {
+    err.style.display = 'block';
+    document.getElementById('un').style.borderColor = '#ef4444';
+  }
+}
+
+function logout() {
+  currentUser = null;
+  sessionStorage.removeItem('gg_user');
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('un').value = '';
+  document.getElementById('pw').value = '';
+}
+
+function showApp() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  buildNav();
+  updateUserArea();
+  renderModule('dashboard');
+}
+
+function buildNav() {
+  const nav = document.getElementById('nav');
+  nav.innerHTML = '';
+  MODULES.forEach(m => {
+    const el = document.createElement('div');
+    el.className = 'nav-item' + (m.id === activeModule ? ' active' : '');
+    el.id = 'nav-' + m.id;
+    el.innerHTML = `<i class="fas ${m.icon}" style="width:14px;text-align:center;font-size:11px"></i>
+      <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.label}</span>
+      ${m.badge ? `<span class="badge" style="background:${m.bc};color:white">${m.badge}</span>` : ''}`;
+    el.onclick = () => renderModule(m.id);
+    nav.appendChild(el);
+  });
+}
+
+function updateUserArea() {
+  const u = currentUser;
+  const initials = u.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+  document.getElementById('user-area').innerHTML = `
+    <div style="width:30px;height:30px;border-radius:50%;background:${u.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0">${initials}</div>
+    <div>
+      <div style="font-size:11px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">${u.name}</div>
+      <div style="font-size:9px;color:#85B7EB">${u.role} &bull; ${u.id}</div>
+    </div>`;
+  document.getElementById('user-chip').innerHTML = `Logged in as <strong>${u.name}</strong> &bull; Level ${u.level}`;
+}
+
+function renderModule(id) {
+  activeModule = id;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navEl = document.getElementById('nav-'+id);
+  if(navEl) navEl.classList.add('active');
+  const m = MODULES.find(x=>x.id===id);
+  document.getElementById('page-title').textContent = m ? m.label : id;
+  const content = document.getElementById('content');
+  if(id === 'dashboard') { content.innerHTML = renderDashboard(); }
+  else if(id === 'employees') { content.innerHTML = renderEmployees(); }
+  else if(id === 'leads' || id === 'auto') { content.innerHTML = renderLeads(); }
+  else if(id === 'leave') { content.innerHTML = renderLeave(); }
+  else if(id === 'attendance') { content.innerHTML = renderAttendance(); }
+  else { content.innerHTML = renderGeneric(m); }
+}
+
+function sc(label,value,sub,color) {
+  return `<div class="card" style="padding:10px 14px">
+    <div style="font-size:10px;color:#6b7280;margin-bottom:4px">${label}</div>
+    <div class="stat-val" style="color:${color||'#111'}">${value}</div>
+    ${sub?`<div style="font-size:10px;color:#6b7280;margin-top:2px">${sub}</div>`:''}
+  </div>`;
+}
+
+function renderDashboard() {
+  const u = currentUser;
+  let html = '';
+  if(u.level >= 100) {
+    html += `<div style="background:linear-gradient(135deg,#312e81,#1e40af);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:16px;color:white">
+      <div><div style="font-size:13px;font-weight:600">🤖 Automation Pipeline — Live</div><div style="font-size:10px;color:#a5b4fc;margin-top:1px">24 leads tracked automatically</div></div>
+      <div style="display:flex;gap:18px;margin-left:auto">
+        ${[['9','Hot leads'],['74','Avg score'],['5','Follow-ups'],['3','Enrolled']].map(([v,l])=>
+          `<div style="text-align:center"><div style="font-size:18px;font-weight:700">${v}</div><div style="font-size:9px;color:#a5b4fc">${l}</div></div>`).join('')}
+      </div>
+    </div>`;
+  }
+  html += `<h2 style="font-size:16px;font-weight:700;margin-bottom:14px;color:#111">Welcome back, ${u.name.split(' ')[0]}! 👋</h2>`;
+  html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+    ${sc('Staff present','7/9','2 absent today')}
+    ${sc('Active applications','60','12 offers pending')}
+    ${sc('Revenue (GBP)','£48k','+12% this month','#16a34a')}
+    ${sc('Red flags open','5','2 high priority','#dc2626')}
+  </div>`;
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="card">
+      <div style="padding:8px 14px;border-bottom:1px solid #e5e7eb;font-size:12px;font-weight:600">Staff attendance today</div>
+      <div style="padding:8px 14px">
+        ${['Thasbiha S.','Umair','Razan T.','Sukaina','Mohamed S.','Binupa','Shiran'].map(n=>
+          `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f9fafb;font-size:12px">
+            <span>${n}</span><span style="background:#dcfce7;color:#166534;font-size:10px;padding:1px 7px;border-radius:10px;font-weight:600">Present</span>
+          </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px">
+          <span style="color:#dc2626">Nafees Razzak</span><span style="background:#fee2e2;color:#991b1b;font-size:10px;padding:1px 7px;border-radius:10px;font-weight:600">Absent</span>
         </div>
       </div>
     </div>
-  );
-}
-
-function Sidebar({user,active,setActive,onLogout}) {
-  return (
-    <div style={{width:210,background:'#0C447C',color:'white',display:'flex',flexDirection:'column',height:'100vh',overflow:'hidden',flexShrink:0}}>
-      <div style={{padding:'14px',borderBottom:'1px solid rgba(255,255,255,.12)'}}>
-        <div style={{fontSize:13,fontWeight:700}}>Global Guidance</div>
-        <div style={{fontSize:9,color:'#85B7EB',marginTop:1}}>Education Consultancy</div>
-      </div>
-      <div style={{padding:'8px 10px',background:'rgba(255,255,255,.07)',borderBottom:'1px solid rgba(255,255,255,.1)',display:'flex',alignItems:'center',gap:8}}>
-        <div style={{width:30,height:30,borderRadius:'50%',background:user.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,flexShrink:0}}>
-          {user.name.split(' ').map(w=>w[0]).join('').slice(0,2)}
-        </div>
-        <div style={{minWidth:0}}>
-          <div style={{fontSize:11,fontWeight:600,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{user.name}</div>
-          <div style={{fontSize:9,color:'#85B7EB'}}>{user.role} · {user.id}</div>
+    <div>
+      <div class="card" style="margin-bottom:10px">
+        <div style="padding:8px 14px;border-bottom:1px solid #e5e7eb;font-size:12px;font-weight:600">Pipeline stages</div>
+        <div style="padding:10px 14px;display:flex;gap:4px">
+          ${[['New',5,'#f3f4f6','#374151'],['Contacted',4,'#dbeafe','#1e40af'],['Applied',6,'#fef3c7','#92400e'],['Offer',4,'#ede9fe','#5b21b6'],['Visa',3,'#fce7f3','#9d174d'],['Enrolled',2,'#dcfce7','#166534']].map(([l,n,bg,c])=>
+            `<div style="flex:1;background:${bg};color:${c};padding:6px 2px;border-radius:6px;text-align:center;font-size:9px;font-weight:600">
+              <div>${l}</div><div style="font-size:15px;font-weight:700;margin:2px 0">${n}</div>
+            </div>`).join('')}
         </div>
       </div>
-      <nav style={{flex:1,overflowY:'auto',padding:'6px 0'}}>
-        {MODULES.map(m=>(
-          <div key={m.id} onClick={()=>setActive(m.id)}
-            style={{display:'flex',alignItems:'center',gap:7,padding:'6px 12px',cursor:'pointer',color:active===m.id?'white':'rgba(255,255,255,.65)',background:active===m.id?'rgba(255,255,255,.12)':'transparent',borderRight:active===m.id?'3px solid #60a5fa':'3px solid transparent',fontSize:11,transition:'all .12s'}}>
-            <i className={`fas ${m.icon}`} style={{width:14,textAlign:'center',fontSize:11}}></i>
-            <span style={{flex:1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{m.label}</span>
-            {m.badge && <span style={{background:m.badgeColor,color:'white',fontSize:8,padding:'1px 4px',borderRadius:6,fontWeight:700}}>{m.badge}</span>}
-          </div>
-        ))}
-      </nav>
-      <div style={{padding:'10px 12px',borderTop:'1px solid rgba(255,255,255,.1)'}}>
-        <button onClick={onLogout} style={{width:'100%',padding:'7px',background:'rgba(255,255,255,.1)',border:'1px solid rgba(255,255,255,.2)',color:'white',borderRadius:6,fontSize:11,cursor:'pointer'}}>
-          <i className="fas fa-sign-out-alt" style={{marginRight:6}}></i>Sign Out
-        </button>
+      <div style="background:#fee2e2;border:1px solid #fecaca;border-radius:8px;padding:9px 12px;font-size:11px;color:#991b1b;margin-bottom:8px">
+        ⚠ 3 students pending docs &gt;7 days
+      </div>
+      <div style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:8px;padding:9px 12px;font-size:11px;color:#166534">
+        ✓ 5 new leads auto-scored today
       </div>
     </div>
-  );
+  </div>`;
+  return html;
 }
 
-function StatCard({label,value,sub,color}) {
-  return (
-    <div style={{background:'white',border:'1px solid #e5e7eb',borderRadius:8,padding:'10px 14px'}}>
-      <div style={{fontSize:10,color:'#6b7280',marginBottom:4}}>{label}</div>
-      <div style={{fontSize:22,fontWeight:700,color:color||'#111'}}>{value}</div>
-      {sub && <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>{sub}</div>}
+function renderEmployees() {
+  const staff = [
+    ['GG001','Nashif A. Razzak','CEO','Executive',100],
+    ['GG002','Nafees Razzak','COO','Executive',100],
+    ['GG003','Thasbiha S.','Head Admissions/HR','Admin/HR',80],
+    ['GG004','Umair','Sr. Admin Executive','Admin/HR',60],
+    ['GG005','Mohamed Salih','Comms Coord','Admin/HR',60],
+    ['GG006','Razan Thawus','Head BD/Visa','BD & Visa',80],
+    ['GG007','Sukaina','Counsellor','Admissions',40],
+    ['GG008','Binupa','Jr. Counsellor','Marketing',40],
+    ['GG009','Shiran','Graphic Designer','Marketing',40],
+  ];
+  return `<div class="card">
+    <div style="padding:10px 14px;border-bottom:1px solid #e5e7eb;font-size:13px;font-weight:600">Employee Directory</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:#f9fafb">
+        ${['ID','Name','Role','Department','Level','Status'].map(h=>`<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase">${h}</th>`).join('')}
+      </tr></thead>
+      <tbody>
+        ${staff.map(([id,n,r,d,l])=>`<tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:8px 12px;color:#6b7280">${id}</td>
+          <td style="padding:8px 12px;font-weight:500">${n}</td>
+          <td style="padding:8px 12px">${r}</td>
+          <td style="padding:8px 12px;color:#6b7280">${d}</td>
+          <td style="padding:8px 12px"><span style="background:${l>=100?'#dbeafe':l>=80?'#ede9fe':l>=60?'#fef3c7':'#f3f4f6'};color:${l>=100?'#1e40af':l>=80?'#5b21b6':l>=60?'#92400e':'#374151'};padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600">${l}</span></td>
+          <td style="padding:8px 12px"><span style="background:#dcfce7;color:#166534;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600">Active</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function renderLeads() {
+  const leads = [
+    ['Priya Nair','UK','PG Business',82,'Qualified'],
+    ['Sahan Fernando','UK','UG Computer Science',91,'Application'],
+    ['Amali Wickramasinghe','Canada','PG Data Science',95,'Offer'],
+    ['Kamal Perera','Australia','PG MBA',65,'Contacted'],
+    ['Nimal Silva','UK','PG Engineering',78,'Qualified'],
+    ['Dilshan Mirantha','UK','UG Law',88,'Visa Prep'],
+    ['Fatima Rasheed','UK','PG Nursing',93,'Visa Applied'],
+    ['Sithumi Rathnayake','Canada','PG Data Science',92,'Application'],
+  ];
+  return `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+    ${sc('Total leads','24','Active pipeline')}
+    ${sc('Hot leads (80+)','9','Need attention','#d97706')}
+    ${sc('Avg AI score','74','/100','#7c3aed')}
+    ${sc('Enrolled','3','This intake','#16a34a')}
+  </div>
+  <div class="card">
+    <div style="padding:10px 14px;border-bottom:1px solid #e5e7eb;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
+      Lead Pipeline
+      <span style="background:#0C447C;color:white;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer">+ Add Lead</span>
     </div>
-  );
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:#f9fafb">
+        ${['Name','Destination','Field','AI Score','Stage','Action'].map(h=>`<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase">${h}</th>`).join('')}
+      </tr></thead>
+      <tbody>
+        ${leads.map(([n,d,f,sc,st])=>`<tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:8px 12px;font-weight:500">${n}</td>
+          <td style="padding:8px 12px"><span style="background:#dbeafe;color:#1e40af;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600">${d}</span></td>
+          <td style="padding:8px 12px;color:#6b7280">${f}</td>
+          <td style="padding:8px 12px;font-weight:700;color:${sc>=80?'#16a34a':sc>=65?'#d97706':'#dc2626'}">${sc}</td>
+          <td style="padding:8px 12px"><span style="background:${st==='Enrolled'?'#dcfce7':st.includes('Visa')?'#fce7f3':st==='Offer'?'#ede9fe':st==='Application'?'#fef3c7':'#dbeafe'};color:${st==='Enrolled'?'#166534':st.includes('Visa')?'#9d174d':st==='Offer'?'#5b21b6':st==='Application'?'#92400e':'#1e40af'};padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600">${st}</span></td>
+          <td style="padding:8px 12px"><span style="color:#0C447C;cursor:pointer;font-size:11px;font-weight:500">View →</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
 }
 
-function Dashboard({user}) {
-  const isHigh = user.level >= 80;
-  return (
-    <div style={{padding:'16px 20px'}}>
-      {user.level>=100 && (
-        <div style={{background:'linear-gradient(135deg,#312e81,#1e40af)',borderRadius:10,padding:'12px 16px',display:'flex',alignItems:'center',gap:12,marginBottom:14,color:'white'}}>
-          <div><div style={{fontSize:13,fontWeight:600}}>🤖 Automation Pipeline — Live</div><div style={{fontSize:10,color:'#a5b4fc',marginTop:1}}>24 leads tracked automatically</div></div>
-          <div style={{display:'flex',gap:16,marginLeft:'auto'}}>
-            {[['9','Hot leads'],['74','Avg score'],['5','Follow-ups'],['3','Enrolled']].map(([v,l])=>(
-              <div key={l} style={{textAlign:'center'}}><div style={{fontSize:18,fontWeight:700}}>{v}</div><div style={{fontSize:9,color:'#a5b4fc'}}>{l}</div></div>
-            ))}
+function renderLeave() {
+  return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+    ${sc('Pending requests','4','2 need approval','#d97706')}
+    ${sc('Approved this month','6','')}
+    ${sc('My leave balance','14 days','Remaining','')}
+  </div>
+  <div class="card">
+    <div style="padding:10px 14px;border-bottom:1px solid #e5e7eb;font-size:13px;font-weight:600">Leave Requests</div>
+    <div style="padding:12px 14px">
+      ${[['Sukaina','Annual leave','Mar 15–17, 2026','3 days','Pending'],
+         ['Umair','Medical leave','Mar 10, 2026','1 day','Approved'],
+         ['Binupa','Annual leave','Apr 1–5, 2026','5 days','Pending'],
+         ['Shiran','Annual leave','Mar 20, 2026','1 day','Approved']].map(([n,t,d,dur,st])=>
+        `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:12px">
+          <div><div style="font-weight:500">${n}</div><div style="color:#6b7280;font-size:11px">${t} &bull; ${d} &bull; ${dur}</div></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="background:${st==='Approved'?'#dcfce7':'#fef3c7'};color:${st==='Approved'?'#166534':'#92400e'};padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">${st}</span>
+            ${st==='Pending'?`<button onclick="this.previousElementSibling.textContent='Approved';this.previousElementSibling.style.background='#dcfce7';this.previousElementSibling.style.color='#166534';this.remove()" style="background:#16a34a;color:white;border:none;padding:3px 8px;border-radius:5px;font-size:10px;cursor:pointer">Approve</button>`:''}
           </div>
-        </div>
-      )}
-      <h2 style={{fontSize:16,fontWeight:700,marginBottom:14,color:'#111'}}>Welcome back, {user.name.split(' ')[0]}! 👋</h2>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:16}}>
-        <StatCard label="Staff present" value="7/9" sub="2 absent today" />
-        <StatCard label="Active applications" value="60" sub="12 offers pending" />
-        <StatCard label="Revenue (GBP)" value="£48k" sub="+12% this month" color="#16a34a" />
-        <StatCard label="Red flags open" value="5" sub="2 high priority" color="#dc2626" />
-      </div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-        <div style={{background:'white',border:'1px solid #e5e7eb',borderRadius:8,overflow:'hidden'}}>
-          <div style={{padding:'8px 14px',borderBottom:'1px solid #e5e7eb',fontSize:12,fontWeight:600}}>Staff attendance today</div>
-          <div style={{padding:'8px 14px'}}>
-            {['Thasbiha S.','Umair','Razan T.','Sukaina','Mohamed S.','Binupa','Shiran'].map(n=>(
-              <div key={n} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',borderBottom:'1px solid #f9fafb',fontSize:12}}>
-                <span>{n}</span><span style={{background:'#dcfce7',color:'#166534',fontSize:10,padding:'1px 7px',borderRadius:10,fontWeight:600}}>Present</span>
-              </div>
-            ))}
-            <div style={{display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:12}}>
-              <span style={{color:'#dc2626'}}>Nafees Razzak</span><span style={{background:'#fee2e2',color:'#991b1b',fontSize:10,padding:'1px 7px',borderRadius:10,fontWeight:600}}>Absent</span>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div style={{background:'white',border:'1px solid #e5e7eb',borderRadius:8,overflow:'hidden',marginBottom:10}}>
-            <div style={{padding:'8px 14px',borderBottom:'1px solid #e5e7eb',fontSize:12,fontWeight:600}}>Pipeline stages</div>
-            <div style={{padding:'10px 14px',display:'flex',gap:4}}>
-              {[['New',5,'#f3f4f6','#374151'],['Contacted',4,'#dbeafe','#1e40af'],['Applied',6,'#fef3c7','#92400e'],['Offer',4,'#ede9fe','#5b21b6'],['Visa',3,'#fce7f3','#9d174d'],['Enrolled',2,'#dcfce7','#166534']].map(([l,n,bg,c])=>(
-                <div key={l} style={{flex:1,background:bg,color:c,padding:'6px 2px',borderRadius:6,textAlign:'center',fontSize:9,fontWeight:600}}>
-                  <div>{l}</div><div style={{fontSize:15,fontWeight:700,margin:'2px 0'}}>{n}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div style={{background:'#fef3c7',border:'1px solid #fde68a',borderRadius:8,padding:'10px 14px',fontSize:11,color:'#92400e'}}>
-            ⚠ 3 students pending docs &gt;7 days · 5 new leads auto-scored today
-          </div>
-        </div>
-      </div>
+        </div>`).join('')}
     </div>
-  );
+  </div>`;
 }
 
-function ModulePage({module,user}) {
-  const titles = {
-    leads:'Lead Management Hub', students:'Students', admissions:'Admissions',
-    visa:'Applications & Visa', finance:'Finance & Commission', attendance:'Attendance & To-Do',
-    employees:'Employees', daily:'Daily Operations', reports:'Reports & Analytics',
-    redflags:'Red Flags & Risks', leave:'Leave Management', location:'Location Tracker',
-    performance:'Performance', training:'Training', comms:'Communication Suite',
-    docs:'Documents', skills:'Skills Matrix', analytics:'Analytics',
-    visa_check:'Visa Checklist Engine', email_gov:'Email Governance', settings:'System Settings',
-    auto:'Automation Pipeline', interview:'Interview Prep AI', payment:'Payment Tracker',
-    sop:'SOP Builder AI', capture:'Lead Capture Portal',
-  };
-  const badgeModules = ['auto','interview','payment','sop','capture'];
-  const isBadge = badgeModules.includes(module);
-  return (
-    <div style={{padding:'20px'}}>
-      <div style={{marginBottom:20,display:'flex',alignItems:'center',gap:10}}>
-        <h1 style={{fontSize:18,fontWeight:700,color:'#111',margin:0}}>{titles[module]||module}</h1>
-        {isBadge && <span style={{background: module==='interview'||module==='sop'?'#8b5cf6':'#10b981',color:'white',fontSize:10,padding:'2px 8px',borderRadius:10,fontWeight:700}}>
-          {module==='interview'||module==='sop'?'AI':'NEW'}
-        </span>}
-      </div>
-      <div style={{background:'white',border:'1px solid #e5e7eb',borderRadius:10,padding:'40px',textAlign:'center',color:'#6b7280'}}>
-        <div style={{fontSize:40,marginBottom:12}}>
-          {module==='auto'?'🤖':module==='interview'?'🎙':module==='sop'?'✍':module==='payment'?'💳':module==='capture'?'🎯':module==='leads'?'📊':module==='students'?'🎓':module==='visa'?'✈':module==='finance'?'💰':'📋'}
-        </div>
-        <div style={{fontSize:16,fontWeight:600,color:'#374151',marginBottom:8}}>{titles[module]}</div>
-        <div style={{fontSize:13,color:'#9ca3af',maxWidth:400,margin:'0 auto',lineHeight:1.6}}>
-          {isBadge ? 
-            `This is the ${titles[module]} module. Connect this system to your Cloudflare D1 database or Supabase to enable full data persistence and real-time features.` :
-            `This module contains your ${titles[module].toLowerCase()} data. Connect to Cloudflare D1 or Supabase to enable full functionality with persistent storage.`
-          }
-        </div>
-        {isBadge && (
-          <div style={{marginTop:20,padding:'12px 16px',background:'#f5f3ff',borderRadius:8,fontSize:12,color:'#5b21b6',border:'1px solid #ede9fe',display:'inline-block'}}>
-            ✨ AI-powered features available with backend connection
-          </div>
-        )}
-      </div>
+function renderAttendance() {
+  return `<div class="card" style="margin-bottom:12px">
+    <div style="padding:10px 14px;border-bottom:1px solid #e5e7eb;font-size:13px;font-weight:600">Today's Attendance — ${new Date().toDateString()}</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:#f9fafb">
+        ${['Staff','Status','Check-in','Notes'].map(h=>`<th style="text-align:left;padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:10px;color:#6b7280;font-weight:600">${h}</th>`).join('')}
+      </tr></thead>
+      <tbody>
+        ${[['Nashif A. Razzak','Present','08:45','CEO'],
+           ['Thasbiha S.','Present','09:00','On time'],
+           ['Umair','Present','08:55','On time'],
+           ['Razan Thawus','Present','09:10','On time'],
+           ['Sukaina','Present','09:05','On time'],
+           ['Mohamed S.','Present','09:00','On time'],
+           ['Binupa','Present','09:20','Late 20m'],
+           ['Shiran','Absent','—','Sick leave'],
+           ['Nafees Razzak','Absent','—','Approved leave'],
+        ].map(([n,st,t,note])=>`<tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:8px 12px;font-weight:500">${n}</td>
+          <td style="padding:8px 12px"><span style="background:${st==='Present'?'#dcfce7':'#fee2e2'};color:${st==='Present'?'#166534':'#991b1b'};padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600">${st}</span></td>
+          <td style="padding:8px 12px;color:#6b7280">${t}</td>
+          <td style="padding:8px 12px;color:#6b7280">${note}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function renderGeneric(m) {
+  const icons = {auto:'🤖',interview:'🎙',sop:'✍',payment:'💳',capture:'🎯',leads:'📊',students:'🎓',visa:'✈',finance:'💰',reports:'📈',settings:'⚙️'};
+  const isAI = m && (m.badge==='AI'||m.badge==='NEW');
+  return `<div class="card" style="padding:50px;text-align:center;color:#6b7280">
+    <div style="font-size:48px;margin-bottom:14px">${icons[m&&m.id]||'📋'}</div>
+    <div style="font-size:17px;font-weight:600;color:#374151;margin-bottom:8px">${m?m.label:'Module'}</div>
+    <div style="font-size:13px;max-width:420px;margin:0 auto;line-height:1.7">
+      ${isAI?'AI-powered features available. Connect to the backend API to enable full functionality with real data.':'This module is ready. Connect to your database to enable full data management.'}
     </div>
-  );
+    ${isAI?`<div style="margin-top:20px;background:#f5f3ff;border:1px solid #ede9fe;border-radius:8px;padding:12px 16px;display:inline-block;font-size:12px;color:#5b21b6">✨ ${m.badge==='AI'?'AI-powered':'New feature'} — fully functional with backend connection</div>`:''}
+  </div>`;
 }
 
-function App() {
-  const [user,setUser] = useState(null);
-  const [active,setActive] = useState('dashboard');
-
-  useEffect(()=>{
-    try{const u=sessionStorage.getItem('gg_user');if(u)setUser(JSON.parse(u));}catch(e){}
-  },[]);
-
-  const login = (u) => { setUser(u); sessionStorage.setItem('gg_user',JSON.stringify(u)); };
-  const logout = () => { setUser(null); sessionStorage.removeItem('gg_user'); setActive('dashboard'); };
-
-  if(!user) return <LoginPage onLogin={login} />;
-
-  return (
-    <div style={{display:'flex',height:'100vh',overflow:'hidden'}}>
-      <Sidebar user={user} active={active} setActive={setActive} onLogout={logout} />
-      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
-        <div style={{background:'white',borderBottom:'1px solid #e5e7eb',padding:'10px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
-          <div>
-            <div style={{fontSize:15,fontWeight:700}}>{active==='dashboard'?'Dashboard':MODULES.find(m=>m.id===active)?.label||active}</div>
-            <div style={{fontSize:11,color:'#6b7280'}}>Global Guidance HR System v4.0</div>
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <div style={{fontSize:11,color:'#6b7280'}}>Logged in as <strong>{user.name}</strong> · Level {user.level}</div>
-          </div>
-        </div>
-        <div style={{flex:1,overflowY:'auto',background:'#f8f9fa'}}>
-          {active==='dashboard' ? <Dashboard user={user} /> : <ModulePage module={active} user={user} />}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-ReactDOM.render(<App />, document.getElementById('root'));
+// Check for existing session
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    const saved = sessionStorage.getItem('gg_user');
+    if(saved) { currentUser = JSON.parse(saved); showApp(); }
+  } catch(e) {}
+});
 </script>
 </body>
 </html>
