@@ -96,7 +96,35 @@
         </div>
     </div>
 
-    <script type="text/babel">
+        <script>
+    (function() {
+        var CK = 'gg_hr_v4';
+        var cached = null;
+        try { cached = localStorage.getItem(CK); } catch(e) {}
+        if (cached) {
+            var s = document.createElement('scr'+'ipt');
+            s.textContent = cached;
+            document.head.appendChild(s);
+            console.log('Instant load from cache!');
+        } else {
+            console.log('First load - Babel compiling...');
+            var iv = setInterval(function(){
+                if(typeof Babel!=='undefined'){
+                    clearInterval(iv);
+                    var orig = Babel.transform.bind(Babel);
+                    Babel.transform = function(code, opts){
+                        var r = orig(code, opts);
+                        if(r && r.code && r.code.length > 50000){
+                            try{ localStorage.setItem(CK, r.code); console.log('Cached! Next load instant.'); }catch(e){}
+                        }
+                        return r;
+                    };
+                }
+            }, 50);
+        }
+    })();
+    <\/script>
+<script type="text/babel">
         console.log('🚀 Starting React application compilation...');
         console.log('✓ React available:', typeof React !== 'undefined');
         console.log('✓ ReactDOM available:', typeof ReactDOM !== 'undefined');
