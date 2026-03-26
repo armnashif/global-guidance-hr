@@ -1,85 +1,12 @@
+'use strict';
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
-const vm = require('vm');
-
 const PORT = process.env.PORT || 8000;
 let compiledHTML = null;
-
-function download(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, res => {
-      if (res.statusCode === 301 || res.statusCode === 302) {
-        return download(res.headers.location).then(resolve).catch(reject);
-      }
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve(data));
-    }).on('error', reject);
-  });
-}
-
-async function init() {
-  const templatePath = path.join(__dirname, 'src', 'template.html');
-  const html = fs.readFileSync(templatePath, 'utf8');
-
-  if (!html.includes('type="text/babel"')) {
-    compiledHTML = html;
-    console.log('Pre-compiled template - serving directly');
-    return;
-  }
-
-  console.log('Downloading Babel for server-side JSX compilation...');
-  try {
-    const babelSrc = await download('https://unpkg.com/@babel/standalone/babel.min.js');
-    console.log('Babel downloaded (' + Math.round(babelSrc.length/1024) + 'KB). Compiling JSX...');
-
-    const sandbox = { console, process };
-    vm.runInNewContext(babelSrc, sandbox);
-    const Babel = sandbox.Babel;
-
-    const babelTag = '<script type="text/babel">';
-    const babelStart = html.indexOf(babelTag) + babelTag.length;
-    const babelEnd = html.indexOf('<' + '/script>', babelStart);
-    const jsxCode = html.slice(babelStart, babelEnd);
-
-    const t0 = Date.now();
-    const result = Babel.transform(jsxCode, {
-      presets: [['react', { runtime: 'classic' }], 'env'],
-      filename: 'app.jsx'
-    });
-    console.log('JSX compiled in ' + (Date.now()-t0) + 'ms! Serving pre-compiled app.');
-
-    compiledHTML = html
-      .replace('<script src="https://unpkg.com/@babel/standalone/babel.min.js"><' + '/script>\n', '')
-      .replace(babelTag + jsxCode + '<' + '/script>', '<script>\n' + result.code + '\n<' + '/script>');
-  } catch(e) {
-    console.error('Compile failed:', e.message.slice(0,200));
-    compiledHTML = html;
-  }
-}
-
-const server = http.createServer((req, res) => {
-  if (req.url.startsWith('/api/')) {
-    res.writeHead(200, {'Content-Type':'application/json'});
-    res.end(JSON.stringify({success:true,data:[]}));
-    return;
-  }
-  if (!compiledHTML) {
-    res.writeHead(503, {'Content-Type':'text/html'});
-    res.end('<html><body style="font-family:system-ui;text-align:center;padding:60px"><h2>Starting up...</h2><p>Please wait 30 seconds and refresh the page.</p></body></html>');
-    return;
-  }
-  res.writeHead(200, {'Content-Type':'text/html; charset=utf-8'});
-  res.end(compiledHTML);
-});
-
-server.listen(PORT, '0.0.0.0', () => {
-  console.log('Server started on port ' + PORT);
-  init().catch(e => {
-    console.error('Init error:', e.message);
-    const templatePath = path.join(__dirname, 'src', 'template.html');
-    compiledHTML = fs.readFileSync(templatePath, 'utf8');
-  });
-});
+const LOADING = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="10"><style>body{margin:0;font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#eff6ff,#e0e7ff)}.b{text-align:center;padding:40px}.s{width:60px;height:60px;border:5px solid #dbeafe;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px}@keyframes spin{to{transform:rotate(360deg)}}h1{color:#1e3a8a}p{color:#6b7280}</style></head><body><div class="b"><div class="s"></div><h1>Global Guidance HR</h1><p>Starting up - please wait 30 seconds then refresh</p></div></body></html>';
+function get(url,n){n=n||0;if(n>5)return Promise.reject(new Error('redirects'));return new Promise(function(res,rej){var r=https.get(url,function(resp){if(resp.statusCode>=300&&resp.headers.location){resp.resume();return get(resp.headers.location,n+1).then(res,rej);}var b=[];resp.on('data',function(d){b.push(d);});resp.on('end',function(){res(Buffer.concat(b).toString());});});r.on('error',rej);r.setTimeout(120000,function(){r.destroy(new Error('timeout'));});});}
+function compile(html){return get('https://unpkg.com/@babel/standalone@7.23.0/babel.min.js').then(function(code){console.log('Babel '+Math.round(code.length/1024)+'KB');var sb={console:console,process:{env:{}},setTimeout:setTimeout,clearTimeout:clearTimeout};sb.global=sb;require('vm').runInNewContext(code,sb);var B=sb.Babel;if(!B||!B.transform)throw new Error('no Babel');var tag='<script type="text/babel">';var si=html.indexOf(tag)+tag.length;var ei=html.indexOf('<'+'/script>',si);var jsx=html.slice(si,ei);console.log('Compiling '+Math.round(jsx.length/1024)+'KB...');var t=Date.now();var r=B.transform(jsx,{presets:[['react',{runtime:'classic'}],'env'],filename:'app.jsx',compact:true});console.log('Done '+(Date.now()-t)+'ms');var cdn='    <script src="https://unpkg.com/@babel/standalone/babel.min.js"><'+'/script>\n';return html.replace(cdn,'').replace(tag+jsx+'<'+'/script>','<script>\n'+r.code+'\n<'+'/script>');});}
+var svr=http.createServer(function(req,res){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});res.end(compiledHTML||LOADING);});
+svr.listen(PORT,'0.0.0.0',function(){console.log('Port '+PORT);var tmpl=path.join(__dirname,'src','template.html');var html=fs.readFileSync(tmpl,'utf8');if(!html.includes('type="text/babel"')){compiledHTML=html;console.log('Direct serve');return;}compile(html).then(function(c){compiledHTML=c;console.log('READY');}).catch(function(e){console.error('ERR:',e.message);compiledHTML=html;});});
