@@ -1,8 +1,1 @@
-{
-  "name": "global-guidance-hr",
-  "version": "4.0.0",
-  "description": "Global Guidance HR System",
-  "main": "server.js",
-  "engines": {"node": ">=16.0.0"},
-  "scripts": {"start": "node server.js"}
-}
+{"name":"global-guidance-hr","version":"4.0.0","main":"server.js","engines":{"node":">=16.0.0"},"scripts":{"start":"node server.js"}}
