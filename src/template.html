@@ -2000,7 +2000,8 @@
             const [isLocating, setIsLocating] = useState(false);
 
             // B. Morning Planner
-            const initialTasks = [
+            const initialTasks = [// Clear stale planner data if role segments don't match current role
+const [morningTasks, setMorningTasks] = usePersistedState('morningTasks_' + currentUser.role, initialTasks);
                 { time: '09:00-10:00', segment: 'Admissions Oversight', desc: '', output: '', priority: 'High' },
                 { time: '10:00-11:00', segment: 'Admissions Oversight', desc: '', output: '', priority: 'High' },
                 { time: '11:00-12:00', segment: 'HR & Staff Control', desc: '', output: '', priority: 'Medium' },
