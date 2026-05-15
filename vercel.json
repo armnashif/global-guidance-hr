@@ -1,5 +1,6 @@
 {
+  "outputDirectory": "src",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/src/template.html" }
+    { "source": "/(.*)", "destination": "/template.html" }
   ]
 }
