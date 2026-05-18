@@ -1,1 +1,1 @@
-web: node server.js
+# Static site - no web process needed
