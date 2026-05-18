@@ -1,6 +1,15 @@
 {
   "outputDirectory": "src",
+  "cleanUrls": true,
   "rewrites": [
     { "source": "/(.*)", "destination": "/template.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    }
   ]
 }
