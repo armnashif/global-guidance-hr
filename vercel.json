@@ -1,15 +1,9 @@
 {
-  "outputDirectory": "src",
-  "cleanUrls": true,
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/template.html" }
+  "version": 2,
+  "builds": [
+    { "src": "src/template.html", "use": "@vercel/static" }
   ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-      ]
-    }
+  "routes": [
+    { "src": "/(.*)", "dest": "/src/template.html" }
   ]
 }
