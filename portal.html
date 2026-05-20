@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Global Guidance — Command Portal v3.0</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;margin:0}
+.tab-pane{display:none}.tab-pane.active{display:block}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;align-items:center;justify-content:center;padding:1rem}
+.modal.open{display:flex}
+.nav-tab{cursor:pointer;padding:10px 16px;font-size:13px;font-weight:500;border-bottom:2px solid transparent;color:#64748b;white-space:nowrap;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none}
+.nav-tab.active{border-bottom-color:#1d4ed8;color:#1d4ed8}
+.nav-tab:hover:not(.active){color:#1e40af;background:#f8fafc}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:#1d4ed8;color:#fff}.btn-primary:hover{background:#1e40af}
+.btn-secondary{background:#f1f5f9;color:#334155;border:1px solid #e2e8f0}.btn-secondary:hover{background:#e2e8f0}
+.btn-danger{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}.btn-danger:hover{background:#fee2e2}
+.btn-success{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}.btn-success:hover{background:#dcfce7}
+.btn-sm{padding:5px 10px;font-size:12px}
+.card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:20px}
+.inp{width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;transition:border-color .15s;font-family:inherit}
+.inp:focus{border-color:#1d4ed8;box-shadow:0 0 0 3px rgba(29,78,216,.1)}
+.sel{width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;background:#fff;font-family:inherit}
+.lbl{display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.tag-high{background:#fef2f2;color:#dc2626}
+.tag-med{background:#fffbeb;color:#d97706}
+.tag-low{background:#f0fdf4;color:#16a34a}
+.tag-new{background:#eff6ff;color:#1d4ed8}.tag-docs{background:#fffbeb;color:#d97706}.tag-offer{background:#f5f3ff;color:#7c3aed}.tag-visa{background:#f0fdf4;color:#16a34a}
+.tag-pending{background:#fffbeb;color:#d97706}.tag-approved{background:#f0fdf4;color:#16a34a}
+.mgmt-only{display:none}.tab-pane.active{display:block!important}
+.priority-bar-high{border-left:3px solid #ef4444}.priority-bar-med{border-left:3px solid #f59e0b}.priority-bar-low{border-left:3px solid #22c55e}
+.task-done .task-title{text-decoration:line-through;color:#94a3b8}
+.task-del{opacity:0;transition:opacity .15s}.task-row:hover .task-del{opacity:1}
+.checkin-on{background:#f0fdf4;border-color:#22c55e!important}.checkin-off{background:#fff7ed;border-color:#fb923c!important}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.4)}100%{box-shadow:0 0 0 10px rgba(34,197,94,0)}}.pulse{animation:pulse 1.5s infinite}
+.sheets-bar{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 14px;font-size:12px;color:#15803d;display:flex;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="min-h-screen flex">
+  <div class="hidden md:flex flex-col justify-between w-5/12 p-12 text-white" style="background:linear-gradient(145deg,#1e3a8a 0%,#1d4ed8 100%)">
+    <div>
+      <div class="flex items-center gap-3 mb-10">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg" style="background:rgba(255,255,255,.15)">GG</div>
+        <div><div class="font-bold text-lg">Global Guidance</div><div class="text-blue-200 text-xs">Command Portal v3.0</div></div>
+      </div>
+      <h1 class="text-3xl font-bold mb-4 leading-snug">Your gateway to global education excellence.</h1>
+      <p class="text-blue-200 text-sm leading-relaxed">Admissions · Business Development · Counselling · Operations</p>
+      <div class="grid grid-cols-3 gap-3 mt-8">
+        <div class="rounded-xl p-4 text-center" style="background:rgba(255,255,255,.1)"><div class="text-2xl font-bold">500+</div><div class="text-xs text-blue-200 mt-1">Students Placed</div></div>
+        <div class="rounded-xl p-4 text-center" style="background:rgba(255,255,255,.1)"><div class="text-2xl font-bold">120+</div><div class="text-xs text-blue-200 mt-1">Universities</div></div>
+        <div class="rounded-xl p-4 text-center" style="background:rgba(255,255,255,.1)"><div class="text-2xl font-bold">12</div><div class="text-xs text-blue-200 mt-1">Countries</div></div>
+      </div>
+    </div>
+    <div class="text-blue-300 text-xs">© Global Guidance Education Consultancy · Colombo, LK</div>
+  </div>
+  <div class="flex-1 flex items-center justify-center p-8 bg-slate-50">
+    <div class="w-full max-w-sm">
+      <div class="flex items-center gap-3 mb-8 md:hidden">
+        <div class="w-9 h-9 bg-blue-700 rounded-xl flex items-center justify-center text-white font-bold text-sm">GG</div>
+        <div class="font-bold text-gray-800">Global Guidance</div>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-1">Welcome back 👋</h2>
+      <p class="text-gray-500 text-sm mb-6">Sign in to your Command Portal</p>
+      <div id="loginErr" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4 flex items-center gap-2">
+        <i class="fas fa-exclamation-circle flex-shrink-0"></i><span id="loginErrMsg"></span>
+      </div>
+      <div class="space-y-4 mb-4">
+        <div><label class="lbl">Username</label>
+          <div class="relative"><i class="fas fa-user absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+            <input id="loginUser" type="text" class="inp pl-9" placeholder="your.username" onkeydown="if(event.key==='Enter')doLogin()"></div></div>
+        <div><label class="lbl">Password</label>
+          <div class="relative"><i class="fas fa-lock absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+            <input id="loginPass" type="password" class="inp pl-9" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div></div>
+        <button onclick="doLogin()" class="btn btn-primary w-full justify-center py-3 text-sm"><i class="fas fa-sign-in-alt"></i>Sign In to Portal</button>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <p class="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide">Quick Access</p>
+        <div class="space-y-1 text-xs">
+          <button onclick="ql('nashif.razzak','CEO@Global2026')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-600 flex items-center gap-2"><i class="fas fa-crown text-yellow-500 w-4"></i>Nashif Razzak — CEO</button>
+          <button onclick="ql('nashif.razzak','CEO@Global2026')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-600 flex items-center gap-2"><i class="fas fa-user-tie text-blue-600 w-4"></i>Nafees Razzak — COO</button>
+          <button onclick="ql('nafees.razzak','CEO@Global2026')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-600 flex items-center gap-2"><i class="fas fa-briefcase text-blue-500 w-4"></i>Nafees Razzak — COO</button>
+          <button onclick="ql('razan.thawus','COO@Global2026')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-600 flex items-center gap-2"><i class="fas fa-handshake text-blue-400 w-4"></i>Razan Thawus — BD/Finance</button>
+          <button onclick="ql('thasbiha.s','Staff@Global2026')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-600 flex items-center gap-2"><i class="fas fa-user-tie text-purple-500 w-4"></i>Thasbiha — Admissions</button>
+          <button onclick="ql('umair.fawzan','Staff@Global2026')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-green-50 text-gray-600 flex items-center gap-2"><i class="fas fa-user text-teal-500 w-4"></i>Umair — Staff</button>
+          <button onclick="ql('sukaina.s','Staff@Global2026')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-green-50 text-gray-600 flex items-center gap-2"><i class="fas fa-user text-rose-500 w-4"></i>Sukaina — Staff</button>
+          <button onclick="ql('superadmin','CEO@Global2026')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 text-gray-600 flex items-center gap-2"><i class="fas fa-shield text-red-500 w-4"></i>Super Admin</button>
+        </div>
+      </div>
+      <p class="text-center text-xs text-gray-400 mt-4">Authorised users only. Forgotten password? Contact Super Admin.</p>
+    </div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="appShell" class="hidden min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-30">
+    <div class="flex items-center justify-between px-4 h-14">
+      <div class="flex items-center gap-3">
+        <div class="w-7 h-7 bg-blue-700 rounded-lg flex items-center justify-center text-white text-xs font-bold">GG</div>
+        <div class="hidden sm:block">
+          <div class="font-semibold text-gray-900 text-sm leading-none">Global Guidance</div>
+          <div class="text-xs text-gray-400 leading-none mt-0.5">Command Portal v3.0</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="hidden sm:flex items-center gap-1.5 text-xs text-gray-500 bg-gray-50 px-3 py-1.5 rounded-lg">
+          <i class="fas fa-clock text-blue-500"></i><span id="clockEl"></span>
+        </div>
+        <div id="checkinChip" onclick="showTab('attendance')" class="text-xs px-3 py-1.5 rounded-lg font-medium cursor-pointer bg-orange-50 text-orange-600 border border-orange-200">
+          <i class="fas fa-circle text-orange-400 text-xs mr-1"></i>Not checked in
+        </div>
+        <div class="flex items-center gap-2">
+          <div id="avBubble" class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold bg-blue-600 cursor-pointer flex-shrink-0"></div>
+          <div class="hidden sm:block leading-none">
+            <div id="hdrName" class="text-sm font-semibold text-gray-800"></div>
+            <div id="hdrRole" class="text-xs text-gray-400"></div>
+          </div>
+        </div>
+        <button onclick="doLogout()" class="btn btn-secondary btn-sm hidden sm:inline-flex"><i class="fas fa-sign-out-alt"></i>Sign Out</button>
+      </div>
+    </div>
+    <div id="tabBar" class="flex overflow-x-auto border-t border-gray-100 px-2" style="scrollbar-width:none;-webkit-overflow-scrolling:touch"></div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full">
+
+    <!-- DASHBOARD -->
+    <div id="pane-dashboard" class="tab-pane">
+      <div class="mb-6"><h1 class="text-xl font-bold text-gray-900">Dashboard</h1>
+        <p class="text-sm text-gray-500 mt-0.5">Good <span id="greetWord"></span>, <span id="greetName"></span>. Here's what's happening.</p></div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="card"><div class="text-xs font-semibold text-gray-400 uppercase mb-1">Total Leads</div><div id="kpiLeads" class="text-3xl font-bold text-blue-600">0</div></div>
+        <div class="card"><div class="text-xs font-semibold text-gray-400 uppercase mb-1">Active Students</div><div class="text-3xl font-bold text-green-600">142</div></div>
+        <div class="card"><div class="text-xs font-semibold text-gray-400 uppercase mb-1">My Tasks</div><div id="kpiTasks" class="text-3xl font-bold text-purple-600">0</div></div>
+        <div class="card"><div class="text-xs font-semibold text-gray-400 uppercase mb-1">Cash Balance</div><div id="kpiCash" class="text-2xl font-bold text-amber-600">LKR 0</div></div>
+      </div>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="card"><div class="flex justify-between items-center mb-3"><h3 class="font-semibold text-gray-800">Recent Leads</h3><button onclick="openModal('addLeadModal')" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i>Add Lead</button></div><div id="dashLeads" class="text-sm text-gray-400">No leads yet.</div></div>
+        <div class="card"><div class="flex justify-between items-center mb-3"><h3 class="font-semibold text-gray-800">My Tasks Today</h3><button onclick="showTab('workspace')" class="btn btn-secondary btn-sm">View All <i class="fas fa-arrow-right"></i></button></div><div id="dashTasks" class="text-sm text-gray-400">No tasks yet.</div></div>
+      </div>
+    </div>
+
+    <!-- MY WORKSPACE -->
+    <div id="pane-workspace" class="tab-pane">
+      <div class="mb-5 flex flex-wrap justify-between items-start gap-3">
+        <div><h1 class="text-xl font-bold text-gray-900">My Workspace</h1>
+          <p class="text-sm text-gray-500 mt-0.5">Personal task board · data persists between sessions</p></div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="openModal('bulkModal')" class="btn btn-secondary"><i class="fas fa-list"></i>Add Multiple</button>
+          <button onclick="openModal('taskModal')" class="btn btn-primary"><i class="fas fa-plus"></i>Add Task</button>
+        </div>
+      </div>
+      <div class="sheets-bar mb-4"><i class="fas fa-table-cells-large"></i><span>Google Sheets sync: <strong id="sheetStatusTxt">Not configured</strong></span><button onclick="openModal('sheetsModal')" class="ml-auto btn btn-sm" style="background:#dcfce7;color:#15803d;border:1px solid #bbf7d0">Configure</button></div>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button id="fil-all" onclick="setFilter('all')" class="btn btn-primary btn-sm">All</button>
+        <button id="fil-today" onclick="setFilter('today')" class="btn btn-secondary btn-sm">Due Today</button>
+        <button id="fil-high" onclick="setFilter('high')" class="btn btn-secondary btn-sm"><span class="w-2 h-2 rounded-full bg-red-400 inline-block mr-1"></span>High</button>
+        <button id="fil-pending" onclick="setFilter('pending')" class="btn btn-secondary btn-sm">Pending</button>
+        <button id="fil-done" onclick="setFilter('done')" class="btn btn-secondary btn-sm">Done</button>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-blue-50 rounded-xl p-3 text-center"><div id="tCount" class="text-xl font-bold text-blue-700">0</div><div class="text-xs text-blue-500">Total</div></div>
+        <div class="bg-amber-50 rounded-xl p-3 text-center"><div id="tPending" class="text-xl font-bold text-amber-700">0</div><div class="text-xs text-amber-500">Pending</div></div>
+        <div class="bg-green-50 rounded-xl p-3 text-center"><div id="tDone" class="text-xl font-bold text-green-700">0</div><div class="text-xs text-green-500">Done</div></div>
+      </div>
+      <div id="taskList" class="space-y-2 mb-4"></div>
+      <div id="taskEmpty" class="card text-center py-12 text-gray-400 hidden">
+        <i class="fas fa-clipboard-check text-4xl mb-3 text-gray-200"></i>
+        <p class="font-medium">No tasks here yet</p><p class="text-sm mt-1">Click Add Task or Add Multiple to start</p>
+      </div>
+      <div class="card mt-5"><h3 class="font-semibold text-gray-800 mb-3"><i class="fas fa-sticky-note text-yellow-400 mr-2"></i>Daily Notes</h3><textarea id="dailyNotes" class="inp" rows="4" placeholder="Notes, reminders, ideas for today..." oninput="autoSaveNotes()"></textarea><div class="flex justify-between items-center mt-2"><span class="text-xs text-gray-400"><i class="fas fa-check-circle text-green-400 mr-1"></i>Auto-saved</span><button onclick="saveNotes()" class="btn btn-secondary btn-sm">Save</button></div></div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div id="pane-attendance" class="tab-pane">
+      <div class="mb-5"><h1 class="text-xl font-bold text-gray-900">Attendance &amp; Daily Plan</h1>
+        <p class="text-sm text-gray-500 mt-0.5">Check in · log your day · check out · submit EOD</p></div>
+      <div class="grid md:grid-cols-2 gap-4 mb-4">
+        <div id="ciCard" class="card border-2 checkin-off">
+          <div class="flex justify-between items-start mb-4">
+            <div><h3 class="font-semibold text-gray-800">Today's Attendance</h3><p id="todayDateEl" class="text-xs text-gray-400 mt-0.5"></p></div>
+            <span id="ciBadge" class="badge bg-orange-100 text-orange-600">Not Checked In</span>
+          </div>
+          <div class="space-y-2 mb-4">
+            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl"><span class="text-sm text-gray-500"><i class="fas fa-sign-in-alt text-green-500 mr-2"></i>Check In</span><span id="ciInTime" class="font-semibold text-gray-800">—</span></div>
+            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl"><span class="text-sm text-gray-500"><i class="fas fa-sign-out-alt text-red-500 mr-2"></i>Check Out</span><span id="ciOutTime" class="font-semibold text-gray-800">—</span></div>
+            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl"><span class="text-sm text-gray-500"><i class="fas fa-clock text-blue-500 mr-2"></i>Hours</span><span id="ciHours" class="font-semibold text-gray-800">0h 0m</span></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <button id="btnCI" onclick="doCheckIn()" class="btn btn-success justify-center py-3"><i class="fas fa-sign-in-alt"></i>Check In</button>
+            <button id="btnCO" onclick="doCheckOut()" class="btn btn-danger justify-center py-3" disabled><i class="fas fa-sign-out-alt"></i>Check Out</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="font-semibold text-gray-800 mb-1"><i class="fas fa-clipboard-list text-blue-500 mr-2"></i>Daily Plan &amp; Notes</h3>
+          <p class="text-xs text-gray-400 mb-3">What are you working on today?</p>
+          <textarea id="attNotes" class="inp mb-3" rows="6" placeholder="- Follow up with Nimasha re: CAS&#10;- Call 3 new leads&#10;- Update visa tracker"></textarea>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="saveDayPlan()" class="btn btn-primary justify-center"><i class="fas fa-save"></i>Save Plan</button>
+            <button onclick="submitEOD()" class="btn btn-secondary justify-center"><i class="fas fa-paper-plane"></i>Submit EOD</button>
+          </div>
+          <div id="planMsg" class="hidden mt-2 text-xs text-green-600 text-center"><i class="fas fa-check-circle mr-1"></i>Saved!</div>
+        </div>
+      </div>
+      <div class="card mb-4"><div class="flex justify-between items-center mb-3"><div><h3 class="font-semibold text-gray-800"><i class="fas fa-calendar-alt text-purple-500 mr-2"></i>Leave Requests</h3></div><button onclick="openModal('leaveModal')" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i>Request Leave</button></div><div id="leaveList" class="text-sm text-gray-400">No leave requests yet.</div></div>
+      <div id="teamAttDiv" class="mgmt-only card">
+        <h3 class="font-semibold text-gray-800 mb-4"><i class="fas fa-users text-blue-500 mr-2"></i>Team Attendance — Today</h3>
+        <div id="teamGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+      </div>
+    </div>
+
+    <!-- LEADS -->
+    <div id="pane-leads" class="tab-pane">
+      <div class="mb-5 flex justify-between items-center gap-3"><div><h1 class="text-xl font-bold text-gray-900">Leads &amp; Pipeline</h1></div><button onclick="openModal('addLeadModal')" class="btn btn-primary"><i class="fas fa-plus"></i>Add Lead</button></div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center"><div id="sNew" class="text-xl font-bold text-blue-700">0</div><div class="text-xs text-blue-500 mt-1">New</div></div>
+        <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 text-center"><div id="sDocs" class="text-xl font-bold text-amber-700">0</div><div class="text-xs text-amber-500 mt-1">Docs</div></div>
+        <div class="bg-purple-50 border border-purple-100 rounded-xl p-3 text-center"><div id="sOffer" class="text-xl font-bold text-purple-700">0</div><div class="text-xs text-purple-500 mt-1">Offer</div></div>
+        <div class="bg-green-50 border border-green-100 rounded-xl p-3 text-center"><div id="sVisa" class="text-xl font-bold text-green-700">0</div><div class="text-xs text-green-500 mt-1">Visa</div></div>
+      </div>
+      <div id="leadList" class="space-y-2"></div>
+      <div id="leadsEmpty" class="card text-center py-12 text-gray-400"><i class="fas fa-user-plus text-4xl mb-3 text-gray-200"></i><p class="font-medium">No leads yet</p><button onclick="openModal('addLeadModal')" class="btn btn-primary mt-3">Add First Lead</button></div>
+    </div>
+
+    <!-- FOLLOW-UP -->
+    <div id="pane-followup" class="tab-pane">
+      <div class="mb-5 flex justify-between items-center gap-3"><div><h1 class="text-xl font-bold text-gray-900">Follow-Up Log</h1></div><button onclick="openModal('followupModal')" class="btn btn-primary"><i class="fas fa-plus"></i>Log Follow-Up</button></div>
+      <div id="followupList" class="space-y-2"></div>
+      <div id="followupEmpty" class="card text-center py-12 text-gray-400"><i class="fas fa-phone text-4xl mb-3 text-gray-200"></i><p class="font-medium">No follow-ups logged yet</p></div>
+    </div>
+
+    <!-- PETTY CASH -->
+    <div id="pane-pettycash" class="tab-pane">
+      <div class="mb-5 flex justify-between items-center gap-3"><div><h1 class="text-xl font-bold text-gray-900">Petty Cash</h1></div><button onclick="openModal('cashModal')" class="btn btn-primary"><i class="fas fa-plus"></i>Add Entry</button></div>
+      <div class="grid grid-cols-3 gap-4 mb-5">
+        <div class="card text-center"><div id="cashBal" class="text-2xl font-bold text-green-600">LKR 0</div><div class="text-xs text-gray-400 mt-1">Balance</div></div>
+        <div class="card text-center"><div id="cashExp" class="text-2xl font-bold text-red-500">LKR 0</div><div class="text-xs text-gray-400 mt-1">Expenses</div></div>
+        <div class="card text-center"><div id="cashTop" class="text-2xl font-bold text-blue-600">LKR 0</div><div class="text-xs text-gray-400 mt-1">Top-ups</div></div>
+      </div>
+      <div id="cashList" class="space-y-2"></div>
+    </div>
+
+    <!-- PAYROLL -->
+    <div id="pane-payroll" class="tab-pane">
+      <div class="mb-5"><h1 class="text-xl font-bold text-gray-900">Payroll</h1></div>
+      <div class="card overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b text-xs text-gray-400 uppercase"><th class="text-left py-3 pr-4">Employee</th><th class="text-left py-3 pr-4">Role</th><th class="text-right py-3 pr-4">Salary (LKR)</th><th class="text-center py-3 pr-4">Status</th><th class="text-center py-3">Action</th></tr></thead><tbody id="payrollBody"></tbody></table></div>
+    </div>
+
+    <!-- EMPLOYEES -->
+    <div id="pane-employees" class="tab-pane">
+      <div class="mb-5"><h1 class="text-xl font-bold text-gray-900">Employees</h1></div>
+      <div id="empGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- COMMISSIONS -->
+    <div id="pane-commissions" class="tab-pane">
+      <div class="mb-5"><h1 class="text-xl font-bold text-gray-900">Commissions</h1></div>
+      <div class="card overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b text-xs text-gray-400 uppercase"><th class="text-left py-3 pr-4">University</th><th class="text-left py-3 pr-4">Country</th><th class="text-right py-3 pr-4">UG</th><th class="text-right py-3 pr-4">PG</th><th class="text-right py-3 pr-4">Bonus</th><th class="text-left py-3">Portal</th></tr></thead><tbody>
+        <tr class="border-b hover:bg-gray-50"><td class="py-3 pr-4 font-medium">Coventry University</td><td class="pr-4 text-gray-400">🇬🇧 UK</td><td class="text-right pr-4 text-green-600 font-bold">15%</td><td class="text-right pr-4 text-green-600 font-bold">15%</td><td class="text-right pr-4 text-blue-500">+2% (5+)</td><td class="text-gray-400">Crizac</td></tr>
+        <tr class="border-b hover:bg-gray-50"><td class="py-3 pr-4 font-medium">Greenwich University</td><td class="pr-4 text-gray-400">🇬🇧 UK</td><td class="text-right pr-4 text-green-600 font-bold">15%</td><td class="text-right pr-4 text-green-600 font-bold">15%</td><td class="text-right pr-4 text-blue-500">+1% (3+)</td><td class="text-gray-400">KC Overseas</td></tr>
+        <tr class="border-b hover:bg-gray-50"><td class="py-3 pr-4 font-medium">Aston University</td><td class="pr-4 text-gray-400">🇬🇧 UK</td><td class="text-right pr-4 text-green-600 font-bold">12%</td><td class="text-right pr-4 text-green-600 font-bold">14%</td><td class="text-right pr-4 text-blue-500">+3% (10+)</td><td class="text-gray-400">Geebee</td></tr>
+        <tr class="border-b hover:bg-gray-50"><td class="py-3 pr-4 font-medium">Monash University</td><td class="pr-4 text-gray-400">🇦🇺 AUS</td><td class="text-right pr-4 text-green-600 font-bold">10%</td><td class="text-right pr-4 text-green-600 font-bold">12%</td><td class="text-right pr-4 text-blue-500">—</td><td class="text-gray-400">IDP</td></tr>
+        <tr class="hover:bg-gray-50"><td class="py-3 pr-4 font-medium">Westminster University</td><td class="pr-4 text-gray-400">🇬🇧 UK</td><td class="text-right pr-4 text-green-600 font-bold">13%</td><td class="text-right pr-4 text-green-600 font-bold">13%</td><td class="text-right pr-4 text-blue-500">+1% (5+)</td><td class="text-gray-400">Crizac</td></tr>
+      </tbody></table></div>
+    </div>
+
+    <!-- REPORTS -->
+    <div id="pane-reports" class="tab-pane">
+      <div class="mb-5 flex justify-between items-center gap-3"><div><h1 class="text-xl font-bold text-gray-900">Reports</h1></div><div class="flex gap-2"><button onclick="exportCSV()" class="btn btn-secondary"><i class="fas fa-file-csv"></i>Export CSV</button><button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i>Print / PDF</button></div></div>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="card"><h3 class="font-semibold mb-3">By Source</h3><div id="rSource"></div></div>
+        <div class="card"><h3 class="font-semibold mb-3">By Destination</h3><div id="rDest"></div></div>
+        <div class="card"><h3 class="font-semibold mb-3">By Staff</h3><div id="rStaff"></div></div>
+        <div class="card"><h3 class="font-semibold mb-3">Task Completion</h3><div id="rTasks"></div></div>
+      </div>
+    </div>
+
+    <!-- SUPER ADMIN -->
+    <div id="pane-superadmin" class="tab-pane">
+      <div class="mb-5"><h1 class="text-xl font-bold text-gray-900">Super Admin Panel</h1></div>
+      <div class="card mb-4">
+        <div class="flex justify-between items-center mb-4"><h3 class="font-semibold">User Accounts</h3><button onclick="openModal('addUserModal')" class="btn btn-primary btn-sm"><i class="fas fa-user-plus"></i>Add User</button></div>
+        <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b text-xs text-gray-400 uppercase"><th class="text-left py-2 pr-4">Name</th><th class="text-left py-2 pr-4">Username</th><th class="text-left py-2 pr-4">Role</th><th class="text-left py-2 pr-4">Level</th><th class="text-center py-2">Actions</th></tr></thead><tbody id="adminTable"></tbody></table></div>
+      </div>
+      <div class="card">
+        <h3 class="font-semibold mb-3"><i class="fas fa-table-cells-large text-green-600 mr-2"></i>Google Sheets Configuration</h3>
+        <div class="grid md:grid-cols-2 gap-3 mb-3"><div><label class="lbl">Apps Script URL</label><input id="adminSheetUrl" type="url" class="inp" placeholder="https://script.google.com/macros/s/..."></div><div><label class="lbl">Sheet ID</label><input id="adminSheetId" type="text" class="inp" placeholder="Sheet ID..."></div></div>
+        <button onclick="saveAdminSheets()" class="btn btn-primary"><i class="fas fa-save"></i>Save Config</button>
+        <div class="mt-4 p-3 bg-blue-50 rounded-xl text-xs text-blue-700"><strong>Apps Script setup:</strong> Create a Google Apps Script web app that accepts POST requests. Deploy as Anyone. Paste the URL here and in staff Configure buttons.</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODALS -->
+<div id="taskModal" class="modal"><div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+  <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900">Add Task</h3><button onclick="closeModal('taskModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button></div>
+  <div class="space-y-3">
+    <div><label class="lbl">Task Title *</label><input id="tTitle" type="text" class="inp" placeholder="What needs to be done?" onkeydown="if(event.key==='Enter')saveTask()"></div>
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl">Priority</label><select id="tPriority" class="sel"><option value="high">🔴 High</option><option value="med" selected>🟡 Medium</option><option value="low">🟢 Low</option></select></div><div><label class="lbl">Due Date</label><input id="tDue" type="date" class="inp"></div></div>
+    <div><label class="lbl">Notes</label><textarea id="tNotes" class="inp" rows="2" placeholder="Additional details..."></textarea></div>
+  </div>
+  <div class="flex gap-3 mt-5"><button onclick="closeModal('taskModal')" class="btn btn-secondary flex-1 justify-center">Cancel</button><button onclick="saveTask()" class="btn btn-primary flex-1 justify-center"><i class="fas fa-plus"></i>Add Task</button></div>
+</div></div>
+
+<div id="bulkModal" class="modal"><div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+  <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900">Add Multiple Tasks</h3><button onclick="closeModal('bulkModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button></div>
+  <p class="text-sm text-gray-500 mb-3">One task per line — all added at once with the settings below.</p>
+  <div class="bg-gray-50 rounded-xl p-3 mb-3"><textarea id="bulkInput" class="inp bg-transparent border-0 p-0" rows="8" placeholder="Follow up with Nimasha re: CAS&#10;Call 3 new leads from WhatsApp&#10;Update visa tracker spreadsheet&#10;Prepare shortlist for Kasun"></textarea></div>
+  <div class="grid grid-cols-2 gap-3 mb-4"><div><label class="lbl">Priority</label><select id="bulkPri" class="sel"><option value="high">🔴 High</option><option value="med" selected>🟡 Medium</option><option value="low">🟢 Low</option></select></div><div><label class="lbl">Due Date</label><input id="bulkDue" type="date" class="inp"></div></div>
+  <div class="flex gap-3"><button onclick="closeModal('bulkModal')" class="btn btn-secondary flex-1 justify-center">Cancel</button><button onclick="saveBulk()" class="btn btn-primary flex-1 justify-center"><i class="fas fa-layer-group"></i>Add All Tasks</button></div>
+</div></div>
+
+<div id="sheetsModal" class="modal"><div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+  <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900"><i class="fas fa-table-cells-large text-green-600 mr-2"></i>Google Sheets Sync</h3><button onclick="closeModal('sheetsModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button></div>
+  <div class="bg-blue-50 rounded-xl p-3 mb-4 text-xs text-blue-700"><i class="fas fa-info-circle mr-2"></i>Tasks sync automatically. Super Admin sets the main URL — you just set your sheet tab name.</div>
+  <div class="space-y-3"><div><label class="lbl">Apps Script URL</label><input id="sUrl" type="url" class="inp" placeholder="https://script.google.com/macros/s/..."></div><div><label class="lbl">Your Sheet Tab Name</label><input id="sName" type="text" class="inp" placeholder="e.g. Umair Tasks"></div></div>
+  <div class="flex gap-3 mt-5"><button onclick="closeModal('sheetsModal')" class="btn btn-secondary flex-1 justify-center">Cancel</button><button onclick="saveSheetsCfg()" class="btn btn-primary flex-1 justify-center"><i class="fas fa-save"></i>Save &amp; Test</button></div>
+  <div id="sheetsTestMsg" class="hidden mt-3 text-xs text-center p-2 rounded-lg"></div>
+</div></div>
+
+<div id="addLeadModal" class="modal"><div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl overflow-y-auto" style="max-height:90vh">
+  <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900">Add New Lead</h3><button onclick="closeModal('addLeadModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button></div>
+  <div class="grid grid-cols-2 gap-3">
+    <div class="col-span-2"><label class="lbl">Full Name *</label><input id="lName" type="text" class="inp" placeholder="Student's full name"></div>
+    <div><label class="lbl">Phone *</label><input id="lPhone" type="text" class="inp" placeholder="+94 77 ..."></div>
+    <div><label class="lbl">Email</label><input id="lEmail" type="email" class="inp"></div>
+    <div><label class="lbl">Source</label><select id="lSource" class="sel"><option>Walk-In</option><option>WhatsApp</option><option>Instagram</option><option>TikTok</option><option>Referral</option><option>Website</option></select></div>
+    <div><label class="lbl">Destination</label><select id="lDest" class="sel"><option>UK</option><option>Australia</option><option>New Zealand</option><option>Canada</option><option>Malaysia</option></select></div>
+    <div><label class="lbl">Level</label><select id="lLevel" class="sel"><option>Undergraduate</option><option>Postgraduate</option><option>Masters</option><option>PhD</option><option>Diploma</option></select></div>
+    <div><label class="lbl">University</label><select id="lUni" class="sel"><option>— Select —</option><option>Coventry University</option><option>Greenwich University</option><option>Aston University</option><option>Westminster University</option><option>Monash University</option><option>Other</option></select></div>
+    <div><label class="lbl">Budget</label><select id="lBudget" class="sel"><option>Under 1M</option><option>1M–2M</option><option>2M–4M</option><option>4M+</option><option>Unclear</option></select></div>
+    <div><label class="lbl">Assign To</label><select id="lAssign" class="sel"><option>Thasbiha S.</option><option>Razan Thawus</option><option>Umair</option><option>Sukaina</option></select></div>
+    <div class="col-span-2"><label class="lbl">Notes</label><textarea id="lNotes" class="inp" rows="2"></textarea></div>
+  </div>
+  <div class="flex gap-3 mt-5"><button onclick="closeModal('addLeadModal')" class="btn btn-secondary flex-1 justify-center">Cancel</button><button onclick="saveLead()" class="btn btn-primary flex-1 justify-center"><i class="fas fa-save"></i>Save Lead</button></div>
+</div></div>
+
+<div id="leaveModal" class="modal"><div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+  <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900">Request Leave</h3><button onclick="closeModal('leaveModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button></div>
+  <div class="space-y-3">
+    <div><label class="lbl">Type</label><select id="lvType" class="sel"><option>Annual Leave</option><option>Sick Leave</option><option>Casual Leave</option><option>Maternity/Paternity</option></select></div>
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl">From</label><input id="lvFrom" type="date" class="inp"></div><div><label class="lbl">To</label><input id="lvTo" type="date" class="inp"></div></div>
+    <div><label class="lbl">Reason</label><textarea id="lvReason" class="inp" rows="3"></textarea></div>
+  </div>
+  <div class="flex gap-3 mt-5"><button onclick="closeModal('leaveModal')" class="btn btn-secondary flex-1 justify-center">Cancel</button><button onclick="submitLeave()" class="btn btn-primary flex-1 justify-center">Submit</button></div>
+</div></div>
+
+<div id="followupModal" class="modal"><div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+  <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900">Log Follow-Up</h3><button onclick="closeModal('followupModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button></div>
+  <div class="space-y-3">
+    <div><label class="lbl">Student</label><select id="fuStudent" class="sel"><option>— Select student —</option></select></div>
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl">Type</label><select id="fuType" class="sel"><option>Phone Call</option><option>WhatsApp</option><option>Email</option><option>In-Person</option></select></div><div><label class="lbl">Priority</label><select id="fuPri" class="sel"><option>High</option><option>Medium</option><option>Low</option></select></div></div>
+    <div><label class="lbl">Topic *</label><input id="fuTopic" type="text" class="inp" placeholder="What needs follow-up?"></div>
+    <div><label class="lbl">Due Date</label><input id="fuDue" type="date" class="inp"></div>
+    <div><label class="lbl">Notes</label><textarea id="fuNotes" class="inp" rows="2"></textarea></div>
+  </div>
+  <div class="flex gap-3 mt-5"><button onclick="closeModal('followupModal')" class="btn btn-secondary flex-1 justify-center">Cancel</button><button onclick="saveFollowup()" class="btn btn-primary flex-1 justify-center">Save</button></div>
+</div></div>
+
+<div id="cashModal" class="modal"><div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+  <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900">Petty Cash Entry</h3><button onclick="closeModal('cashModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button></div>
+  <div class="space-y-3">
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl">Type</label><select id="cType" class="sel"><option>Expense</option><option>Top-up</option></select></div><div><label class="lbl">Amount (LKR)</label><input id="cAmount" type="number" class="inp" min="0"></div></div>
+    <div><label class="lbl">Category</label><select id="cCat" class="sel"><option>Office Supplies</option><option>Travel</option><option>Entertainment</option><option>Courier</option><option>Utilities</option><option>Other</option></select></div>
+    <div><label class="lbl">Paid By</label><select id="cBy" class="sel"><option>Thasbiha S.</option><option>Razan Thawus</option><option>Umair</option><option>Sukaina</option><option>Nashif</option><option>Nafees</option></select></div>
+    <div><label class="lbl">Description</label><textarea id="cDesc" class="inp" rows="2"></textarea></div>
+  </div>
+  <div class="flex gap-3 mt-5"><button onclick="closeModal('cashModal')" class="btn btn-secondary flex-1 justify-center">Cancel</button><button onclick="saveCash()" class="btn btn-primary flex-1 justify-center">Add Entry</button></div>
+</div></div>
+
+<div id="addUserModal" class="modal"><div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+  <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900">Add User</h3><button onclick="closeModal('addUserModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button></div>
+  <div class="space-y-3">
+    <div><label class="lbl">Full Name</label><input id="nuName" type="text" class="inp"></div>
+    <div><label class="lbl">Username</label><input id="nuUser" type="text" class="inp"></div>
+    <div><label class="lbl">Password</label><input id="nuPass" type="text" class="inp"></div>
+    <div><label class="lbl">Access Level</label><select id="nuLevel" class="sel"><option value="Staff">Staff</option><option value="Management">Management</option></select></div>
+  </div>
+  <div class="flex gap-3 mt-5"><button onclick="closeModal('addUserModal')" class="btn btn-secondary flex-1 justify-center">Cancel</button><button onclick="addUser()" class="btn btn-primary flex-1 justify-center"><i class="fas fa-user-plus"></i>Add User</button></div>
+</div></div>
+
+<div id="toast" class="fixed bottom-6 right-6 z-50 hidden"><div class="bg-gray-900 text-white text-sm px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 max-w-xs"><i id="toastIco" class="fas fa-check-circle text-green-400 flex-shrink-0"></i><span id="toastTxt"></span></div></div>
+<script>
+const USERS = [
+  {id:'U0',name:'Nashif A. Razzak',username:'nashif.razzak',password:'CEO@Global2026',role:'Founder & CEO',dept:'Executive',level:'Management',salary:200000,av:'NR',bg:'bg-indigo-700'},
+  {id:'U0',name:'Nashif Razzak',  username:'nashif.razzak', password:'CEO@Global2026',   role:'CEO',               dept:'Executive',  level:'Management', salary:200000, av:'NA', bg:'bg-blue-700'},
+  {id:'U1',name:'Nafees Razzak',  username:'nafees.razzak', password:'CEO@Global2026',   role:'COO',               dept:'Executive',  level:'Management', salary:180000, av:'NR', bg:'bg-blue-600'},
+  {id:'U2',name:'Razan Thawus',   username:'razan.thawus',  password:'COO@Global2026',   role:'Head of BD/Visa',   dept:'BD & Visa',  level:'Management', salary:150000, av:'RT', bg:'bg-purple-600'},
+  {id:'U3',name:'Thasbiha S.',    username:'thasbiha.s',    password:'Staff@Global2026', role:'Head of Admissions', dept:'Admissions', level:'Management', salary:140000, av:'TS', bg:'bg-pink-600'},
+  {id:'U4',name:'Umair Fawzan',   username:'umair.fawzan',  password:'Staff@Global2026', role:'Admissions Exec',   dept:'Admissions', level:'Staff',      salary:65000,  av:'UF', bg:'bg-teal-600'},
+  {id:'U5',name:'Shiran Shafraz', username:'shiran.shafraz',password:'Staff@Global2026', role:'Marketing',         dept:'Marketing',  level:'Staff',      salary:60000,  av:'SS', bg:'bg-amber-600'},
+  {id:'U6',name:'Sukaina S.',     username:'sukaina.s',     password:'Staff@Global2026', role:'Counsellor',        dept:'Admissions', level:'Staff',      salary:58000,  av:'SK', bg:'bg-rose-600'},
+  {id:'U7',name:'Jinushiya',      username:'jinushiya',     password:'Staff@Global2026', role:'Front Desk',        dept:'Operations', level:'Staff',      salary:55000,  av:'JN', bg:'bg-cyan-600'},
+  {id:'U8',name:'Shakya',         username:'shakya',        password:'Staff@Global2026', role:'Counsellor',        dept:'Admissions', level:'Staff',      salary:55000,  av:'SH', bg:'bg-lime-600'},
+  {id:'U9',name:'Saleh',          username:'saleh',         password:'Staff@Global2026', role:'BD Executive',      dept:'BD & Visa',  level:'Staff',      salary:58000,  av:'SL', bg:'bg-orange-600'},
+  {id:'SA',name:'Super Admin',    username:'superadmin',    password:'CEO@Global2026',   role:'Super Admin',       dept:'System',     level:'SuperAdmin', salary:0,      av:'SA', bg:'bg-red-700'},
+];
+let CU=null,tasks=[],leads=[],followups=[],cash=[],leaves=[],att={},sheetsUrl='',sheetName='',activeFilter='all';
+function save(){try{localStorage.setItem('gg3_tasks',JSON.stringify(tasks));localStorage.setItem('gg3_leads',JSON.stringify(leads));localStorage.setItem('gg3_fu',JSON.stringify(followups));localStorage.setItem('gg3_cash',JSON.stringify(cash));localStorage.setItem('gg3_leaves',JSON.stringify(leaves));localStorage.setItem('gg3_att',JSON.stringify(att));localStorage.setItem('gg3_sheetsUrl',sheetsUrl);}catch(e){}}
+function load(){tasks=JSON.parse(localStorage.getItem('gg3_tasks')||'[]');leads=JSON.parse(localStorage.getItem('gg3_leads')||'[]');followups=JSON.parse(localStorage.getItem('gg3_fu')||'[]');cash=JSON.parse(localStorage.getItem('gg3_cash')||'[]');leaves=JSON.parse(localStorage.getItem('gg3_leaves')||'[]');att=JSON.parse(localStorage.getItem('gg3_att')||'{}');sheetsUrl=localStorage.getItem('gg3_sheetsUrl')||'';}
+function toast(msg,type='ok'){const el=document.getElementById('toast');const ico=document.getElementById('toastIco');document.getElementById('toastTxt').textContent=msg;ico.className=type==='ok'?'fas fa-check-circle text-green-400 flex-shrink-0':'fas fa-exclamation-circle text-red-400 flex-shrink-0';el.classList.remove('hidden');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.add('hidden'),3200);}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));});
+function fmtTs(ts){if(!ts)return'—';return new Date(ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});}
+function today(){return new Date().toISOString().split('T')[0];}
+function elapsed(a,b){const ms=(b||Date.now())-a;return Math.floor(ms/3600000)+'h '+Math.floor((ms%3600000)/60000)+'m';}
+function bar(obj,elId){const el=document.getElementById(elId);if(!el)return;const max=Math.max(...Object.values(obj),1);el.innerHTML=Object.entries(obj).map(([k,v])=>`<div class="flex items-center gap-2 text-xs mb-1.5"><div class="w-24 truncate text-gray-500">${k}</div><div class="flex-1 bg-gray-100 rounded-full h-2"><div class="bg-blue-500 h-2 rounded-full" style="width:${Math.round(v/max*100)}%"></div></div><div class="w-5 text-right font-semibold text-gray-600">${v}</div></div>`).join('');}
+function ql(u,p){document.getElementById('loginUser').value=u;document.getElementById('loginPass').value=p;doLogin();}
+function doLogin(){const u=document.getElementById('loginUser').value.trim().toLowerCase();const p=document.getElementById('loginPass').value;const user=USERS.find(x=>x.username.toLowerCase()===u&&x.password===p);if(!user){document.getElementById('loginErr').classList.remove('hidden');document.getElementById('loginErrMsg').textContent='Invalid username or password.';return;}document.getElementById('loginErr').classList.add('hidden');CU=user;load();initApp();}
+function doLogout(){CU=null;document.getElementById('appShell').classList.add('hidden');document.getElementById('loginScreen').classList.remove('hidden');document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';}
+function initApp(){
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('appShell').classList.remove('hidden');
+  document.getElementById('hdrName').textContent=CU.name;
+  document.getElementById('hdrRole').textContent=CU.role;
+  const av=document.getElementById('avBubble');
+  av.textContent=CU.av; av.className=`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer flex-shrink-0 ${CU.bg}`;
+  const h=new Date().getHours();
+  document.getElementById('greetWord').textContent=h<12?'morning':h<17?'afternoon':'evening';
+  document.getElementById('greetName').textContent=CU.name.split(' ')[0];
+  document.getElementById('todayDateEl').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  if(CU.level==='Management'||CU.level==='SuperAdmin'){document.querySelectorAll('.mgmt-only').forEach(el=>{el.style.display='block';el.classList.remove('hidden');});}
+  document.getElementById('dailyNotes').value=localStorage.getItem('gg3_notes_'+CU.username)||'';
+  document.getElementById('attNotes').value=localStorage.getItem('gg3_daynotes_'+CU.username+'_'+today())||'';
+  sheetsUrl=localStorage.getItem('gg3_sheetsUrl')||'';
+  sheetName=localStorage.getItem('gg3_sheetname_'+CU.username)||CU.name;
+  document.getElementById('sheetStatusTxt').textContent=sheetsUrl?'Connected ✓':'Not configured';
+  if(document.getElementById('sUrl'))document.getElementById('sUrl').value=sheetsUrl;
+  if(document.getElementById('sName'))document.getElementById('sName').value=sheetName;
+  if(document.getElementById('adminSheetUrl'))document.getElementById('adminSheetUrl').value=sheetsUrl;
+  const todayAtt=(att[CU.username]||{})[today()];
+  if(todayAtt&&todayAtt.in)refreshCiUI(todayAtt.in,todayAtt.out||null);
+  const t=today();
+  ['tDue','bulkDue','lvFrom','lvTo','fuDue'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=t;});
+  buildTabs();
+  startClock();
+  updateStudentDd();
+  showTab(CU.level==='Staff'?'workspace':'dashboard');
+  renderAll();
+}
+const TAB_DEF=[
+  {id:'dashboard',   label:'Dashboard',   roles:['Management','SuperAdmin']},
+  {id:'workspace',   label:'My Workspace',roles:['Staff','Management','SuperAdmin']},
+  {id:'attendance',  label:'Attendance',  roles:['Staff','Management','SuperAdmin']},
+  {id:'leads',       label:'Leads',       roles:['Management','SuperAdmin']},
+  {id:'followup',    label:'Follow-Up',   roles:['Staff','Management','SuperAdmin']},
+  {id:'pettycash',   label:'Petty Cash',  roles:['Management','SuperAdmin']},
+  {id:'payroll',     label:'Payroll',     roles:['Management','SuperAdmin']},
+  {id:'employees',   label:'Employees',   roles:['Management','SuperAdmin']},
+  {id:'commissions', label:'Commissions', roles:['Management','SuperAdmin']},
+  {id:'reports',     label:'Reports',     roles:['Management','SuperAdmin']},
+  {id:'superadmin',  label:'Super Admin', roles:['SuperAdmin']},
+];
+function buildTabs(){const bar=document.getElementById('tabBar');bar.innerHTML='';TAB_DEF.forEach(t=>{if(!t.roles.includes(CU.level))return;const btn=document.createElement('button');btn.className='nav-tab';btn.id='ntab-'+t.id;btn.textContent=t.label;btn.onclick=()=>showTab(t.id);bar.appendChild(btn);});}
+function showTab(id){document.querySelectorAll('.tab-pane').forEach(el=>el.classList.remove('active'));document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));const pane=document.getElementById('pane-'+id);const ntab=document.getElementById('ntab-'+id);if(pane)pane.classList.add('active');if(ntab)ntab.classList.add('active');renderAll();}
+function startClock(){function tick(){const t=new Date().toLocaleTimeString('en-US',{timeZone:'Asia/Colombo',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});document.getElementById('clockEl').textContent='🇱🇰 '+t;}tick();setInterval(tick,1000);}
+function myTasks(){return tasks.filter(t=>t.owner===CU.username);}
+function saveTask(){const title=document.getElementById('tTitle').value.trim();if(!title){toast('Enter a task title','err');return;}const task={id:Date.now()+Math.random(),title,priority:document.getElementById('tPriority').value,due:document.getElementById('tDue').value,notes:document.getElementById('tNotes').value.trim(),done:false,owner:CU.username,created:new Date().toISOString()};tasks.push(task);save();syncTask(task,'add');closeModal('taskModal');document.getElementById('tTitle').value='';document.getElementById('tNotes').value='';renderTasks();updateDash();toast('Task added!');}
+function saveBulk(){const lines=document.getElementById('bulkInput').value.split('\n').map(l=>l.trim()).filter(l=>l);if(!lines.length){toast('Enter at least one task','err');return;}const pri=document.getElementById('bulkPri').value;const due=document.getElementById('bulkDue').value;lines.forEach(line=>{const task={id:Date.now()+Math.random(),title:line,priority:pri,due,notes:'',done:false,owner:CU.username,created:new Date().toISOString()};tasks.push(task);syncTask(task,'add');});save();closeModal('bulkModal');document.getElementById('bulkInput').value='';renderTasks();updateDash();toast(lines.length+' tasks added!');}
+function toggleTask(id){const t=tasks.find(x=>x.id==id);if(!t)return;t.done=!t.done;save();syncTask(t,'update');renderTasks();updateDash();}
+function delTask(id){tasks=tasks.filter(x=>x.id!=id);save();renderTasks();updateDash();toast('Task deleted');}
+function setFilter(f){activeFilter=f;['all','today','high','pending','done'].forEach(x=>{const el=document.getElementById('fil-'+x);if(el)el.className='btn btn-sm '+(x===f?'btn-primary':'btn-secondary');});renderTasks();}
+function renderTasks(){const list=document.getElementById('taskList');const empty=document.getElementById('taskEmpty');if(!list)return;const mine=myTasks();let show=mine;const t=today();if(activeFilter==='today')show=mine.filter(x=>x.due===t);else if(activeFilter==='high')show=mine.filter(x=>x.priority==='high');else if(activeFilter==='pending')show=mine.filter(x=>!x.done);else if(activeFilter==='done')show=mine.filter(x=>x.done);show=[...show].sort((a,b)=>{if(a.done!==b.done)return a.done?1:-1;const p={high:0,med:1,low:2};return(p[a.priority]||1)-(p[b.priority]||1);});document.getElementById('tCount').textContent=mine.length;document.getElementById('tPending').textContent=mine.filter(x=>!x.done).length;document.getElementById('tDone').textContent=mine.filter(x=>x.done).length;if(!show.length){list.innerHTML='';empty.classList.remove('hidden');return;}empty.classList.add('hidden');const pIco={high:'🔴',med:'🟡',low:'🟢'};const pCls={high:'tag-high',med:'tag-med',low:'tag-low'};list.innerHTML=show.map(t=>`<div class="task-row flex items-start gap-3 card py-3 px-4 ${t.done?'task-done opacity-60':''} ${t.priority==='high'?'priority-bar-high':t.priority==='low'?'priority-bar-low':'priority-bar-med'}"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${t.id}')" class="mt-0.5 w-4 h-4 accent-blue-600 cursor-pointer flex-shrink-0"><div class="flex-1 min-w-0"><div class="task-title font-medium text-sm text-gray-800">${esc(t.title)}</div><div class="flex flex-wrap items-center gap-2 mt-1"><span class="badge text-xs ${pCls[t.priority]}">${pIco[t.priority]} ${t.priority==='high'?'High':t.priority==='med'?'Medium':'Low'}</span>${t.due?`<span class="text-xs text-gray-400"><i class="fas fa-calendar mr-1"></i>${t.due}</span>`:''}</div></div><button onclick="delTask('${t.id}')" class="task-del btn btn-danger btn-sm flex-shrink-0"><i class="fas fa-trash-alt"></i></button></div>`).join('');}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function autoSaveNotes(){clearTimeout(autoSaveNotes._t);autoSaveNotes._t=setTimeout(saveNotes,800);}
+function saveNotes(){localStorage.setItem('gg3_notes_'+CU.username,document.getElementById('dailyNotes').value);toast('Notes saved');}
+function syncTask(task,action){if(!sheetsUrl)return;fetch(sheetsUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,sheetName,task:{...task,staffName:CU.name,role:CU.role,ts:new Date().toISOString()}})}).catch(()=>{});}
+function saveSheetsCfg(){const url=document.getElementById('sUrl').value.trim();if(!url){toast('Enter the Apps Script URL','err');return;}sheetsUrl=url;sheetName=document.getElementById('sName').value.trim()||CU.name;localStorage.setItem('gg3_sheetsUrl',sheetsUrl);localStorage.setItem('gg3_sheetname_'+CU.username,sheetName);save();document.getElementById('sheetStatusTxt').textContent='Connecting...';const msg=document.getElementById('sheetsTestMsg');msg.classList.remove('hidden');msg.textContent='Testing connection...';msg.className='mt-3 text-xs text-center p-2 rounded-lg bg-blue-50 text-blue-600';fetch(url+'?ping=1',{method:'GET',mode:'no-cors'}).then(()=>{msg.textContent='✓ Connected! Tasks will sync automatically.';msg.className='mt-3 text-xs text-center p-2 rounded-lg bg-green-50 text-green-700';document.getElementById('sheetStatusTxt').textContent='Connected ✓';}).catch(()=>{msg.textContent='URL saved (CORS expected — sync will still work).';msg.className='mt-3 text-xs text-center p-2 rounded-lg bg-amber-50 text-amber-700';document.getElementById('sheetStatusTxt').textContent='Saved ✓';});setTimeout(()=>closeModal('sheetsModal'),3000);toast('Google Sheets config saved!');}
+function saveAdminSheets(){const url=document.getElementById('adminSheetUrl').value.trim();if(!url){toast('Enter URL','err');return;}sheetsUrl=url;localStorage.setItem('gg3_sheetsUrl',url);save();document.getElementById('sheetStatusTxt').textContent='Connected ✓';toast('Sheets config saved!');}
+function doCheckIn(){const a=att[CU.username]||{};if(!a[today()])a[today()]={};if(a[today()].in){toast('Already checked in today','err');return;}a[today()].in=Date.now();att[CU.username]=a;save();refreshCiUI(a[today()].in,null);toast('Checked in! Have a great day ⭐');}
+function doCheckOut(){const a=att[CU.username]||{};if(!a[today()]||!a[today()].in){toast('Please check in first','err');return;}if(a[today()].out){toast('Already checked out','err');return;}a[today()].out=Date.now();att[CU.username]=a;save();refreshCiUI(a[today()].in,a[today()].out);toast('Checked out. See you tomorrow! 👋');}
+function refreshCiUI(inTs,outTs){document.getElementById('ciInTime').textContent=fmtTs(inTs);document.getElementById('ciOutTime').textContent=fmtTs(outTs);document.getElementById('ciHours').textContent=inTs?elapsed(inTs,outTs||Date.now()):'0h 0m';const card=document.getElementById('ciCard');const badge=document.getElementById('ciBadge');const chip=document.getElementById('checkinChip');const btnCI=document.getElementById('btnCI');const btnCO=document.getElementById('btnCO');if(outTs){badge.textContent='Checked Out';badge.className='badge bg-gray-100 text-gray-500';card.className='card border-2';chip.innerHTML='<i class="fas fa-circle text-gray-400 text-xs mr-1"></i>Checked out';chip.className='text-xs px-3 py-1.5 rounded-lg font-medium cursor-pointer bg-gray-50 text-gray-500 border border-gray-200';btnCI.disabled=true;btnCO.disabled=true;}else{badge.textContent='Checked In ✓';badge.className='badge bg-green-100 text-green-600';card.className='card border-2 checkin-on';chip.innerHTML='<i class="fas fa-circle pulse text-green-500 text-xs mr-1"></i>Checked in';chip.className='text-xs px-3 py-1.5 rounded-lg font-medium cursor-pointer bg-green-50 text-green-600 border border-green-200';btnCI.disabled=true;btnCO.disabled=false;if(!card._interval)card._interval=setInterval(()=>document.getElementById('ciHours').textContent=elapsed(inTs,Date.now()),60000);}}
+function saveDayPlan(){const notes=document.getElementById('attNotes').value;localStorage.setItem('gg3_daynotes_'+CU.username+'_'+today(),notes);const a=att[CU.username]||{};if(!a[today()])a[today()]={};a[today()].notes=notes;att[CU.username]=a;save();const msg=document.getElementById('planMsg');msg.classList.remove('hidden');setTimeout(()=>msg.classList.add('hidden'),2000);toast('Daily plan saved!');}
+function submitEOD(){const notes=document.getElementById('attNotes').value.trim();if(!notes){toast('Write your daily plan first','err');return;}saveDayPlan();if(sheetsUrl){const a=(att[CU.username]||{})[today()]||{};fetch(sheetsUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'eod',sheetName,eod:{staff:CU.name,role:CU.role,date:today(),notes,in:fmtTs(a.in),out:fmtTs(a.out)}})}).catch(()=>{});}toast('EOD submitted! ✅');}
+function renderTeamAtt(){const grid=document.getElementById('teamGrid');if(!grid)return;const t=today();grid.innerHTML=USERS.filter(u=>u.level!=='SuperAdmin').map(u=>{const a=(att[u.username]||{})[t]||{};const cls=a.out?'bg-gray-50 border-gray-200':a.in?'bg-green-50 border-green-200':'bg-red-50 border-red-200';const tc=a.out?'text-gray-500':a.in?'text-green-700':'text-red-600';const status=a.out?'Checked Out':a.in?'● Checked In':'○ Not In';return `<div class="border ${cls} rounded-xl p-3"><div class="flex items-center gap-2 mb-1.5"><div class="w-7 h-7 rounded-full ${u.bg} flex items-center justify-center text-white text-xs font-bold flex-shrink-0">${u.av}</div><div class="min-w-0"><div class="font-medium text-sm truncate">${u.name}</div><div class="text-xs text-gray-400 truncate">${u.role}</div></div></div><div class="text-xs font-medium ${tc}">${status}</div>${a.in?`<div class="text-xs text-gray-400 mt-0.5">In: ${fmtTs(a.in)}${a.out?' · Out: '+fmtTs(a.out):''}</div>`:''}</div>`;}).join('');}
+function saveLead(){const name=document.getElementById('lName').value.trim();const phone=document.getElementById('lPhone').value.trim();if(!name||!phone){toast('Name and phone required','err');return;}const lead={id:Date.now(),name,phone,email:document.getElementById('lEmail').value.trim(),source:document.getElementById('lSource').value,dest:document.getElementById('lDest').value,level:document.getElementById('lLevel').value,uni:document.getElementById('lUni').value,budget:document.getElementById('lBudget').value,assign:document.getElementById('lAssign').value,notes:document.getElementById('lNotes').value.trim(),stage:'New Enquiry',created:new Date().toISOString(),by:CU.username};leads.push(lead);save();updateStudentDd();closeModal('addLeadModal');['lName','lPhone','lEmail','lNotes'].forEach(id=>document.getElementById(id).value='');renderLeads();updateDash();toast('Lead saved: '+name);}
+function setStage(id,stage){const l=leads.find(x=>x.id==id);if(l){l.stage=stage;save();renderLeads();}}
+function renderLeads(){const list=document.getElementById('leadList');const empty=document.getElementById('leadsEmpty');if(!list)return;if(!leads.length){list.innerHTML='';empty.classList.remove('hidden');return;}empty.classList.add('hidden');const stages=['New Enquiry','Docs Pending','Offer Received','Visa / Enrolled'];const stCls={'New Enquiry':'tag-new','Docs Pending':'tag-docs','Offer Received':'tag-offer','Visa / Enrolled':'tag-visa'};document.getElementById('sNew').textContent=leads.filter(l=>l.stage==='New Enquiry').length;document.getElementById('sDocs').textContent=leads.filter(l=>l.stage==='Docs Pending').length;document.getElementById('sOffer').textContent=leads.filter(l=>l.stage==='Offer Received').length;document.getElementById('sVisa').textContent=leads.filter(l=>l.stage==='Visa / Enrolled').length;list.innerHTML=[...leads].reverse().map(l=>`<div class="card flex flex-wrap items-start gap-3 py-3"><div class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm flex-shrink-0">${l.name.charAt(0).toUpperCase()}</div><div class="flex-1 min-w-0"><div class="flex flex-wrap items-center gap-2 mb-0.5"><span class="font-semibold text-sm text-gray-900">${esc(l.name)}</span><span class="badge text-xs ${stCls[l.stage]||''}">${l.stage}</span></div><div class="text-xs text-gray-500">${esc(l.phone)}${l.email?' · '+esc(l.email):''}</div><div class="flex flex-wrap gap-3 mt-1 text-xs text-gray-400"><span>🌍 ${l.dest}</span><span>🎓 ${l.level}</span>${l.uni&&l.uni!=='— Select —'?`<span>🏗 ${esc(l.uni)}</span>`:''}<span>👤 ${esc(l.assign)}</span></div></div><select onchange="setStage(${l.id},this.value)" class="sel w-auto text-xs py-1.5 flex-shrink-0" style="min-width:150px">${stages.map(s=>'<option '+(l.stage===s?'selected':'')+'>'+s+'</option>').join('')}</select></div>`).join('');}
+function updateStudentDd(){const dd=document.getElementById('fuStudent');if(!dd)return;dd.innerHTML='<option>— Select student —</option>'+leads.map(l=>`<option value="${l.id}">${esc(l.name)}</option>`).join('');}
+function saveFollowup(){const topic=document.getElementById('fuTopic').value.trim();if(!topic){toast('Enter a topic','err');return;}const dd=document.getElementById('fuStudent');const f={id:Date.now(),studentName:dd.options[dd.selectedIndex].text,type:document.getElementById('fuType').value,priority:document.getElementById('fuPri').value,topic,due:document.getElementById('fuDue').value,notes:document.getElementById('fuNotes').value.trim(),by:CU.name,created:new Date().toISOString()};followups.push(f);save();closeModal('followupModal');document.getElementById('fuTopic').value='';document.getElementById('fuNotes').value='';renderFollowups();toast('Follow-up logged!');}
+function renderFollowups(){const list=document.getElementById('followupList');const empty=document.getElementById('followupEmpty');if(!list)return;const mine=CU.level==='Staff'?followups.filter(f=>f.by===CU.name):followups;if(!mine.length){list.innerHTML='';empty.classList.remove('hidden');return;}empty.classList.add('hidden');list.innerHTML=[...mine].reverse().map(f=>`<div class="card flex items-start gap-3 py-3"><div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-xs flex-shrink-0"><i class="fas fa-phone"></i></div><div class="flex-1 min-w-0"><div class="flex flex-wrap items-center gap-2 mb-0.5"><span class="font-medium text-sm text-gray-800">${esc(f.studentName)}</span><span class="badge text-xs ${f.priority==='High'?'tag-high':f.priority==='Low'?'tag-low':'tag-med'}">${f.priority}</span></div><div class="text-xs text-gray-500">${f.type} · ${esc(f.topic)}</div>${f.due?`<div class="text-xs text-gray-400"><i class="fas fa-calendar mr-1"></i>Due: ${f.due}</div>`:''}<div class="text-xs text-gray-300 mt-0.5">By: ${esc(f.by)}</div></div></div>`).join('');}
+function saveCash(){const amount=parseFloat(document.getElementById('cAmount').value);if(!amount||amount<=0){toast('Enter a valid amount','err');return;}cash.push({id:Date.now(),type:document.getElementById('cType').value,amount,cat:document.getElementById('cCat').value,by:document.getElementById('cBy').value,desc:document.getElementById('cDesc').value.trim(),date:today()});save();closeModal('cashModal');document.getElementById('cAmount').value='';document.getElementById('cDesc').value='';renderCash();updateDash();toast('Cash entry added!');}
+function renderCash(){if(!document.getElementById('cashList'))return;const topups=cash.filter(e=>e.type==='Top-up').reduce((s,e)=>s+e.amount,0);const expenses=cash.filter(e=>e.type==='Expense').reduce((s,e)=>s+e.amount,0);document.getElementById('cashBal').textContent='LKR '+(topups-expenses).toLocaleString();document.getElementById('cashExp').textContent='LKR '+expenses.toLocaleString();document.getElementById('cashTop').textContent='LKR '+topups.toLocaleString();document.getElementById('cashList').innerHTML=[...cash].reverse().map(e=>`<div class="card flex items-center gap-3 py-2.5"><div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${e.type==='Expense'?'bg-red-100 text-red-600':'bg-green-100 text-green-600'} text-xs"><i class="fas ${e.type==='Expense'?'fa-minus':'fa-plus'}"></i></div><div class="flex-1 min-w-0"><div class="font-medium text-sm">${esc(e.cat)}${e.desc?' — '+esc(e.desc):''}</div><div class="text-xs text-gray-400">${esc(e.by)} · ${e.date}</div></div><div class="font-bold text-sm flex-shrink-0 ${e.type==='Expense'?'text-red-600':'text-green-600'}">${e.type==='Expense'?'-':'+'}LKR ${e.amount.toLocaleString()}</div></div>`).join('');}
+function renderPayroll(){const body=document.getElementById('payrollBody');if(!body)return;const paid=JSON.parse(localStorage.getItem('gg3_payroll')||'{}');body.innerHTML=USERS.filter(u=>u.level!=='SuperAdmin'&&u.salary>0).map(u=>`<tr class="border-b hover:bg-gray-50"><td class="py-3 pr-4"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full ${u.bg} flex items-center justify-center text-white text-xs font-bold flex-shrink-0">${u.av}</div><span class="font-medium">${u.name}</span></div></td><td class="pr-4 text-gray-400 text-xs">${u.role}</td><td class="text-right pr-4 font-semibold">LKR ${u.salary.toLocaleString()}</td><td class="text-center pr-4"><span class="badge ${paid[u.id]?'bg-green-100 text-green-700':'bg-amber-100 text-amber-700'}">${paid[u.id]?'Paid':'Pending'}</span></td><td class="text-center"><button onclick="markPaid('${u.id}')" class="btn btn-secondary btn-sm ${paid[u.id]?'opacity-40':''}" ${paid[u.id]?'disabled':''}><i class="fas fa-check mr-1"></i>Mark Paid</button></td></tr>`).join('');}
+function markPaid(uid){const paid=JSON.parse(localStorage.getItem('gg3_payroll')||'{}');paid[uid]=true;localStorage.setItem('gg3_payroll',JSON.stringify(paid));renderPayroll();toast('Marked as paid!');}
+function renderEmployees(){const grid=document.getElementById('empGrid');if(!grid)return;grid.innerHTML=USERS.filter(u=>u.level!=='SuperAdmin').map(u=>`<div class="card flex items-start gap-3"><div class="w-12 h-12 rounded-xl ${u.bg} flex items-center justify-center text-white font-bold text-base flex-shrink-0">${u.av}</div><div class="flex-1 min-w-0"><div class="font-semibold text-gray-900 text-sm">${u.name}</div><div class="text-xs text-gray-500">${u.role}</div><div class="text-xs text-gray-400">${u.dept}</div><span class="badge text-xs mt-2 ${u.level==='Management'?'bg-blue-100 text-blue-700':'bg-gray-100 text-gray-600'}">${u.level}</span></div></div>`).join('');}
+function renderReports(){const bs={},bd={},bf={};leads.forEach(l=>{bs[l.source]=(bs[l.source]||0)+1;bd[l.dest]=(bd[l.dest]||0)+1;bf[l.assign]=(bf[l.assign]||0)+1;});bar(Object.keys(bs).length?bs:{'No data yet':0},'rSource');bar(Object.keys(bd).length?bd:{'No data yet':0},'rDest');bar(Object.keys(bf).length?bf:{'No data yet':0},'rStaff');const mine=myTasks();bar({Completed:mine.filter(t=>t.done).length,Pending:mine.filter(t=>!t.done).length},'rTasks');}
+function exportCSV(){if(!leads.length){toast('No leads to export','err');return;}const h=['Name','Phone','Email','Source','Dest','Level','Uni','Budget','Stage','Assigned','Created'];const rows=leads.map(l=>[l.name,l.phone,l.email,l.source,l.dest,l.level,l.uni,l.budget,l.stage,l.assign,l.created]);const csv=[h,...rows].map(r=>r.map(v=>'"'+(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='gg-leads-'+today()+'.csv';a.click();toast('CSV exported!');}
+function renderAdmin(){const tbody=document.getElementById('adminTable');if(!tbody)return;tbody.innerHTML=USERS.map(u=>`<tr class="border-b hover:bg-gray-50 text-sm"><td class="py-2 pr-4 font-medium">${esc(u.name)}</td><td class="pr-4 text-gray-400 font-mono text-xs">${esc(u.username)}</td><td class="pr-4 text-gray-500">${esc(u.role)}</td><td class="pr-4"><span class="badge text-xs ${u.level==='Management'?'bg-blue-100 text-blue-700':u.level==='SuperAdmin'?'bg-red-100 text-red-700':'bg-gray-100 text-gray-600'}">${u.level}</span></td><td class="text-center"><button onclick="alert('To update credentials, edit USERS array in source and redeploy.')" class="btn btn-secondary btn-sm"><i class="fas fa-key mr-1"></i>Reset</button></td></tr>`).join('');}
+function addUser(){const name=document.getElementById('nuName').value.trim();const username=document.getElementById('nuUser').value.trim();const pass=document.getElementById('nuPass').value.trim();const level=document.getElementById('nuLevel').value;if(!name||!username||!pass){toast('Fill all fields','err');return;}USERS.push({id:'U'+Date.now(),name,username,password:pass,role:'Staff',dept:'General',level,salary:0,av:name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(),bg:'bg-slate-600'});closeModal('addUserModal');renderAdmin();toast(name+' added!');}
+function submitLeave(){const from=document.getElementById('lvFrom').value;const to=document.getElementById('lvTo').value;if(!from||!to){toast('Select dates','err');return;}leaves.push({id:Date.now(),username:CU.username,name:CU.name,type:document.getElementById('lvType').value,from,to,reason:document.getElementById('lvReason').value.trim(),status:'Pending',submitted:new Date().toISOString()});save();closeModal('leaveModal');document.getElementById('lvReason').value='';renderLeaveList();toast('Leave submitted!');}
+function renderLeaveList(){const el=document.getElementById('leaveList');if(!el)return;const mine=leaves.filter(l=>l.username===CU.username);if(!mine.length){el.innerHTML='<p class="text-sm text-gray-400">No leave requests yet.</p>';return;}el.innerHTML=mine.reverse().map(l=>`<div class="flex justify-between items-center py-2 border-b border-gray-50 last:border-0 text-sm"><div><div class="font-medium text-gray-800">${esc(l.type)}</div><div class="text-xs text-gray-400">${l.from} → ${l.to}</div></div><span class="badge text-xs ${l.status==='Approved'?'tag-visa':l.status==='Rejected'?'tag-high':'tag-pending'}">${l.status}</span></div>`).join('');}
+function updateDash(){document.getElementById('kpiLeads').textContent=leads.length;document.getElementById('kpiTasks').textContent=myTasks().filter(t=>!t.done).length;const topups=cash.filter(e=>e.type==='Top-up').reduce((s,e)=>s+e.amount,0);const expenses=cash.filter(e=>e.type==='Expense').reduce((s,e)=>s+e.amount,0);document.getElementById('kpiCash').textContent='LKR '+(topups-expenses).toLocaleString();const dl=document.getElementById('dashLeads');if(!leads.length){dl.textContent='No leads yet.';}else dl.innerHTML=[...leads].reverse().slice(0,5).map(l=>`<div class="flex items-center gap-2 py-1.5 border-b border-gray-50 last:border-0"><div class="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold flex-shrink-0">${l.name.charAt(0).toUpperCase()}</div><div class="flex-1 min-w-0"><div class="text-sm font-medium truncate">${esc(l.name)}</div><div class="text-xs text-gray-400">${l.dest} · ${l.source}</div></div></div>`).join('');const dt=document.getElementById('dashTasks');const pending=myTasks().filter(t=>!t.done).slice(0,5);if(!pending.length){dt.textContent='No pending tasks.';}else dt.innerHTML=pending.map(t=>`<div class="flex items-center gap-2 py-1.5 border-b border-gray-50 last:border-0 text-sm"><input type="checkbox" onchange="toggleTask('${t.id}')" class="accent-blue-600 cursor-pointer flex-shrink-0"><span class="${t.priority==='high'?'text-red-600 font-medium':''} truncate">${esc(t.title)}</span></div>`).join('');}
+function renderAll(){renderTasks();renderLeads();renderFollowups();renderCash();renderPayroll();renderEmployees();renderReports();renderAdmin();renderTeamAtt();renderLeaveList();updateDash();}
+window.addEventListener('DOMContentLoaded',()=>{const t=today();['tDue','bulkDue','lvFrom','lvTo','fuDue'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=t;});startClock();});
+</script>
+</body>
+</html>
