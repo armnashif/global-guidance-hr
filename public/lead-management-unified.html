@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Management - Global Guidance HR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .tab-btn { border-bottom: 3px solid transparent; transition: all 0.3s; }
+        .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; background: #eff6ff; }
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .status-new { background: #dbeafe; color: #1e40af; }
+        .status-contacted { background: #fef3c7; color: #92400e; }
+        .status-qualified { background: #d1fae5; color: #065f46; }
+        .status-registered { background: #e0e7ff; color: #3730a3; }
+        .status-dropped { background: #fee2e2; color: #991b1b; }
+        .modal { display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal.show { display: flex; align-items: center; justify-content: center; }
+        .sync-progress { height: 4px; background: #3b82f6; transition: width 0.3s; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="min-h-screen">
+        <nav id="topNav" class="bg-blue-600 text-white p-4 shadow-lg" style="display: none;">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold"><i class="fas fa-users-cog mr-2"></i>Lead Management Hub</h1>
+                <div class="flex items-center gap-4">
+                    <span id="userName" class="text-sm"></span>
+                    <a href="/" class="bg-white text-blue-600 px-4 py-2 rounded hover:bg-gray-100 transition">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto p-6">
+            <!-- Tab Navigation -->
+            <div class="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
+                <div class="flex border-b">
+                    <button onclick="switchTab('dashboard')" class="tab-btn active px-6 py-4 font-semibold">
+                        <i class="fas fa-chart-line mr-2"></i>Dashboard
+                    </button>
+                    <button onclick="switchTab('leads')" class="tab-btn px-6 py-4 font-semibold">
+                        <i class="fas fa-user-plus mr-2"></i>All Leads
+                    </button>
+                    <button onclick="switchTab('intelligence')" class="tab-btn px-6 py-4 font-semibold">
+                        <i class="fas fa-brain mr-2"></i>Intelligence
+                    </button>
+                    <button onclick="switchTab('import-export')" class="tab-btn px-6 py-4 font-semibold">
+                        <i class="fas fa-exchange-alt mr-2"></i>Import/Export
+                    </button>
+                    <button onclick="switchTab('google-sheets')" class="tab-btn px-6 py-4 font-semibold">
+                        <i class="fab fa-google mr-2"></i>Google Sheets
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <div id="tab-dashboard" class="tab-content">
+                <div id="stats" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6"></div>
+                
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                    <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <button onclick="switchTab('leads'); showAddModal();" class="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition">
+                            <i class="fas fa-plus mr-2"></i>Add New Lead
+                        </button>
+                        <button onclick="switchTab('import-export')" class="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition">
+                            <i class="fas fa-file-import mr-2"></i>Import CSV
+                        </button>
+                        <button onclick="exportCSV()" class="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition">
+                            <i class="fas fa-file-export mr-2"></i>Export CSV
+                        </button>
+                        <button onclick="switchTab('google-sheets')" class="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition">
+                            <i class="fab fa-google mr-2"></i>Sync Sheets
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pipeline Overview -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-bold mb-4">Lead Pipeline</h3>
+                    <div id="pipeline" class="flex items-center gap-4"></div>
+                </div>
+            </div>
+
+            <!-- All Leads Tab -->
+            <div id="tab-leads" class="tab-content" style="display: none;">
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                    <div class="flex flex-wrap items-center gap-4">
+                        <button onclick="showAddModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                            <i class="fas fa-plus mr-2"></i>Add Lead
+                        </button>
+                        <input type="text" id="searchInput" placeholder="Search leads..." 
+                            class="border border-gray-300 rounded px-4 py-2 flex-1 min-w-[200px]"
+                            oninput="handleSearch()">
+                        <select id="statusFilter" class="border border-gray-300 rounded px-4 py-2" onchange="fetchLeads()">
+                            <option value="">All Status</option>
+                            <option value="new">New</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="qualified">Qualified</option>
+                            <option value="registered">Registered</option>
+                            <option value="dropped">Dropped</option>
+                        </select>
+                        <button onclick="exportCSV()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
+                            <i class="fas fa-download mr-2"></i>Export
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lead</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Country</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Counselor</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leadsTable" class="divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Intelligence Tab -->
+            <div id="tab-intelligence" class="tab-content" style="display: none;">
+                <div class="grid grid-cols-4 gap-6 mb-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500">
+                        <div class="text-sm text-gray-600 mb-1">RISK ALERTS</div>
+                        <div id="riskCount" class="text-3xl font-bold text-red-600">0</div>
+                        <div class="text-xs text-gray-500 mt-1">Leads need attention</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-yellow-500">
+                        <div class="text-sm text-gray-600 mb-1">NO CONTACT YET</div>
+                        <div id="noContactCount" class="text-3xl font-bold text-yellow-600">0</div>
+                        <div class="text-xs text-gray-500 mt-1">Never contacted</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-purple-500">
+                        <div class="text-sm text-gray-600 mb-1">FOLLOW-UP DUE</div>
+                        <div id="followUpCount" class="text-3xl font-bold text-purple-600">0</div>
+                        <div class="text-xs text-gray-500 mt-1">Due today or overdue</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
+                        <div class="text-sm text-gray-600 mb-1">HOT LEADS</div>
+                        <div id="hotLeadsCount" class="text-3xl font-bold text-green-600">0</div>
+                        <div class="text-xs text-gray-500 mt-1">Recently qualified</div>
+                    </div>
+                </div>
+
+                <!-- Intelligence Lists -->
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold text-red-600 mb-4"><i class="fas fa-exclamation-triangle mr-2"></i>High Priority</h3>
+                        <div id="highPriorityList" class="space-y-3"></div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold text-green-600 mb-4"><i class="fas fa-fire mr-2"></i>Hot Leads</h3>
+                        <div id="hotLeadsList" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Import/Export Tab -->
+            <div id="tab-import-export" class="tab-content" style="display: none;">
+                <div class="grid grid-cols-2 gap-6">
+                    <!-- Export Section -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold mb-4"><i class="fas fa-file-export mr-2"></i>Export Leads</h3>
+                        <p class="text-gray-600 mb-4">Download all leads as CSV file</p>
+                        <button onclick="exportCSV()" class="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-semibold">
+                            <i class="fas fa-download mr-2"></i>Download CSV
+                        </button>
+                    </div>
+
+                    <!-- Import Section -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold mb-4"><i class="fas fa-file-import mr-2"></i>Import Leads</h3>
+                        <p class="text-gray-600 mb-4">Upload CSV file to import leads</p>
+                        <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleCSVImport(event)">
+                        <button onclick="document.getElementById('csvFileInput').click()" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                            <i class="fas fa-upload mr-2"></i>Upload CSV
+                        </button>
+                        <div id="importProgress" class="mt-4 hidden">
+                            <div class="text-sm text-gray-600 mb-2">Importing...</div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div id="importProgressBar" class="sync-progress rounded-full"></div>
+                            </div>
+                        </div>
+                        <div id="importResult" class="mt-4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Google Sheets Tab -->
+            <div id="tab-google-sheets" class="tab-content" style="display: none;">
+                <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                    <h3 class="text-lg font-bold mb-4"><i class="fab fa-google mr-2"></i>Google Sheets Integration</h3>
+                    <p class="text-gray-600 mb-6">Sync leads with Google Sheets using CSV import/export</p>
+                    
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                            <i class="fas fa-file-export text-4xl text-green-600 mb-4"></i>
+                            <h4 class="font-bold mb-2">Step 1: Export to CSV</h4>
+                            <p class="text-sm text-gray-600 mb-4">Download current leads as CSV</p>
+                            <button onclick="exportCSV()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                                Export CSV
+                            </button>
+                        </div>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                            <i class="fab fa-google-drive text-4xl text-blue-600 mb-4"></i>
+                            <h4 class="font-bold mb-2">Step 2: Upload to Sheets</h4>
+                            <p class="text-sm text-gray-600 mb-4">Import CSV into Google Sheets</p>
+                            <a href="https://sheets.google.com" target="_blank" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                                Open Sheets
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                        <i class="fas fa-file-import text-4xl text-purple-600 mb-4"></i>
+                        <h4 class="font-bold mb-2">Step 3: Import from Sheets</h4>
+                        <p class="text-sm text-gray-600 mb-4">Download from Google Sheets and upload CSV here</p>
+                        <button onclick="document.getElementById('csvFileInput').click()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition">
+                            Import CSV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sync History -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-bold mb-4">Sync History</h3>
+                    <div id="syncHistory" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="leadModal" class="modal">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="modalTitle" class="text-2xl font-bold">Add New Lead</h2>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <form id="leadForm" onsubmit="saveLead(event)">
+                <input type="hidden" id="leadId">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Name *</label>
+                        <input type="text" id="leadName" required class="w-full border rounded px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Email *</label>
+                        <input type="email" id="leadEmail" required class="w-full border rounded px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Phone</label>
+                        <input type="tel" id="leadPhone" class="w-full border rounded px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Country *</label>
+                        <select id="leadCountry" required class="w-full border rounded px-3 py-2">
+                            <option value="">Select Country</option>
+                            <option value="UK">UK</option>
+                            <option value="USA">USA</option>
+                            <option value="Canada">Canada</option>
+                            <option value="Australia">Australia</option>
+                            <option value="New Zealand">New Zealand</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Intake Period</label>
+                        <input type="text" id="leadIntake" placeholder="e.g., September 2025" class="w-full border rounded px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Status</label>
+                        <select id="leadStatus" class="w-full border rounded px-3 py-2">
+                            <option value="new">New</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="qualified">Qualified</option>
+                            <option value="registered">Registered</option>
+                            <option value="dropped">Dropped</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Source</label>
+                        <select id="leadSource" class="w-full border rounded px-3 py-2">
+                            <option value="Walk-in">Walk-in</option>
+                            <option value="Referral">Referral</option>
+                            <option value="Meta">Meta</option>
+                            <option value="Google">Google</option>
+                            <option value="Agent">Agent</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Follow-up Date</label>
+                        <input type="date" id="leadFollowUp" class="w-full border rounded px-3 py-2">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium mb-1">Notes</label>
+                        <textarea id="leadNotes" rows="3" class="w-full border rounded px-3 py-2"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeModal()" class="px-6 py-2 border rounded hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                        Save Lead
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let allLeads = [];
+        let currentTab = 'dashboard';
+        let syncHistory = JSON.parse(localStorage.getItem('syncHistory') || '[]');
+
+        // Initialize
+        (function() {
+            if (window.self === window.top) {
+                document.getElementById('topNav').style.display = 'block';
+            }
+            
+            // Read from correct auth key (gg_hr_session) used by main app
+            const userData = localStorage.getItem('gg_hr_session');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+                document.getElementById('userName').textContent = currentUser.name;
+                fetchStats();
+                fetchLeads();
+                updateIntelligence();
+                renderSyncHistory();
+            } else {
+                // Don't force logout - just show empty state
+                console.log('[Lead Management] No session found');
+            }
+
+            // Auto-refresh every 30 seconds
+            setInterval(() => {
+                if (currentTab === 'dashboard' || currentTab === 'leads') {
+                    fetchStats();
+                    fetchLeads();
+                }
+                if (currentTab === 'intelligence') {
+                    updateIntelligence();
+                }
+            }, 30000);
+        })();
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.tab-btn').classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+            document.getElementById('tab-' + tabName).style.display = 'block';
+
+            if (tabName === 'intelligence') {
+                updateIntelligence();
+            }
+        }
+
+        async function fetchStats() {
+            try {
+                const response = await fetch('/api/leads/stats');
+                const stats = await response.json();
+                
+                document.getElementById('stats').innerHTML = `
+                    <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-500">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Total Leads</p>
+                                <p class="text-3xl font-bold text-blue-600">${stats.total}</p>
+                            </div>
+                            <i class="fas fa-users text-4xl text-blue-200"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-green-500">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Qualified</p>
+                                <p class="text-3xl font-bold text-green-600">${stats.qualified}</p>
+                            </div>
+                            <i class="fas fa-check-circle text-4xl text-green-200"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-red-500">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Flagged</p>
+                                <p class="text-3xl font-bold text-red-600">${stats.flagged}</p>
+                            </div>
+                            <i class="fas fa-flag text-4xl text-red-200"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-purple-500">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">This Month</p>
+                                <p class="text-3xl font-bold text-purple-600">${stats.thisMonth}</p>
+                                <p class="text-xs text-gray-500">${stats.growthRate > 0 ? '+' : ''}${stats.growthRate}% growth</p>
+                            </div>
+                            <i class="fas fa-chart-line text-4xl text-purple-200"></i>
+                        </div>
+                    </div>
+                `;
+
+                // Render pipeline
+                const pipeline = stats.pipeline;
+                const stages = [
+                    { name: 'New', count: pipeline.new, color: 'bg-blue-100 text-blue-700' },
+                    { name: 'Contacted', count: pipeline.contacted, color: 'bg-yellow-100 text-yellow-700' },
+                    { name: 'Qualified', count: pipeline.qualified, color: 'bg-green-100 text-green-700' },
+                    { name: 'Registered', count: pipeline.registered, color: 'bg-purple-100 text-purple-700' }
+                ];
+
+                document.getElementById('pipeline').innerHTML = stages.map((stage, idx) => `
+                    <div class="flex-1 rounded-xl p-6 text-center ${stage.color}">
+                        <div class="text-4xl font-bold mb-2">${stage.count}</div>
+                        <div class="text-sm font-semibold">${stage.name}</div>
+                    </div>
+                    ${idx < stages.length - 1 ? '<i class="fas fa-arrow-right text-gray-300 text-2xl"></i>' : ''}
+                `).join('');
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+
+        async function fetchLeads() {
+            try {
+                const statusFilter = document.getElementById('statusFilter')?.value || '';
+                const url = statusFilter ? `/api/leads?status=${statusFilter}` : '/api/leads';
+                const response = await fetch(url);
+                allLeads = await response.json();
+                renderLeadsTable();
+            } catch (error) {
+                console.error('Error fetching leads:', error);
+            }
+        }
+
+        function renderLeadsTable() {
+            const tbody = document.getElementById('leadsTable');
+            if (!tbody) return;
+
+            tbody.innerHTML = allLeads.map(lead => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <div class="font-semibold">${lead.name}</div>
+                        <div class="text-sm text-gray-500">${lead.intakePeriod || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm">${lead.email}</div>
+                        <div class="text-sm text-gray-500">${lead.phone || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-4">${lead.country}</td>
+                    <td class="px-6 py-4">
+                        <span class="status-badge status-${lead.status}">${lead.status.toUpperCase()}</span>
+                        ${lead.flagged ? '<i class="fas fa-flag text-red-500 ml-2"></i>' : ''}
+                    </td>
+                    <td class="px-6 py-4">${lead.assignedCounselor || 'Unassigned'}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex gap-2">
+                            <button onclick="editLead(${lead.id})" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteLead(${lead.id})" class="text-red-600 hover:text-red-800">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function handleSearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allLeads.filter(lead => 
+                lead.name.toLowerCase().includes(searchTerm) ||
+                lead.email.toLowerCase().includes(searchTerm) ||
+                lead.country.toLowerCase().includes(searchTerm)
+            );
+            
+            const tbody = document.getElementById('leadsTable');
+            if (!tbody) return;
+
+            tbody.innerHTML = filtered.map(lead => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <div class="font-semibold">${lead.name}</div>
+                        <div class="text-sm text-gray-500">${lead.intakePeriod || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm">${lead.email}</div>
+                        <div class="text-sm text-gray-500">${lead.phone || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-4">${lead.country}</td>
+                    <td class="px-6 py-4">
+                        <span class="status-badge status-${lead.status}">${lead.status.toUpperCase()}</span>
+                    </td>
+                    <td class="px-6 py-4">${lead.assignedCounselor || 'Unassigned'}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex gap-2">
+                            <button onclick="editLead(${lead.id})" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteLead(${lead.id})" class="text-red-600 hover:text-red-800">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function updateIntelligence() {
+            try {
+                const response = await fetch('/api/leads');
+                const leads = await response.json();
+                
+                // Calculate intelligence metrics
+                const today = new Date().toISOString().split('T')[0];
+                const riskLeads = leads.filter(l => l.flagged);
+                const noContact = leads.filter(l => !l.lastContactDate);
+                const followUpDue = leads.filter(l => l.followUpDate && l.followUpDate <= today);
+                const hotLeads = leads.filter(l => l.status === 'qualified');
+
+                document.getElementById('riskCount').textContent = riskLeads.length;
+                document.getElementById('noContactCount').textContent = noContact.length;
+                document.getElementById('followUpCount').textContent = followUpDue.length;
+                document.getElementById('hotLeadsCount').textContent = hotLeads.length;
+
+                // Render high priority list
+                document.getElementById('highPriorityList').innerHTML = riskLeads.slice(0, 5).map(lead => `
+                    <div class="flex items-center justify-between p-3 bg-red-50 rounded">
+                        <div>
+                            <div class="font-semibold">${lead.name}</div>
+                            <div class="text-sm text-gray-600">${lead.flagReason || 'Needs attention'}</div>
+                        </div>
+                        <button onclick="editLead(${lead.id})" class="text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                `).join('') || '<p class="text-gray-500">No high priority leads</p>';
+
+                // Render hot leads list
+                document.getElementById('hotLeadsList').innerHTML = hotLeads.slice(0, 5).map(lead => `
+                    <div class="flex items-center justify-between p-3 bg-green-50 rounded">
+                        <div>
+                            <div class="font-semibold">${lead.name}</div>
+                            <div class="text-sm text-gray-600">${lead.country} - ${lead.intakePeriod || 'N/A'}</div>
+                        </div>
+                        <button onclick="editLead(${lead.id})" class="text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                `).join('') || '<p class="text-gray-500">No hot leads</p>';
+            } catch (error) {
+                console.error('Error updating intelligence:', error);
+            }
+        }
+
+        function showAddModal() {
+            document.getElementById('modalTitle').textContent = 'Add New Lead';
+            document.getElementById('leadForm').reset();
+            document.getElementById('leadId').value = '';
+            document.getElementById('leadModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('leadModal').classList.remove('show');
+        }
+
+        async function editLead(id) {
+            const lead = allLeads.find(l => l.id === id);
+            if (!lead) return;
+
+            document.getElementById('modalTitle').textContent = 'Edit Lead';
+            document.getElementById('leadId').value = lead.id;
+            document.getElementById('leadName').value = lead.name;
+            document.getElementById('leadEmail').value = lead.email;
+            document.getElementById('leadPhone').value = lead.phone || '';
+            document.getElementById('leadCountry').value = lead.country;
+            document.getElementById('leadIntake').value = lead.intakePeriod || '';
+            document.getElementById('leadStatus').value = lead.status;
+            document.getElementById('leadSource').value = lead.source;
+            document.getElementById('leadFollowUp').value = lead.followUpDate ? lead.followUpDate.split('T')[0] : '';
+            document.getElementById('leadNotes').value = lead.notes || '';
+            document.getElementById('leadModal').classList.add('show');
+        }
+
+        async function saveLead(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('leadId').value;
+            const leadData = {
+                name: document.getElementById('leadName').value,
+                email: document.getElementById('leadEmail').value,
+                phone: document.getElementById('leadPhone').value,
+                country: document.getElementById('leadCountry').value,
+                intakePeriod: document.getElementById('leadIntake').value,
+                status: document.getElementById('leadStatus').value,
+                source: document.getElementById('leadSource').value,
+                followUpDate: document.getElementById('leadFollowUp').value || null,
+                notes: document.getElementById('leadNotes').value
+            };
+
+            try {
+                const url = id ? `/api/leads/${id}` : '/api/leads';
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(leadData)
+                });
+
+                if (response.ok) {
+                    closeModal();
+                    fetchStats();
+                    fetchLeads();
+                    alert(id ? 'Lead updated successfully!' : 'Lead added successfully!');
+                }
+            } catch (error) {
+                console.error('Error saving lead:', error);
+                alert('Error saving lead');
+            }
+        }
+
+        async function deleteLead(id) {
+            if (!confirm('Are you sure you want to delete this lead?')) return;
+
+            try {
+                const response = await fetch(`/api/leads/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    fetchStats();
+                    fetchLeads();
+                    alert('Lead deleted successfully!');
+                }
+            } catch (error) {
+                console.error('Error deleting lead:', error);
+                alert('Error deleting lead');
+            }
+        }
+
+        async function exportCSV() {
+            try {
+                window.location.href = '/api/leads/export/csv';
+                
+                // Add to sync history
+                syncHistory.unshift({
+                    action: 'Export CSV',
+                    timestamp: new Date().toISOString(),
+                    count: allLeads.length,
+                    status: 'success'
+                });
+                localStorage.setItem('syncHistory', JSON.stringify(syncHistory.slice(0, 10)));
+                renderSyncHistory();
+            } catch (error) {
+                console.error('Error exporting:', error);
+            }
+        }
+
+        async function handleCSVImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('importProgress').classList.remove('hidden');
+            document.getElementById('importProgressBar').style.width = '0%';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const text = e.target.result;
+                    const response = await fetch('/api/leads/import/csv', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ csvData: text })
+                    });
+
+                    document.getElementById('importProgressBar').style.width = '100%';
+                    
+                    const result = await response.json();
+                    document.getElementById('importProgress').classList.add('hidden');
+                    document.getElementById('importResult').innerHTML = `
+                        <div class="p-4 bg-green-50 border border-green-200 rounded">
+                            <p class="font-semibold text-green-800">Import Successful!</p>
+                            <p class="text-sm text-gray-600">Imported: ${result.imported} | Updated: ${result.updated} | Errors: ${result.errors}</p>
+                        </div>
+                    `;
+
+                    // Add to sync history
+                    syncHistory.unshift({
+                        action: 'Import CSV',
+                        timestamp: new Date().toISOString(),
+                        count: result.imported + result.updated,
+                        status: 'success'
+                    });
+                    localStorage.setItem('syncHistory', JSON.stringify(syncHistory.slice(0, 10)));
+                    renderSyncHistory();
+
+                    fetchStats();
+                    fetchLeads();
+                };
+                reader.readAsText(file);
+            } catch (error) {
+                console.error('Error importing:', error);
+                document.getElementById('importProgress').classList.add('hidden');
+                document.getElementById('importResult').innerHTML = `
+                    <div class="p-4 bg-red-50 border border-red-200 rounded">
+                        <p class="font-semibold text-red-800">Import Failed</p>
+                        <p class="text-sm text-gray-600">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderSyncHistory() {
+            const container = document.getElementById('syncHistory');
+            if (!container) return;
+
+            container.innerHTML = syncHistory.length === 0 
+                ? '<p class="text-gray-500">No sync history yet</p>'
+                : syncHistory.map(item => `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <div class="flex items-center gap-3">
+                            <i class="fas ${item.action.includes('Export') ? 'fa-download' : 'fa-upload'} text-gray-600"></i>
+                            <div>
+                                <div class="font-semibold">${item.action}</div>
+                                <div class="text-sm text-gray-500">${new Date(item.timestamp).toLocaleString()}</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-semibold">${item.count} leads</div>
+                            <div class="text-sm text-green-600">${item.status}</div>
+                        </div>
+                    </div>
+                `).join('');
+        }
+    </script>
+    <script src="/shared-auth.js"></script>
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

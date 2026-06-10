@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Razan Thawus — Marketing, Operations & Finance Coordinator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .tab-active { color:#be185d; border-bottom:3px solid #be185d; }
+  .kpi-card { transition:.2s; }
+  .kpi-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.08); }
+  .channel-fb { background:#1877f2; color:#fff; }
+  .channel-ig { background:linear-gradient(135deg,#f09433,#dc2743,#bc1888); color:#fff; }
+  .channel-tt { background:#000; color:#fff; }
+  .channel-wa { background:#25d366; color:#fff; }
+</style>
+</head>
+<body class="bg-gray-50">
+
+<header class="bg-gradient-to-r from-pink-600 to-rose-700 text-white shadow-lg">
+  <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold"><i class="fas fa-bullhorn mr-2"></i>Razan Thawus — Marketing, Operations & Finance Coordinator</h1>
+      <p class="text-sm opacity-90 mt-1" id="todayDate"></p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="switchTab('dashboard')" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-sm"><i class="fas fa-tachometer-alt mr-1"></i>Dashboard</button>
+      <button onclick="window.print()" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-sm"><i class="fas fa-print mr-1"></i>Print</button>
+    </div>
+  </div>
+</header>
+
+<nav class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+  <div class="max-w-7xl mx-auto px-6 flex flex-wrap gap-1 overflow-x-auto">
+    <button class="portal-tab tab-active px-4 py-3 font-medium text-gray-700 hover:text-pink-700" data-tab="dashboard"><i class="fas fa-tachometer-alt mr-1"></i>Dashboard</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-pink-700" data-tab="morning"><i class="fas fa-sun mr-1"></i>Morning Plan</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-pink-700" data-tab="evening"><i class="fas fa-moon mr-1"></i>Evening Report</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-pink-700" data-tab="leads"><i class="fas fa-bullseye mr-1"></i>Lead Gen</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-pink-700" data-tab="social"><i class="fab fa-instagram mr-1"></i>Social Media</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-pink-700" data-tab="apps-visa"><i class="fas fa-passport mr-1"></i>Apps & Visa</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-pink-700" data-tab="partners"><i class="fas fa-handshake mr-1"></i>Uni / Partners</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-pink-700" data-tab="events"><i class="fas fa-calendar-day mr-1"></i>Events</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-pink-700" data-tab="finance"><i class="fas fa-coins mr-1"></i>Finance</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-pink-700" data-tab="trackers"><i class="fas fa-table mr-1"></i>Trackers</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-pink-700" data-tab="kpi"><i class="fas fa-chart-line mr-1"></i>KPIs</button>
+  </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-6 py-6" id="content"></main>
+
+<script>
+const USER = { id: 6, employeeId: 'GG006', name: 'Razan Thawus', role: 'Marketing, Operations & Finance Coordinator' };
+const TODAY = new Date().toISOString().slice(0,10);
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+let state = { morningPlan:null, eveningReport:null, kpi:{weekly:{},monthly:{}},
+  leadCampaigns:[], socialPosts:[], events:[], partners:[],
+  finance:{refunds:[],commissions:[],pettyCash:[],expenses:[]}, trackers:[] };
+
+async function loadAll() {
+  try {
+    const [mp, er, k, lc, sp, ev, pt, fn] = await Promise.all([
+      fetch('/api/staff-portal/morning-plan/GG006/' + TODAY).then(r=>r.json()).catch(()=>({})),
+      fetch('/api/staff-portal/evening-report/GG006/' + TODAY).then(r=>r.json()).catch(()=>({})),
+      fetch('/api/staff-portal/kpi/GG006').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/staff-portal/lead-campaigns/GG006').then(r=>r.json()).catch(()=>({items:[]})),
+      fetch('/api/staff-portal/social-posts/GG006').then(r=>r.json()).catch(()=>({items:[]})),
+      fetch('/api/staff-portal/events/GG006').then(r=>r.json()).catch(()=>({items:[]})),
+      fetch('/api/staff-portal/partners/GG006').then(r=>r.json()).catch(()=>({items:[]})),
+      fetch('/api/staff-portal/finance/GG006').then(r=>r.json()).catch(()=>({}))
+    ]);
+    state.morningPlan = mp.plan || null;
+    state.eveningReport = er.report || null;
+    state.kpi = k.kpi || {weekly:{},monthly:{}};
+    state.leadCampaigns = lc.items || [];
+    state.socialPosts = sp.items || [];
+    state.events = ev.items || [];
+    state.partners = pt.items || [];
+    state.finance = fn.finance || {refunds:[],commissions:[],pettyCash:[],expenses:[]};
+  } catch(e) {}
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.portal-tab').forEach(t => t.classList.remove('tab-active'));
+  document.querySelector(`.portal-tab[data-tab="${name}"]`).classList.add('tab-active');
+  renderTab(name);
+}
+document.querySelectorAll('.portal-tab').forEach(t => t.onclick = () => switchTab(t.dataset.tab));
+
+async function renderTab(name) {
+  const el = document.getElementById('content');
+  el.innerHTML = '<p class="text-gray-500"><i class="fas fa-spinner fa-spin"></i> Loading…</p>';
+  await loadAll();
+  if (name==='dashboard')   return renderDashboard(el);
+  if (name==='morning')     return renderMorning(el);
+  if (name==='evening')     return renderEvening(el);
+  if (name==='leads')       return renderLeads(el);
+  if (name==='social')      return renderSocial(el);
+  if (name==='apps-visa')   return renderAppsVisa(el);
+  if (name==='partners')    return renderPartners(el);
+  if (name==='events')      return renderEvents(el);
+  if (name==='finance')     return renderFinance(el);
+  if (name==='trackers')    return renderTrackers(el);
+  if (name==='kpi')         return renderKPI(el);
+}
+
+// ===== DASHBOARD =====
+function renderDashboard(el) {
+  const k = state.kpi.weekly || {};
+  const m = state.kpi.monthly || {};
+  el.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-l-4 border-pink-500">
+        <p class="text-xs text-gray-500 uppercase">Today's Plan</p>
+        <p class="text-2xl font-bold">${state.morningPlan ? '✓ Done' : '⏳ Pending'}</p>
+        <p class="text-xs ${state.morningPlan?'text-green-600':'text-red-600'} mt-1">${state.morningPlan ? (state.morningPlan.priorityTasks||[]).length+' tasks' : 'Submit morning plan'}</p>
+      </div>
+      <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-l-4 border-rose-500">
+        <p class="text-xs text-gray-500 uppercase">Leads This Week</p>
+        <p class="text-2xl font-bold">${k.leadsGenerated||0}</p>
+        <p class="text-xs text-gray-600 mt-1">${k.leadsContacted||0} contacted</p>
+      </div>
+      <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-l-4 border-purple-500">
+        <p class="text-xs text-gray-500 uppercase">Social Posts (week)</p>
+        <p class="text-2xl font-bold">${k.socialPosts||0}</p>
+        <p class="text-xs text-gray-600 mt-1">${state.socialPosts.filter(p=>p.status==='scheduled').length} scheduled</p>
+      </div>
+      <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-l-4 border-green-500">
+        <p class="text-xs text-gray-500 uppercase">Revenue Tracked</p>
+        <p class="text-2xl font-bold">LKR ${(m.revenueTracked||0).toLocaleString()}</p>
+        <p class="text-xs text-gray-600 mt-1">${(state.finance.commissions||[]).length} commissions</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div class="bg-white rounded-xl shadow-sm p-5">
+        <h3 class="font-semibold mb-3"><i class="fas fa-bullseye text-rose-500 mr-2"></i>Active Lead Campaigns</h3>
+        ${state.leadCampaigns.slice(0,4).map(c=>`
+          <div class="border-b border-gray-100 py-2 text-sm">
+            <strong>${c.name}</strong>
+            <span class="ml-2 text-xs px-2 py-0.5 rounded ${c.status==='live'?'bg-green-100 text-green-700':'bg-gray-100'}">${c.status}</span>
+            <p class="text-xs text-gray-600">${c.platform||''} · ${c.leadsCount||0} leads · LKR ${(c.budget||0).toLocaleString()}</p>
+          </div>
+        `).join('') || '<p class="text-sm text-gray-500">No active campaigns</p>'}
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-5">
+        <h3 class="font-semibold mb-3"><i class="fas fa-calendar-day text-purple-500 mr-2"></i>Upcoming Events</h3>
+        ${state.events.slice(0,4).map(ev=>`
+          <div class="border-b border-gray-100 py-2 text-sm">
+            <strong>${ev.name}</strong> <span class="text-xs text-gray-500">${ev.date||''}</span>
+            <p class="text-xs text-gray-600">${ev.venue||''} · ${ev.type||''}</p>
+          </div>
+        `).join('') || '<p class="text-sm text-gray-500">None scheduled</p>'}
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-5">
+        <h3 class="font-semibold mb-3"><i class="fas fa-coins text-yellow-500 mr-2"></i>Pending Financial Matters</h3>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between"><span>Refunds pending</span><strong class="text-red-600">${(state.finance.refunds||[]).filter(r=>r.status==='pending').length}</strong></div>
+          <div class="flex justify-between"><span>Commissions awaiting</span><strong class="text-orange-600">${(state.finance.commissions||[]).filter(c=>c.status==='awaiting').length}</strong></div>
+          <div class="flex justify-between"><span>Petty cash entries (mo)</span><strong>${(state.finance.pettyCash||[]).length}</strong></div>
+          <div class="flex justify-between"><span>Monthly expenses</span><strong>${(state.finance.expenses||[]).length}</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm p-5">
+      <h3 class="font-semibold mb-3"><i class="fas fa-chart-line text-green-500 mr-2"></i>Weekly Performance</h3>
+      <div class="grid grid-cols-2 md:grid-cols-6 gap-3 text-center">
+        ${[
+          ['Leads', k.leadsGenerated||0, 'rose'],
+          ['Contacted', k.leadsContacted||0, 'blue'],
+          ['Apps Handled', k.applicationsHandled||0, 'purple'],
+          ['Social', k.socialPosts||0, 'pink'],
+          ['Conversions', k.registrationConversions||0, 'green'],
+          ['Refunds Cleared', k.refundsCleared||0, 'orange']
+        ].map(([l,v,c])=>`<div><p class="text-2xl font-bold text-${c}-700">${v}</p><p class="text-xs text-gray-500">${l}</p></div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ===== MORNING PLAN =====
+function renderMorning(el) {
+  const mp = state.morningPlan || { priorityTasks:[], marketingTasks:'', leadTargets:'', pendingApps:'', financeFollowUps:'', socialSchedule:'' };
+  el.innerHTML = `
+    <div class="bg-gradient-to-r from-pink-100 to-rose-100 rounded-xl p-4 mb-4">
+      <h2 class="text-xl font-bold"><i class="fas fa-sun text-rose-500 mr-2"></i>Morning Task Planner — ${TODAY}</h2>
+      <p class="text-sm text-gray-700 mt-1">Submit during attendance marking. Visible to CEO/COO.</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 space-y-5">
+      <div>
+        <h3 class="font-semibold mb-3">Priority Tasks Today</h3>
+        <div id="taskList"></div>
+        <button onclick="addTask()" class="text-sm text-pink-600 hover:underline"><i class="fas fa-plus"></i> Add task</button>
+      </div>
+      <div><h3 class="font-semibold mb-2">A. Priority Marketing Tasks</h3>
+        <textarea id="marketingTasks" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Campaigns, designs, posts due today…">${mp.marketingTasks||''}</textarea></div>
+      <div><h3 class="font-semibold mb-2">B. Lead Generation Targets</h3>
+        <textarea id="leadTargets" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Lead targets, channels to focus on…">${mp.leadTargets||''}</textarea></div>
+      <div><h3 class="font-semibold mb-2">C. Pending Applications</h3>
+        <textarea id="pendingApps" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Applications/visa cases needing follow-up…">${mp.pendingApps||''}</textarea></div>
+      <div><h3 class="font-semibold mb-2">D. Finance Follow-Ups</h3>
+        <textarea id="financeFollowUps" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Refunds, commissions, Amana finance, petty cash…">${mp.financeFollowUps||''}</textarea></div>
+      <div><h3 class="font-semibold mb-2">E. Social Media Schedule</h3>
+        <textarea id="socialSchedule" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Posts to publish, stories, coordination with Shiran…">${mp.socialSchedule||''}</textarea></div>
+      <button onclick="submitMorning()" class="w-full py-3 bg-gradient-to-r from-pink-600 to-rose-600 text-white rounded-lg font-semibold hover:from-pink-700 hover:to-rose-700">
+        <i class="fas fa-paper-plane mr-2"></i>Submit Morning Plan
+      </button>
+    </div>
+  `;
+  renderTasks(mp.priorityTasks || [{title:'',priority:'P2',notes:''}]);
+}
+let _tasks = [];
+function renderTasks(list) {
+  _tasks = list.length ? list : [{title:'',priority:'P2',notes:''}];
+  document.getElementById('taskList').innerHTML = _tasks.map((t,i)=>`
+    <div class="flex gap-2 mb-2 items-start">
+      <select onchange="_tasks[${i}].priority=this.value" class="border border-gray-300 rounded px-2 py-2 text-xs w-20">
+        ${['P1','P2','P3','P4'].map(p=>`<option value="${p}" ${p===t.priority?'selected':''}>${p}</option>`).join('')}
+      </select>
+      <input value="${(t.title||'').replace(/"/g,'&quot;')}" oninput="_tasks[${i}].title=this.value" class="border border-gray-300 rounded px-3 py-2 text-sm flex-1" placeholder="Task title"/>
+      <input value="${(t.notes||'').replace(/"/g,'&quot;')}" oninput="_tasks[${i}].notes=this.value" class="border border-gray-300 rounded px-3 py-2 text-sm flex-1" placeholder="Notes"/>
+      <button onclick="_tasks.splice(${i},1);renderTasks(_tasks)" class="text-red-500 px-2"><i class="fas fa-times"></i></button>
+    </div>
+  `).join('');
+}
+function addTask() { _tasks.push({title:'',priority:'P3',notes:''}); renderTasks(_tasks); }
+
+async function submitMorning() {
+  const plan = {
+    date: TODAY,
+    priorityTasks: _tasks.filter(t=>t.title.trim()),
+    marketingTasks: document.getElementById('marketingTasks').value,
+    leadTargets: document.getElementById('leadTargets').value,
+    pendingApps: document.getElementById('pendingApps').value,
+    financeFollowUps: document.getElementById('financeFollowUps').value,
+    socialSchedule: document.getElementById('socialSchedule').value
+  };
+  const res = await fetch('/api/staff-portal/morning-plan/GG006', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(plan) });
+  const j = await res.json();
+  if (j.success) { alert('Morning plan submitted ✓'); switchTab('dashboard'); }
+  else alert(j.error||'Failed');
+}
+
+// ===== EVENING REPORT =====
+function renderEvening(el) {
+  const er = state.eveningReport || { leadsContacted:0, applicationsUpdated:0, campaignsCompleted:'', refundsCommissions:'', pendingTasks:'', operationalIssues:'' };
+  el.innerHTML = `
+    <div class="bg-gradient-to-r from-rose-100 to-pink-100 rounded-xl p-4 mb-4">
+      <h2 class="text-xl font-bold"><i class="fas fa-moon text-pink-600 mr-2"></i>Evening Daily Report — ${TODAY}</h2>
+      <p class="text-sm text-gray-700 mt-1">Mandatory before logout. KPIs auto-update.</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 space-y-5">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div><label class="text-xs text-gray-600">Leads Contacted</label><input id="leadsContacted" type="number" min="0" class="w-full border border-gray-300 rounded p-2" value="${er.leadsContacted||0}"/></div>
+        <div><label class="text-xs text-gray-600">Applications Updated</label><input id="applicationsUpdated" type="number" min="0" class="w-full border border-gray-300 rounded p-2" value="${er.applicationsUpdated||0}"/></div>
+        <div><label class="text-xs text-gray-600">Social Posts Done</label><input id="postsDone" type="number" min="0" class="w-full border border-gray-300 rounded p-2" value="${er.postsDone||0}"/></div>
+        <div><label class="text-xs text-gray-600">Conversions</label><input id="conversions" type="number" min="0" class="w-full border border-gray-300 rounded p-2" value="${er.conversions||0}"/></div>
+      </div>
+      <div><h3 class="font-semibold mb-2">Campaigns Completed</h3>
+        <textarea id="campaignsCompleted" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Marketing campaigns delivered today">${er.campaignsCompleted||''}</textarea></div>
+      <div><h3 class="font-semibold mb-2">Refund / Commission Updates</h3>
+        <textarea id="refundsCommissions" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Financial updates processed">${er.refundsCommissions||''}</textarea></div>
+      <div><h3 class="font-semibold mb-2">Pending Tasks for Tomorrow</h3>
+        <textarea id="pendingTasks" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Carry-forward">${er.pendingTasks||''}</textarea></div>
+      <div><h3 class="font-semibold mb-2">Operational Issues Faced</h3>
+        <textarea id="operationalIssues" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Delays, system slowness, management dependencies">${er.operationalIssues||''}</textarea></div>
+      <button onclick="submitEvening()" class="w-full py-3 bg-gradient-to-r from-pink-600 to-rose-600 text-white rounded-lg font-semibold">
+        <i class="fas fa-check-circle mr-2"></i>Submit Evening Report
+      </button>
+    </div>
+  `;
+}
+async function submitEvening() {
+  const report = {
+    date: TODAY,
+    leadsContacted: +document.getElementById('leadsContacted').value || 0,
+    applicationsUpdated: +document.getElementById('applicationsUpdated').value || 0,
+    postsDone: +document.getElementById('postsDone').value || 0,
+    conversions: +document.getElementById('conversions').value || 0,
+    campaignsCompleted: document.getElementById('campaignsCompleted').value,
+    refundsCommissions: document.getElementById('refundsCommissions').value,
+    pendingTasks: document.getElementById('pendingTasks').value,
+    operationalIssues: document.getElementById('operationalIssues').value
+  };
+  const res = await fetch('/api/staff-portal/evening-report/GG006', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(report) });
+  const j = await res.json();
+  if (j.success) { alert('Evening report submitted ✓'); switchTab('dashboard'); }
+  else alert(j.error||'Failed');
+}
+
+// ===== LEAD GEN =====
+function renderLeads(el) {
+  el.innerHTML = `
+    <div class="bg-white rounded-xl shadow-sm p-6">
+      <div class="flex justify-between mb-4">
+        <h2 class="text-xl font-bold"><i class="fas fa-bullseye text-rose-600 mr-2"></i>Lead Generation Campaigns</h2>
+        <button onclick="addCampaign()" class="px-4 py-2 bg-rose-600 text-white rounded text-sm"><i class="fas fa-plus mr-1"></i>New Campaign</button>
+      </div>
+      <table class="w-full text-sm border border-gray-200 rounded">
+        <thead class="bg-gray-100"><tr><th class="p-2 text-left">Campaign</th><th class="p-2 text-left">Platform</th><th class="p-2 text-left">Budget</th><th class="p-2 text-left">Leads</th><th class="p-2 text-left">Conversions</th><th class="p-2 text-left">Status</th><th class="p-2"></th></tr></thead>
+        <tbody>
+          ${state.leadCampaigns.map(c=>`
+            <tr class="border-t border-gray-200">
+              <td class="p-2 font-medium">${c.name}</td>
+              <td class="p-2"><span class="channel-${(c.platform||'').toLowerCase().slice(0,2)} px-2 py-0.5 rounded text-xs">${c.platform||'-'}</span></td>
+              <td class="p-2">LKR ${(c.budget||0).toLocaleString()}</td>
+              <td class="p-2 font-semibold">${c.leadsCount||0}</td>
+              <td class="p-2">${c.conversions||0}</td>
+              <td class="p-2"><span class="text-xs px-2 py-0.5 rounded ${c.status==='live'?'bg-green-100 text-green-700':'bg-gray-100'}">${c.status||'planned'}</span></td>
+              <td class="p-2 text-right"><button onclick="delCampaign('${c.id}')" class="text-red-600 text-xs"><i class="fas fa-trash"></i></button></td>
+            </tr>
+          `).join('') || '<tr><td colspan="7" class="p-4 text-center text-gray-500">No campaigns logged</td></tr>'}
+        </tbody>
+      </table>
+      <p class="text-sm text-gray-600 mt-4">For full lead tracking, open the <a href="/lead-management" class="text-blue-600 underline">Lead Management module</a>.</p>
+    </div>
+  `;
+}
+async function addCampaign() {
+  const name = prompt('Campaign name?'); if (!name) return;
+  const platform = prompt('Platform? (Facebook / Instagram / TikTok / WhatsApp / Google)', 'Facebook');
+  const budget = +prompt('Budget (LKR)?', '0') || 0;
+  await fetch('/api/staff-portal/lead-campaigns/GG006', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name, platform, budget, status:'live', leadsCount:0, conversions:0 }) });
+  switchTab('leads');
+}
+async function delCampaign(id) {
+  if (!confirm('Delete?')) return;
+  await fetch('/api/staff-portal/lead-campaigns/GG006/' + id, { method:'DELETE' });
+  switchTab('leads');
+}
+
+// ===== SOCIAL =====
+function renderSocial(el) {
+  el.innerHTML = `
+    <div class="bg-white rounded-xl shadow-sm p-6">
+      <div class="flex justify-between mb-4">
+        <h2 class="text-xl font-bold"><i class="fab fa-instagram text-pink-600 mr-2"></i>Social Media Calendar</h2>
+        <button onclick="addPost()" class="px-4 py-2 bg-pink-600 text-white rounded text-sm"><i class="fas fa-plus mr-1"></i>Schedule Post</button>
+      </div>
+      <p class="text-sm text-gray-600 mb-4">Coordinate with Shiran for artwork. Track posts, stories, and campaign artwork delivery.</p>
+      <table class="w-full text-sm border border-gray-200 rounded">
+        <thead class="bg-gray-100"><tr><th class="p-2 text-left">Date</th><th class="p-2 text-left">Platform</th><th class="p-2 text-left">Title</th><th class="p-2 text-left">Designer</th><th class="p-2 text-left">Status</th><th class="p-2"></th></tr></thead>
+        <tbody>
+          ${state.socialPosts.map(p=>`
+            <tr class="border-t border-gray-200">
+              <td class="p-2 text-xs">${p.date||''}</td>
+              <td class="p-2"><span class="channel-${(p.platform||'').toLowerCase().slice(0,2)} px-2 py-0.5 rounded text-xs">${p.platform||'-'}</span></td>
+              <td class="p-2 font-medium">${p.title}</td>
+              <td class="p-2">${p.designer||'Shiran'}</td>
+              <td class="p-2"><span class="text-xs px-2 py-0.5 rounded ${p.status==='published'?'bg-green-100 text-green-700':p.status==='scheduled'?'bg-blue-100 text-blue-700':'bg-yellow-100 text-yellow-700'}">${p.status||'draft'}</span></td>
+              <td class="p-2 text-right">
+                ${p.status!=='published' ? `<button onclick="publishPost('${p.id}')" class="text-xs px-2 py-1 bg-green-600 text-white rounded mr-1">Publish</button>`:''}
+                <button onclick="delPost('${p.id}')" class="text-red-600 text-xs"><i class="fas fa-trash"></i></button>
+              </td>
+            </tr>
+          `).join('') || '<tr><td colspan="6" class="p-4 text-center text-gray-500">No posts scheduled</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+async function addPost() {
+  const title = prompt('Post title/topic?'); if (!title) return;
+  const platform = prompt('Platform? (Facebook / Instagram / TikTok / WhatsApp)', 'Instagram');
+  const date = prompt('Publish date? (YYYY-MM-DD)', TODAY);
+  const designer = prompt('Designer?', 'Shiran');
+  await fetch('/api/staff-portal/social-posts/GG006', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title, platform, date, designer, status:'scheduled' }) });
+  switchTab('social');
+}
+async function publishPost(id) {
+  await fetch('/api/staff-portal/social-posts/GG006/' + id + '/publish', { method:'POST' });
+  switchTab('social');
+}
+async function delPost(id) {
+  if (!confirm('Delete?')) return;
+  await fetch('/api/staff-portal/social-posts/GG006/' + id, { method:'DELETE' });
+  switchTab('social');
+}
+
+// ===== APPS & VISA =====
+function renderAppsVisa(el) {
+  el.innerHTML = `
+    <div class="bg-white rounded-xl shadow-sm p-6">
+      <h2 class="text-xl font-bold mb-4"><i class="fas fa-passport text-indigo-600 mr-2"></i>Applications & Visa Processing</h2>
+      <p class="text-sm text-gray-600 mb-4">All applications and visa cases are managed through the dedicated modules. Razan oversees coordination and follow-ups.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <a href="/applications" class="block p-6 bg-indigo-50 rounded-lg hover:bg-indigo-100">
+          <i class="fas fa-file-alt text-indigo-600 text-2xl mb-2"></i>
+          <h3 class="font-semibold">Applications Module</h3>
+          <p class="text-sm text-gray-600">Full application pipeline management</p>
+        </a>
+        <a href="/applications-visa" class="block p-6 bg-red-50 rounded-lg hover:bg-red-100">
+          <i class="fas fa-passport text-red-600 text-2xl mb-2"></i>
+          <h3 class="font-semibold">Visa Processing</h3>
+          <p class="text-sm text-gray-600">CAS, COE, visa lodgement tracking</p>
+        </a>
+      </div>
+    </div>
+  `;
+}
+
+// ===== PARTNERS =====
+function renderPartners(el) {
+  el.innerHTML = `
+    <div class="bg-white rounded-xl shadow-sm p-6">
+      <div class="flex justify-between mb-4">
+        <h2 class="text-xl font-bold"><i class="fas fa-handshake text-purple-600 mr-2"></i>University & Channel Partners</h2>
+        <button onclick="addPartner()" class="px-4 py-2 bg-purple-600 text-white rounded text-sm"><i class="fas fa-plus mr-1"></i>Add Partner</button>
+      </div>
+      <table class="w-full text-sm border border-gray-200 rounded">
+        <thead class="bg-gray-100"><tr><th class="p-2 text-left">Name</th><th class="p-2 text-left">Type</th><th class="p-2 text-left">Contact</th><th class="p-2 text-left">Last Contact</th><th class="p-2 text-left">Status</th><th class="p-2"></th></tr></thead>
+        <tbody>
+          ${state.partners.map(p=>`
+            <tr class="border-t border-gray-200">
+              <td class="p-2 font-medium">${p.name}</td>
+              <td class="p-2"><span class="text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-700">${p.type||'-'}</span></td>
+              <td class="p-2 text-xs">${p.contact||'-'}</td>
+              <td class="p-2 text-xs">${p.lastContact||'-'}</td>
+              <td class="p-2"><span class="text-xs px-2 py-0.5 rounded ${p.status==='active'?'bg-green-100 text-green-700':'bg-gray-100'}">${p.status||'active'}</span></td>
+              <td class="p-2 text-right"><button onclick="delPartner('${p.id}')" class="text-red-600 text-xs"><i class="fas fa-trash"></i></button></td>
+            </tr>
+          `).join('') || '<tr><td colspan="6" class="p-4 text-center text-gray-500">No partners logged</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+async function addPartner() {
+  const name = prompt('Partner name?'); if (!name) return;
+  const type = prompt('Type? (University / Agent / Channel)', 'University');
+  const contact = prompt('Contact (email/phone)?', '');
+  await fetch('/api/staff-portal/partners/GG006', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name, type, contact, status:'active', lastContact:TODAY }) });
+  switchTab('partners');
+}
+async function delPartner(id) {
+  if (!confirm('Delete?')) return;
+  await fetch('/api/staff-portal/partners/GG006/' + id, { method:'DELETE' });
+  switchTab('partners');
+}
+
+// ===== EVENTS =====
+function renderEvents(el) {
+  el.innerHTML = `
+    <div class="bg-white rounded-xl shadow-sm p-6">
+      <div class="flex justify-between mb-4">
+        <h2 class="text-xl font-bold"><i class="fas fa-calendar-day text-orange-600 mr-2"></i>Events & Promotional Activities</h2>
+        <button onclick="addEvent()" class="px-4 py-2 bg-orange-600 text-white rounded text-sm"><i class="fas fa-plus mr-1"></i>Add Event</button>
+      </div>
+      <table class="w-full text-sm border border-gray-200 rounded">
+        <thead class="bg-gray-100"><tr><th class="p-2 text-left">Event</th><th class="p-2 text-left">Type</th><th class="p-2 text-left">Date</th><th class="p-2 text-left">Venue</th><th class="p-2 text-left">Attendees</th><th class="p-2 text-left">Status</th><th class="p-2"></th></tr></thead>
+        <tbody>
+          ${state.events.map(e=>`
+            <tr class="border-t border-gray-200">
+              <td class="p-2 font-medium">${e.name}</td>
+              <td class="p-2"><span class="text-xs px-2 py-0.5 rounded bg-orange-100 text-orange-700">${e.type||'-'}</span></td>
+              <td class="p-2 text-xs">${e.date||'-'}</td>
+              <td class="p-2 text-xs">${e.venue||'-'}</td>
+              <td class="p-2">${e.attendees||0}</td>
+              <td class="p-2"><span class="text-xs px-2 py-0.5 rounded ${e.status==='completed'?'bg-green-100 text-green-700':'bg-blue-100 text-blue-700'}">${e.status||'planned'}</span></td>
+              <td class="p-2 text-right"><button onclick="delEvent('${e.id}')" class="text-red-600 text-xs"><i class="fas fa-trash"></i></button></td>
+            </tr>
+          `).join('') || '<tr><td colspan="7" class="p-4 text-center text-gray-500">No events scheduled</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+async function addEvent() {
+  const name = prompt('Event name?'); if (!name) return;
+  const type = prompt('Type? (Seminar / Open Day / Exhibition / Webinar)', 'Seminar');
+  const date = prompt('Date? (YYYY-MM-DD)', TODAY);
+  const venue = prompt('Venue?', '');
+  await fetch('/api/staff-portal/events/GG006', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name, type, date, venue, status:'planned', attendees:0 }) });
+  switchTab('events');
+}
+async function delEvent(id) {
+  if (!confirm('Delete?')) return;
+  await fetch('/api/staff-portal/events/GG006/' + id, { method:'DELETE' });
+  switchTab('events');
+}
+
+// ===== FINANCE =====
+function renderFinance(el) {
+  const f = state.finance;
+  el.innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-white rounded-xl shadow-sm p-5">
+        <div class="flex justify-between mb-3">
+          <h3 class="font-semibold"><i class="fas fa-undo text-red-600 mr-2"></i>Refunds</h3>
+          <button onclick="addFinItem('refunds')" class="text-xs px-3 py-1 bg-red-600 text-white rounded"><i class="fas fa-plus"></i> Add</button>
+        </div>
+        ${(f.refunds||[]).map(r=>`
+          <div class="border-b border-gray-100 py-2 text-sm flex justify-between">
+            <div><strong>${r.studentName}</strong><p class="text-xs text-gray-600">${r.reason||''} · LKR ${(r.amount||0).toLocaleString()}</p></div>
+            <span class="text-xs px-2 py-0.5 rounded h-fit ${r.status==='paid'?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${r.status}</span>
+          </div>
+        `).join('') || '<p class="text-xs text-gray-500">No refunds</p>'}
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-5">
+        <div class="flex justify-between mb-3">
+          <h3 class="font-semibold"><i class="fas fa-percentage text-green-600 mr-2"></i>University Commissions</h3>
+          <button onclick="addFinItem('commissions')" class="text-xs px-3 py-1 bg-green-600 text-white rounded"><i class="fas fa-plus"></i> Add</button>
+        </div>
+        ${(f.commissions||[]).map(c=>`
+          <div class="border-b border-gray-100 py-2 text-sm flex justify-between">
+            <div><strong>${c.university}</strong><p class="text-xs text-gray-600">${c.studentName||''} · LKR ${(c.amount||0).toLocaleString()}</p></div>
+            <span class="text-xs px-2 py-0.5 rounded h-fit ${c.status==='received'?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${c.status}</span>
+          </div>
+        `).join('') || '<p class="text-xs text-gray-500">No commissions tracked</p>'}
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-5">
+        <div class="flex justify-between mb-3">
+          <h3 class="font-semibold"><i class="fas fa-wallet text-yellow-600 mr-2"></i>Petty Cash</h3>
+          <button onclick="addFinItem('pettyCash')" class="text-xs px-3 py-1 bg-yellow-600 text-white rounded"><i class="fas fa-plus"></i> Add</button>
+        </div>
+        ${(f.pettyCash||[]).map(p=>`
+          <div class="border-b border-gray-100 py-2 text-sm flex justify-between">
+            <div><strong>${p.purpose}</strong><p class="text-xs text-gray-600">${p.date||''}</p></div>
+            <span>LKR ${(p.amount||0).toLocaleString()}</span>
+          </div>
+        `).join('') || '<p class="text-xs text-gray-500">No petty cash entries</p>'}
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-5">
+        <div class="flex justify-between mb-3">
+          <h3 class="font-semibold"><i class="fas fa-file-invoice text-purple-600 mr-2"></i>Monthly Expenses (Amana Finance)</h3>
+          <button onclick="addFinItem('expenses')" class="text-xs px-3 py-1 bg-purple-600 text-white rounded"><i class="fas fa-plus"></i> Add</button>
+        </div>
+        ${(f.expenses||[]).map(x=>`
+          <div class="border-b border-gray-100 py-2 text-sm flex justify-between">
+            <div><strong>${x.category}</strong><p class="text-xs text-gray-600">${x.description||''} · ${x.date||''}</p></div>
+            <span>LKR ${(x.amount||0).toLocaleString()}</span>
+          </div>
+        `).join('') || '<p class="text-xs text-gray-500">No expenses logged</p>'}
+      </div>
+    </div>
+  `;
+}
+async function addFinItem(kind) {
+  let item = {};
+  if (kind==='refunds') {
+    item.studentName = prompt('Student name?'); if (!item.studentName) return;
+    item.amount = +prompt('Amount (LKR)?','0')||0;
+    item.reason = prompt('Reason?','');
+    item.status = prompt('Status? (pending/paid)','pending');
+  } else if (kind==='commissions') {
+    item.university = prompt('University?'); if (!item.university) return;
+    item.studentName = prompt('Student?','');
+    item.amount = +prompt('Amount (LKR)?','0')||0;
+    item.status = prompt('Status? (awaiting/received)','awaiting');
+  } else if (kind==='pettyCash') {
+    item.purpose = prompt('Purpose?'); if (!item.purpose) return;
+    item.amount = +prompt('Amount (LKR)?','0')||0;
+    item.date = TODAY;
+  } else if (kind==='expenses') {
+    item.category = prompt('Category? (Salary/Rent/Marketing/Utility/Other)','Other'); if (!item.category) return;
+    item.description = prompt('Description?','');
+    item.amount = +prompt('Amount (LKR)?','0')||0;
+    item.date = TODAY;
+  }
+  await fetch('/api/staff-portal/finance/GG006/' + kind, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(item) });
+  switchTab('finance');
+}
+
+// ===== TRACKERS =====
+function renderTrackers(el) {
+  el.innerHTML = `
+    <div class="bg-white rounded-xl shadow-sm p-6">
+      <h2 class="text-xl font-bold mb-4"><i class="fas fa-table text-blue-600 mr-2"></i>Operational Tracking Sheets</h2>
+      <p class="text-sm text-gray-600 mb-4">Quick links to all the tracking sheets Razan maintains. Upload Excel files via the document upload button.</p>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        ${[
+          ['Registrations', 'fa-user-check', '/students', 'blue'],
+          ['Invoices', 'fa-file-invoice', '/finance-commission', 'green'],
+          ['Applications', 'fa-folder-open', '/applications', 'indigo'],
+          ['Commissions', 'fa-percentage', '/finance-commission', 'yellow'],
+          ['Monthly Expenses', 'fa-receipt', '/finance-commission', 'red'],
+          ['Amana Finance', 'fa-piggy-bank', '/finance-commission', 'purple'],
+          ['Petty Cash', 'fa-coins', '/finance-commission', 'orange'],
+          ['Attendance', 'fa-clock', '/location-tracker', 'teal'],
+          ['Leads Tracker', 'fa-bullseye', '/lead-management', 'rose'],
+          ['Social Media Posts', 'fab fa-instagram', '#', 'pink'],
+          ['Promotions', 'fa-tag', '#', 'cyan'],
+          ['Marketing Activities', 'fa-bullhorn', '#', 'fuchsia']
+        ].map(([l,ic,h,c])=>`
+          <a href="${h}" class="block bg-${c}-50 border border-${c}-200 rounded-lg p-4 hover:bg-${c}-100">
+            <i class="${ic.startsWith('fab')?ic:'fas '+ic} text-${c}-600 text-xl mb-2"></i>
+            <h4 class="font-semibold text-sm">${l}</h4>
+          </a>
+        `).join('')}
+      </div>
+      <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+        <p class="text-sm"><i class="fas fa-info-circle text-blue-600 mr-1"></i> Use the blue <strong>Upload</strong> button (bottom right) to import Excel sheets directly into any module — they auto-parse and merge into the portal.</p>
+      </div>
+    </div>
+  `;
+}
+
+// ===== KPI =====
+function renderKPI(el) {
+  const d = state.kpi.daily || {}, w = state.kpi.weekly || {}, m = state.kpi.monthly || {};
+  el.innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="bg-white rounded-xl shadow-sm p-6">
+        <h3 class="font-semibold mb-4"><i class="fas fa-calendar-day text-rose-600 mr-2"></i>Daily KPIs</h3>
+        <div class="space-y-2">
+          ${[
+            ['Leads generated', d.leadsGenerated||0],
+            ['Leads contacted', d.leadsContacted||0],
+            ['Applications handled', d.applicationsHandled||0],
+            ['Social media updates', d.socialPosts||0],
+            ['Financial updates', d.financialUpdates||0],
+            ['Refund/compliance follow-ups', d.refundFollowUps||0]
+          ].map(([l,v])=>`<div class="flex justify-between text-sm"><span>${l}</span><strong class="text-rose-700">${v}</strong></div>`).join('')}
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-6">
+        <h3 class="font-semibold mb-4"><i class="fas fa-calendar-week text-purple-600 mr-2"></i>Weekly KPIs</h3>
+        <div class="space-y-2">
+          ${[
+            ['Registration conversions', w.registrationConversions||0],
+            ['Lead engagement %', w.leadEngagement||0],
+            ['Marketing campaigns complete', w.campaignsCompleted||0],
+            ['Uni coordination updates', w.uniUpdates||0],
+            ['Pending apps reduced', w.pendingAppsReduced||0]
+          ].map(([l,v])=>`<div class="flex justify-between text-sm"><span>${l}</span><strong class="text-purple-700">${v}</strong></div>`).join('')}
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-6">
+        <h3 class="font-semibold mb-4"><i class="fas fa-calendar-alt text-green-600 mr-2"></i>Monthly KPIs</h3>
+        <div class="space-y-2">
+          ${[
+            ['Total leads generated', m.totalLeads||0],
+            ['Conversion ratio %', m.conversionRatio||0],
+            ['Marketing ROI %', m.marketingROI||0],
+            ['Reporting accuracy %', m.reportingAccuracy||0],
+            ['Financial tracking %', m.financialTracking||0],
+            ['Event coord score', m.eventScore||0]
+          ].map(([l,v])=>`<div class="flex justify-between text-sm"><span>${l}</span><strong class="text-green-700">${v}</strong></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 mt-6">
+      <h3 class="font-semibold mb-3">Lead Generation Trend</h3>
+      <canvas id="kpiTrend" height="80"></canvas>
+    </div>
+  `;
+  setTimeout(() => {
+    const ctx = document.getElementById('kpiTrend');
+    if (ctx) new Chart(ctx, {
+      type:'bar',
+      data:{
+        labels: ['Mon','Tue','Wed','Thu','Fri','Sat'],
+        datasets:[
+          { label:'Leads', data: w.dailyLeads || [0,0,0,0,0,0], backgroundColor:'#f43f5e' },
+          { label:'Conversions', data: w.dailyConversions || [0,0,0,0,0,0], backgroundColor:'#16a34a' }
+        ]
+      },
+      options:{ responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}} }
+    });
+  }, 100);
+}
+
+switchTab('dashboard');
+</script>
+
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

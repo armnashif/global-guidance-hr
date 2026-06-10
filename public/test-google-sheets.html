@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheets Integration Diagnostic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl shadow-xl p-8 mb-8">
+            <h1 class="text-4xl font-bold mb-2">
+                <i class="fas fa-stethoscope mr-3"></i>
+                Google Sheets Integration Diagnostic
+            </h1>
+            <p class="text-xl text-blue-100">Test your Google Sheet connection and data</p>
+        </div>
+
+        <!-- Configuration Status -->
+        <div id="configStatus" class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-cog mr-3 text-blue-600"></i>
+                Configuration Status
+            </h2>
+            <div id="configStatusContent" class="space-y-3">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-spinner fa-spin text-blue-600"></i>
+                    <span>Checking configuration...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Buttons -->
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <button onclick="testConnection()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition flex items-center justify-center">
+                <i class="fas fa-plug mr-3"></i>
+                Test Connection
+            </button>
+            <button onclick="fetchStaffData()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition flex items-center justify-center">
+                <i class="fas fa-users mr-3"></i>
+                Fetch Staff Data
+            </button>
+            <button onclick="fetchAttendanceData()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition flex items-center justify-center">
+                <i class="fas fa-clock mr-3"></i>
+                Fetch Attendance Data
+            </button>
+            <button onclick="fetchApplicationsData()" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition flex items-center justify-center">
+                <i class="fas fa-file-alt mr-3"></i>
+                Fetch Applications Data
+            </button>
+        </div>
+
+        <!-- Test Umair Login -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-user-lock mr-3 text-green-600"></i>
+                Test Umair Login
+            </h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                    <input 
+                        type="email" 
+                        id="testEmail"
+                        value="umair@globalguidance.com"
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                <button onclick="testLogin()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition">
+                    <i class="fas fa-sign-in-alt mr-2"></i>
+                    Test Login (Check Staff Record)
+                </button>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-2xl font-bold flex items-center">
+                    <i class="fas fa-clipboard-list mr-3 text-blue-600"></i>
+                    Test Results
+                </h2>
+                <button onclick="clearResults()" class="text-sm text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-times-circle mr-1"></i>Clear
+                </button>
+            </div>
+            <div id="resultsContent" class="space-y-4"></div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-xl p-6">
+            <h3 class="font-bold text-lg mb-4">Quick Links</h3>
+            <div class="grid md:grid-cols-3 gap-4 text-sm">
+                <a href="/system-settings" class="flex items-center hover:text-blue-300 transition">
+                    <i class="fas fa-cog mr-2"></i>System Settings
+                </a>
+                <a href="/umair-portal" class="flex items-center hover:text-blue-300 transition">
+                    <i class="fas fa-user-circle mr-2"></i>Umair Portal
+                </a>
+                <a href="https://docs.google.com/spreadsheets/d/1bTBIXZAlK0Z-EgIxAOWviY_-oETih07KtMOWgFmL9ew/edit" target="_blank" class="flex items-center hover:text-blue-300 transition">
+                    <i class="fab fa-google mr-2"></i>Google Sheet
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get Apps Script URL from localStorage
+        const APPS_SCRIPT_URL = localStorage.getItem('APPS_SCRIPT_URL') || '';
+        const GOOGLE_SHEET_ID = '1bTBIXZAlK0Z-EgIxAOWviY_-oETih07KtMOWgFmL9ew';
+
+        // Check configuration on load
+        window.addEventListener('DOMContentLoaded', () => {
+            checkConfiguration();
+        });
+
+        function checkConfiguration() {
+            const content = document.getElementById('configStatusContent');
+            
+            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('YOUR_DEPLOYMENT_ID')) {
+                content.innerHTML = `
+                    <div class="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                        <div class="flex items-start space-x-3">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-2xl mt-1"></i>
+                            <div>
+                                <p class="font-bold text-red-900 mb-2">❌ Not Configured</p>
+                                <p class="text-red-800 text-sm mb-3">
+                                    Apps Script URL is not configured in localStorage.
+                                </p>
+                                <div class="space-y-2 text-sm">
+                                    <p class="text-red-900 font-semibold">To configure:</p>
+                                    <ol class="list-decimal ml-6 space-y-1 text-red-800">
+                                        <li>Go to <a href="/system-settings" class="underline font-semibold">System Settings</a></li>
+                                        <li>Click System Config → External Integrations</li>
+                                        <li>Click "Configure" under Google Sheets Integration</li>
+                                        <li>Enter your Apps Script deployment URL</li>
+                                        <li>Save configuration</li>
+                                    </ol>
+                                </div>
+                                <a href="/system-settings" class="inline-block mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                                    <i class="fas fa-cog mr-2"></i>Configure Now
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div class="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                        <div class="flex items-start space-x-3">
+                            <i class="fas fa-check-circle text-green-600 text-2xl mt-1"></i>
+                            <div class="flex-1">
+                                <p class="font-bold text-green-900 mb-2">✅ Configured</p>
+                                <div class="space-y-2 text-sm">
+                                    <div>
+                                        <span class="font-semibold text-green-900">Apps Script URL:</span>
+                                        <code class="block mt-1 p-2 bg-green-100 rounded text-green-800 text-xs break-all">${APPS_SCRIPT_URL}</code>
+                                    </div>
+                                    <div>
+                                        <span class="font-semibold text-green-900">Google Sheet ID:</span>
+                                        <code class="block mt-1 p-2 bg-green-100 rounded text-green-800 text-xs break-all">${GOOGLE_SHEET_ID}</code>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        async function testConnection() {
+            showLoading('Testing connection to Apps Script...');
+            
+            try {
+                if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('YOUR_DEPLOYMENT_ID')) {
+                    throw new Error('Apps Script URL not configured. Please configure it in System Settings.');
+                }
+
+                const url = `${APPS_SCRIPT_URL}?action=test&timestamp=${Date.now()}`;
+                console.log('Testing:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                showSuccess('Connection Test', result);
+                
+            } catch (error) {
+                console.error('Connection test error:', error);
+                showError('Connection Test Failed', error.message);
+            }
+        }
+
+        async function fetchStaffData() {
+            showLoading('Fetching Staff data from Google Sheet...');
+            
+            try {
+                if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('YOUR_DEPLOYMENT_ID')) {
+                    throw new Error('Apps Script URL not configured.');
+                }
+
+                const url = `${APPS_SCRIPT_URL}?action=read&sheet=Staff&timestamp=${Date.now()}`;
+                console.log('Fetching Staff from:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                const data = result.data || [];
+                
+                showSuccess('Staff Data', {
+                    totalRecords: data.length,
+                    records: data,
+                    sample: data.slice(0, 3)
+                });
+                
+            } catch (error) {
+                console.error('Fetch staff error:', error);
+                showError('Failed to Fetch Staff Data', error.message);
+            }
+        }
+
+        async function fetchAttendanceData() {
+            showLoading('Fetching Attendance data from Google Sheet...');
+            
+            try {
+                if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('YOUR_DEPLOYMENT_ID')) {
+                    throw new Error('Apps Script URL not configured.');
+                }
+
+                const url = `${APPS_SCRIPT_URL}?action=read&sheet=Attendance&timestamp=${Date.now()}`;
+                console.log('Fetching Attendance from:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                const data = result.data || [];
+                
+                showSuccess('Attendance Data', {
+                    totalRecords: data.length,
+                    records: data,
+                    sample: data.slice(0, 5)
+                });
+                
+            } catch (error) {
+                console.error('Fetch attendance error:', error);
+                showError('Failed to Fetch Attendance Data', error.message);
+            }
+        }
+
+        async function fetchApplicationsData() {
+            showLoading('Fetching Applications data from Google Sheet...');
+            
+            try {
+                if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('YOUR_DEPLOYMENT_ID')) {
+                    throw new Error('Apps Script URL not configured.');
+                }
+
+                const url = `${APPS_SCRIPT_URL}?action=read&sheet=Applications&timestamp=${Date.now()}`;
+                console.log('Fetching Applications from:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                const data = result.data || [];
+                
+                showSuccess('Applications Data', {
+                    totalRecords: data.length,
+                    records: data,
+                    sample: data.slice(0, 5)
+                });
+                
+            } catch (error) {
+                console.error('Fetch applications error:', error);
+                showError('Failed to Fetch Applications Data', error.message);
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('testEmail').value.trim();
+            showLoading(`Testing login for: ${email}`);
+            
+            try {
+                if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('YOUR_DEPLOYMENT_ID')) {
+                    throw new Error('Apps Script URL not configured.');
+                }
+
+                // First fetch staff data
+                const url = `${APPS_SCRIPT_URL}?action=read&sheet=Staff&timestamp=${Date.now()}`;
+                console.log('Fetching Staff from:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                const staffData = result.data || [];
+                
+                if (staffData.length === 0) {
+                    throw new Error('No staff records found in the Staff tab. Please add staff data to your Google Sheet.');
+                }
+                
+                // Find staff by email
+                const normalizedEmail = email.toLowerCase().trim();
+                const staff = staffData.find(s => 
+                    s.Email && s.Email.toLowerCase().trim() === normalizedEmail
+                );
+                
+                if (!staff) {
+                    showError('Login Test Failed', `
+                        <div class="space-y-3">
+                            <p>Staff member with email <strong>${email}</strong> not found in the Staff tab.</p>
+                            <div class="bg-yellow-50 border border-yellow-200 rounded p-3">
+                                <p class="font-semibold text-yellow-900 mb-2">Available staff emails:</p>
+                                <ul class="list-disc ml-6 text-sm text-yellow-800">
+                                    ${staffData.map(s => `<li>${s.Email || 'No email'} (${s.Name || 'No name'})</li>`).join('')}
+                                </ul>
+                            </div>
+                            <div class="bg-blue-50 border border-blue-200 rounded p-3">
+                                <p class="font-semibold text-blue-900 mb-2">To fix this:</p>
+                                <ol class="list-decimal ml-6 text-sm text-blue-800 space-y-1">
+                                    <li>Open your <a href="https://docs.google.com/spreadsheets/d/1bTBIXZAlK0Z-EgIxAOWviY_-oETih07KtMOWgFmL9ew/edit" target="_blank" class="underline font-semibold">Google Sheet</a></li>
+                                    <li>Go to the <strong>Staff</strong> tab</li>
+                                    <li>Add a row with Email: <strong>${email}</strong></li>
+                                    <li>Also add: StaffID, Name, Role, Status (Active), Department</li>
+                                    <li>Try logging in again</li>
+                                </ol>
+                            </div>
+                        </div>
+                    `);
+                    return;
+                }
+                
+                // Check status
+                const status = (staff.Status || '').toLowerCase();
+                if (status === 'inactive' || status === 'terminated') {
+                    showError('Login Test Failed', `
+                        <p>Staff account status is: <strong class="text-red-600">${staff.Status}</strong></p>
+                        <p class="mt-2 text-sm">Please change the Status to "Active" in the Google Sheet.</p>
+                    `);
+                    return;
+                }
+                
+                // Success!
+                showSuccess('Login Test - Staff Found!', {
+                    message: '✅ Staff member found and active',
+                    staffRecord: staff,
+                    loginWillWork: staff.Status?.toLowerCase() === 'active',
+                    password: staff.Password ? `Password is set in sheet: ${staff.Password}` : 'No password in sheet - any password will work'
+                });
+                
+            } catch (error) {
+                console.error('Login test error:', error);
+                showError('Login Test Failed', error.message);
+            }
+        }
+
+        function showLoading(message) {
+            const results = document.getElementById('results');
+            const content = document.getElementById('resultsContent');
+            
+            results.classList.remove('hidden');
+            content.innerHTML = `
+                <div class="flex items-center space-x-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i>
+                    <span class="text-blue-900">${message}</span>
+                </div>
+            `;
+            
+            results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function showSuccess(title, data) {
+            const results = document.getElementById('results');
+            const content = document.getElementById('resultsContent');
+            
+            results.classList.remove('hidden');
+            content.innerHTML = `
+                <div class="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                    <div class="flex items-start space-x-3 mb-4">
+                        <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                        <div>
+                            <h3 class="font-bold text-green-900 text-lg">${title}</h3>
+                            <p class="text-green-700 text-sm">Success!</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded p-4">
+                        <pre class="text-xs overflow-auto max-h-96">${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                </div>
+            `;
+            
+            results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function showError(title, message) {
+            const results = document.getElementById('results');
+            const content = document.getElementById('resultsContent');
+            
+            results.classList.remove('hidden');
+            content.innerHTML = `
+                <div class="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                    <div class="flex items-start space-x-3 mb-4">
+                        <i class="fas fa-exclamation-circle text-red-600 text-2xl"></i>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-red-900 text-lg">${title}</h3>
+                            <div class="text-red-800 text-sm mt-2">${message}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function clearResults() {
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('resultsContent').innerHTML = '';
+        }
+    </script>
+</body>
+</html>

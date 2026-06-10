@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Applications & Visa Management - Global Guidance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .top-nav { display: block; }
+        body.in-iframe .top-nav { display: none; }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-pending { background: #FEF3C7; color: #92400E; }
+        .status-processing { background: #DBEAFE; color: #1E40AF; }
+        .status-offer { background: #D1FAE5; color: #065F46; }
+        .status-rejected { background: #FEE2E2; color: #991B1B; }
+        .status-visa { background: #E0E7FF; color: #3730A3; }
+        
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { background: #F3F4F6; }
+        .tab-btn.active {
+            border-bottom-color: #3B82F6;
+            color: #3B82F6;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-nav bg-white border-b px-6 py-3 flex items-center justify-between">
+        <h1 class="text-xl font-bold text-gray-800">
+            <i class="fas fa-graduation-cap text-blue-600 mr-2"></i>
+            Applications & Visa Management
+        </h1>
+        <div class="flex items-center space-x-4">
+            <span class="font-medium text-gray-700" id="userName">Admin</span>
+            <button onclick="window.location.href='/'" class="text-red-600 hover:text-red-800">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="p-8 bg-gray-50 min-h-screen">
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500">
+                <div class="text-3xl font-bold text-gray-800" id="stat-total">0</div>
+                <div class="text-sm text-gray-600 mt-1">Total Applications</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-yellow-500">
+                <div class="text-3xl font-bold text-gray-800" id="stat-processing">0</div>
+                <div class="text-sm text-gray-600 mt-1">Processing</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
+                <div class="text-3xl font-bold text-gray-800" id="stat-offers">0</div>
+                <div class="text-sm text-gray-600 mt-1">Offers Received</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-purple-500">
+                <div class="text-3xl font-bold text-gray-800" id="stat-visa">0</div>
+                <div class="text-sm text-gray-600 mt-1">Visa Stage</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500">
+                <div class="text-3xl font-bold text-gray-800" id="stat-alerts">0</div>
+                <div class="text-sm text-gray-600 mt-1">Alerts</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-xl shadow-sm mb-6">
+            <div class="border-b flex overflow-x-auto">
+                <button onclick="switchTab('all')" class="tab-btn active" data-tab="all">
+                    <i class="fas fa-list mr-2"></i>All Applications
+                </button>
+                <button onclick="switchTab('handler')" class="tab-btn" data-tab="handler">
+                    <i class="fas fa-users mr-2"></i>By Handler
+                </button>
+                <button onclick="switchTab('status')" class="tab-btn" data-tab="status">
+                    <i class="fas fa-chart-bar mr-2"></i>By Status
+                </button>
+                <button onclick="switchTab('university')" class="tab-btn" data-tab="university">
+                    <i class="fas fa-university mr-2"></i>By University
+                </button>
+                <button onclick="switchTab('alerts')" class="tab-btn" data-tab="alerts">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Alerts
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <input type="text" id="search" placeholder="Search student name..." 
+                           class="w-full px-4 py-2 border rounded-lg">
+                </div>
+                <div>
+                    <select id="filter-handler" class="w-full px-4 py-2 border rounded-lg">
+                        <option value="">All Handlers</option>
+                        <option value="Thasbiha">Thasbiha</option>
+                        <option value="Umair">Umair</option>
+                    </select>
+                </div>
+                <div>
+                    <select id="filter-status" class="w-full px-4 py-2 border rounded-lg">
+                        <option value="">All Status</option>
+                        <option value="offer">Offers</option>
+                        <option value="processing">Processing</option>
+                        <option value="visa">Visa Stage</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                </div>
+                <div>
+                    <button onclick="applyFilters()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-filter mr-2"></i>Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Tabs -->
+        <div id="tab-all" class="tab-content">
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">University</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Course</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Handler</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Portal</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="applications-table" class="divide-y divide-gray-200">
+                            <!-- Loaded by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="px-6 py-4 border-t">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-700">
+                            Showing <span id="showing-start">0</span> to <span id="showing-end">0</span> of <span id="showing-total">0</span> applications
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="prevPage()" class="px-4 py-2 border rounded-lg hover:bg-gray-50">Previous</button>
+                            <button onclick="nextPage()" class="px-4 py-2 border rounded-lg hover:bg-gray-50">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-handler" class="tab-content hidden">
+            <div id="handler-stats" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Loaded by JS -->
+            </div>
+        </div>
+
+        <div id="tab-status" class="tab-content hidden">
+            <div id="status-charts" class="space-y-6">
+                <!-- Loaded by JS -->
+            </div>
+        </div>
+
+        <div id="tab-university" class="tab-content hidden">
+            <div id="university-stats" class="space-y-6">
+                <!-- Loaded by JS -->
+            </div>
+        </div>
+
+        <div id="tab-alerts" class="tab-content hidden">
+            <div id="alerts-list" class="space-y-4">
+                <!-- Loaded by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const isInIframe = window.self !== window.top;
+        if (isInIframe) document.body.classList.add('in-iframe');
+
+        let applications = [];
+        let filteredApps = [];
+        let currentPage = 1;
+        const perPage = 20;
+
+        async function loadApplications() {
+            try {
+                const response = await fetch('/api/applications');
+                applications = await response.json();
+                filteredApps = applications;
+                updateStats();
+                renderTable();
+                renderHandlerStats();
+                renderStatusCharts();
+                renderUniversityStats();
+                renderAlerts();
+            } catch (err) {
+                console.error('Failed to load applications:', err);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total').textContent = applications.length;
+            document.getElementById('stat-processing').textContent = 
+                applications.filter(a => a.status.toLowerCase().includes('process') || 
+                                        a.status.toLowerCase().includes('pending')).length;
+            document.getElementById('stat-offers').textContent = 
+                applications.filter(a => a.status.toLowerCase().includes('offer') || 
+                                        a.status.toLowerCase().includes('co')).length;
+            document.getElementById('stat-visa').textContent = 
+                applications.filter(a => a.status.toLowerCase().includes('visa') || 
+                                        a.status.toLowerCase().includes('cas')).length;
+            document.getElementById('stat-alerts').textContent = 
+                applications.filter(a => a.docs_status === 'Pending' || 
+                                        a.status.toLowerCase().includes('reject')).length;
+        }
+
+        function renderTable() {
+            const start = (currentPage - 1) * perPage;
+            const end = start + perPage;
+            const page = filteredApps.slice(start, end);
+            
+            const tbody = document.getElementById('applications-table');
+            tbody.innerHTML = page.map(app => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm text-gray-900">#${app.id}</td>
+                    <td class="px-6 py-4">
+                        <div class="font-medium text-gray-900">${app.student_name}</div>
+                        <div class="text-sm text-gray-500">${app.counselor}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-900">${app.email}</div>
+                        <div class="text-sm text-gray-500">${app.mobile}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900">${app.university}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${app.course.substring(0, 40)}${app.course.length > 40 ? '...' : ''}</td>
+                    <td class="px-6 py-4">
+                        <span class="status-badge ${getStatusClass(app.status)}">${app.status.substring(0, 20)}</span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900">${app.handler}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${app.portal_type}</td>
+                    <td class="px-6 py-4 text-sm">
+                        <button onclick="viewApplication(${app.id})" class="text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('showing-start').textContent = start + 1;
+            document.getElementById('showing-end').textContent = Math.min(end, filteredApps.length);
+            document.getElementById('showing-total').textContent = filteredApps.length;
+        }
+
+        function getStatusClass(status) {
+            const s = status.toLowerCase();
+            if (s.includes('offer') || s.includes('co') || s.includes('uco')) return 'status-offer';
+            if (s.includes('visa') || s.includes('cas')) return 'status-visa';
+            if (s.includes('reject') || s.includes('fail')) return 'status-rejected';
+            if (s.includes('process') || s.includes('sent')) return 'status-processing';
+            return 'status-pending';
+        }
+
+        function renderHandlerStats() {
+            const thasbiha = applications.filter(a => a.handler === 'Thasbiha');
+            const umair = applications.filter(a => a.handler === 'Umair');
+            
+            document.getElementById('handler-stats').innerHTML = [
+                { name: 'Thasbiha', apps: thasbiha, color: 'blue' },
+                { name: 'Umair', apps: umair, color: 'purple' }
+            ].map(h => `
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">${h.name}</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Total Applications</span>
+                            <span class="font-bold text-${h.color}-600">${h.apps.length}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Offers</span>
+                            <span class="font-bold text-green-600">${h.apps.filter(a => a.status.toLowerCase().includes('offer')).length}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Processing</span>
+                            <span class="font-bold text-yellow-600">${h.apps.filter(a => a.status.toLowerCase().includes('process')).length}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Visa Stage</span>
+                            <span class="font-bold text-purple-600">${h.apps.filter(a => a.status.toLowerCase().includes('visa')).length}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderStatusCharts() {
+            const statusCounts = {};
+            applications.forEach(app => {
+                const status = app.status.substring(0, 30);
+                statusCounts[status] = (statusCounts[status] || 0) + 1;
+            });
+            
+            const sorted = Object.entries(statusCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            
+            document.getElementById('status-charts').innerHTML = `
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Top Application Statuses</h3>
+                    <div class="space-y-3">
+                        ${sorted.map(([status, count]) => `
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm text-gray-700">${status}</span>
+                                    <span class="text-sm font-bold text-gray-900">${count}</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-600 h-2 rounded-full" style="width: ${(count/applications.length*100).toFixed(1)}%"></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderUniversityStats() {
+            const uniCounts = {};
+            applications.forEach(app => {
+                if (app.university !== 'TBD') {
+                    const uni = app.university.substring(0, 50);
+                    uniCounts[uni] = (uniCounts[uni] || 0) + 1;
+                }
+            });
+            
+            const sorted = Object.entries(uniCounts).sort((a, b) => b[1] - a[1]).slice(0, 15);
+            
+            document.getElementById('university-stats').innerHTML = `
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Top Universities (by Applications)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${sorted.map(([uni, count]) => `
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div class="flex-1">
+                                    <div class="font-medium text-gray-900">${uni}</div>
+                                    <div class="text-sm text-gray-500">${count} applications</div>
+                                </div>
+                                <div class="text-2xl font-bold text-blue-600">${count}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAlerts() {
+            const alerts = applications.filter(a => 
+                a.docs_status === 'Pending' || 
+                a.status.toLowerCase().includes('reject') ||
+                a.status.toLowerCase().includes('fail')
+            );
+            
+            document.getElementById('alerts-list').innerHTML = alerts.length === 0 
+                ? '<div class="bg-white rounded-xl shadow-sm p-8 text-center text-gray-500">No alerts at this time</div>'
+                : alerts.map(a => `
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <h4 class="font-bold text-gray-900">${a.student_name}</h4>
+                                <p class="text-sm text-gray-600 mt-1">${a.university} - ${a.course.substring(0, 50)}</p>
+                                <div class="mt-2">
+                                    <span class="status-badge ${getStatusClass(a.status)}">${a.status}</span>
+                                    ${a.docs_status === 'Pending' ? '<span class="status-badge status-pending ml-2">Docs Pending</span>' : ''}
+                                </div>
+                                <p class="text-sm text-gray-500 mt-2">Handler: ${a.handler} | Contact: ${a.mobile}</p>
+                            </div>
+                            <button onclick="viewApplication(${a.id})" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('search').value.toLowerCase();
+            const handler = document.getElementById('filter-handler').value;
+            const status = document.getElementById('filter-status').value;
+            
+            filteredApps = applications.filter(app => {
+                const matchSearch = !search || app.student_name.toLowerCase().includes(search) || 
+                                   app.university.toLowerCase().includes(search);
+                const matchHandler = !handler || app.handler === handler;
+                const matchStatus = !status || 
+                    (status === 'offer' && app.status.toLowerCase().includes('offer')) ||
+                    (status === 'processing' && app.status.toLowerCase().includes('process')) ||
+                    (status === 'visa' && app.status.toLowerCase().includes('visa')) ||
+                    (status === 'pending' && app.status.toLowerCase().includes('pending'));
+                
+                return matchSearch && matchHandler && matchStatus;
+            });
+            
+            currentPage = 1;
+            renderTable();
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        }
+
+        function nextPage() {
+            if (currentPage * perPage < filteredApps.length) {
+                currentPage++;
+                renderTable();
+            }
+        }
+
+        function viewApplication(id) {
+            alert(`View application #${id} - Full details modal would open here`);
+        }
+
+        // Load on page ready
+        document.addEventListener('DOMContentLoaded', loadApplications);
+    </script>
+    <script src="/shared-auth.js"></script>
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

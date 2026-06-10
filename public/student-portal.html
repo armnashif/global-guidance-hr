@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal - Global Guidance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .top-nav { display: block; }
+        body.in-iframe .top-nav { display: none; }
+        .status-badge { padding:0.25rem 0.75rem; border-radius:9999px; font-size:0.75rem; font-weight:600; white-space:nowrap; }
+        .badge-co { background:#D1FAE5; color:#065F46; }
+        .badge-uco { background:#DBEAFE; color:#1E40AF; }
+        .badge-processing { background:#FEF3C7; color:#92400E; }
+        .badge-rejected { background:#FEE2E2; color:#991B1B; }
+        .badge-payment { background:#F3E8FF; color:#6B21A8; }
+        .badge-cas { background:#CCFBF1; color:#0F766E; }
+        .badge-pending { background:#F3F4F6; color:#374151; }
+        .badge-red { background:#FEE2E2; color:#991B1B; }
+        .badge-yellow { background:#FEF3C7; color:#92400E; }
+        .badge-green { background:#D1FAE5; color:#065F46; }
+        
+        .progress-bar { height:8px; background:#E5E7EB; border-radius:9999px; overflow:hidden; }
+        .progress-fill { height:100%; background:linear-gradient(90deg,#3B82F6,#8B5CF6); transition:width 0.5s ease; }
+        
+        .timeline-item { position:relative; padding-left:2.5rem; padding-bottom:1.5rem; }
+        .timeline-item::before { content:''; position:absolute; left:0.65rem; top:1.75rem; bottom:-0.5rem; width:2px; background:#E5E7EB; }
+        .timeline-item:last-child::before { display:none; }
+        .timeline-dot { position:absolute; left:0; top:0.5rem; width:1.5rem; height:1.5rem; border-radius:50%; background:white; border:3px solid #D1D5DB; display:flex; align-items:center; justify-content:center; }
+        .timeline-dot.completed { background:#3B82F6; border-color:#3B82F6; }
+        .timeline-dot.active { border-color:#F59E0B; background:#FEF3C7; }
+        .timeline-dot i { font-size:0.6rem; }
+        
+        .nav-btn { transition:all 0.2s; }
+        .nav-btn:hover { background:rgba(59,130,246,0.1); }
+        .nav-btn.active { background:rgba(59,130,246,0.15); color:#3B82F6; border-right:3px solid #3B82F6; }
+
+        .card-hover { transition:all 0.2s; }
+        .card-hover:hover { transform:translateY(-2px); box-shadow:0 10px 25px rgba(0,0,0,0.1); }
+
+        .toast { position:fixed; top:20px; right:20px; z-index:9999; padding:16px 24px; border-radius:12px; color:white; font-weight:600; box-shadow:0 10px 40px rgba(0,0,0,0.3); transform:translateX(120%); transition:transform 0.4s ease; }
+        .toast.show { transform:translateX(0); }
+        .toast-success { background:linear-gradient(135deg,#10b981,#059669); }
+        .toast-info { background:linear-gradient(135deg,#3b82f6,#2563eb); }
+        .toast-warn { background:linear-gradient(135deg,#f59e0b,#d97706); }
+
+        .upload-zone { border:2px dashed #D1D5DB; border-radius:0.5rem; padding:2rem; text-align:center; transition:all 0.2s; cursor:pointer; }
+        .upload-zone:hover { border-color:#3B82F6; background:#EFF6FF; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="toast" class="toast"></div>
+
+    <!-- Top Navigation -->
+    <div class="top-nav bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-4">
+            <div class="w-9 h-9 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <i class="fas fa-graduation-cap text-white text-sm"></i>
+            </div>
+            <h1 class="text-lg font-bold text-gray-800">Global Guidance <span class="text-blue-600">Student Portal</span></h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="relative cursor-pointer" onclick="switchTab('messages')">
+                <i class="fas fa-bell text-gray-500 text-lg hover:text-blue-600 transition"></i>
+                <span id="notifDot" class="w-2 h-2 bg-red-500 rounded-full absolute -top-0.5 -right-0.5 hidden"></span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <div id="avatarCircle" class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">S</div>
+                <span class="font-medium text-gray-700 text-sm" id="headerName">Student</span>
+            </div>
+            <button onclick="logout()" class="text-red-500 hover:text-red-700 text-sm font-medium transition">
+                <i class="fas fa-sign-out-alt mr-1"></i>Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="flex" style="height:calc(100vh - 57px)">
+        <!-- Sidebar -->
+        <div class="w-60 bg-white border-r border-gray-200 overflow-y-auto flex-shrink-0">
+            <!-- Student Info Card -->
+            <div class="p-4 border-b border-gray-100">
+                <div class="flex items-center space-x-3">
+                    <div id="sidebarAvatar" class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">S</div>
+                    <div class="min-w-0">
+                        <div class="font-bold text-gray-800 text-sm truncate" id="sidebarName">Student</div>
+                        <div class="text-xs text-gray-500" id="sidebarId">ID: ---</div>
+                        <div class="text-xs text-blue-600 font-medium" id="sidebarCounselor">Counselor: ---</div>
+                    </div>
+                </div>
+            </div>
+            <nav class="p-3 space-y-1">
+                <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-btn active w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 text-sm">
+                    <i class="fas fa-home w-5 text-center text-blue-600"></i><span class="font-medium">Dashboard</span>
+                </button>
+                <button onclick="switchTab('applications')" data-tab="applications" class="nav-btn w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 text-sm">
+                    <i class="fas fa-graduation-cap w-5 text-center text-purple-600"></i><span class="font-medium">My Applications</span>
+                    <span id="appCount" class="ml-auto bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded-full">0</span>
+                </button>
+                <button onclick="switchTab('timeline')" data-tab="timeline" class="nav-btn w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 text-sm">
+                    <i class="fas fa-stream w-5 text-center text-green-600"></i><span class="font-medium">Timeline</span>
+                </button>
+                <button onclick="switchTab('documents')" data-tab="documents" class="nav-btn w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 text-sm">
+                    <i class="fas fa-file-alt w-5 text-center text-emerald-600"></i><span class="font-medium">Documents</span>
+                    <span id="docPendingCount" class="ml-auto bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full hidden">0</span>
+                </button>
+                <button onclick="switchTab('payments')" data-tab="payments" class="nav-btn w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 text-sm">
+                    <i class="fas fa-credit-card w-5 text-center text-indigo-600"></i><span class="font-medium">Payments</span>
+                </button>
+                <button onclick="switchTab('visa')" data-tab="visa" class="nav-btn w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 text-sm">
+                    <i class="fas fa-passport w-5 text-center text-orange-600"></i><span class="font-medium">Visa Tracker</span>
+                </button>
+                <button onclick="switchTab('messages')" data-tab="messages" class="nav-btn w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 text-sm">
+                    <i class="fas fa-comments w-5 text-center text-blue-600"></i><span class="font-medium">Messages</span>
+                </button>
+                <button onclick="switchTab('profile')" data-tab="profile" class="nav-btn w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 text-sm">
+                    <i class="fas fa-user w-5 text-center text-gray-600"></i><span class="font-medium">My Profile</span>
+                </button>
+                <button onclick="switchTab('resources')" data-tab="resources" class="nav-btn w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 text-sm">
+                    <i class="fas fa-book w-5 text-center text-orange-600"></i><span class="font-medium">Resources</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-y-auto">
+            <div class="p-6 max-w-7xl mx-auto">
+
+                <!-- DASHBOARD TAB -->
+                <div id="tab-dashboard" class="tab-content">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Welcome back, <span id="welcomeName">Student</span>! <span class="text-2xl">&#128075;</span></h2>
+                        <p class="text-gray-500 mt-1">Here's your application overview</p>
+                    </div>
+                    <!-- Stats -->
+                    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6" id="statsGrid"></div>
+                    <!-- Progress + Alerts -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-university text-blue-600 mr-2"></i>University Applications</h3>
+                            <div id="dashAppList" class="space-y-3"></div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-exclamation-triangle text-orange-500 mr-2"></i>Action Required</h3>
+                            <div id="dashAlerts" class="space-y-3"></div>
+                        </div>
+                    </div>
+                    <!-- Recent Timeline -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-history text-green-600 mr-2"></i>Recent Activity</h3>
+                        <div id="dashTimeline" class="space-y-0"></div>
+                    </div>
+                </div>
+
+                <!-- APPLICATIONS TAB -->
+                <div id="tab-applications" class="tab-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">My University Applications</h2>
+                        <p class="text-gray-500 mt-1">Track all your applications and their status</p>
+                    </div>
+                    <div id="applicationsList" class="space-y-4"></div>
+                </div>
+
+                <!-- TIMELINE TAB -->
+                <div id="tab-timeline" class="tab-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Application Timeline</h2>
+                        <p class="text-gray-500 mt-1">Complete chronological history of your journey</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div id="timelineList"></div>
+                    </div>
+                </div>
+
+                <!-- DOCUMENTS TAB -->
+                <div id="tab-documents" class="tab-content hidden">
+                    <div class="mb-6 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Documents</h2>
+                            <p class="text-gray-500 mt-1">Manage your required documents</p>
+                        </div>
+                    </div>
+                    <div id="documentsList" class="space-y-4"></div>
+                </div>
+
+                <!-- PAYMENTS TAB -->
+                <div id="tab-payments" class="tab-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Payments & Financial</h2>
+                        <p class="text-gray-500 mt-1">Track tuition deposits, payments, and financial status</p>
+                    </div>
+                    <div id="paymentsList"></div>
+                </div>
+
+                <!-- VISA TAB -->
+                <div id="tab-visa" class="tab-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Visa Application Tracker</h2>
+                        <p class="text-gray-500 mt-1">Monitor your visa application progress</p>
+                    </div>
+                    <div id="visaTracker"></div>
+                </div>
+
+                <!-- MESSAGES TAB -->
+                <div id="tab-messages" class="tab-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Messages</h2>
+                        <p class="text-gray-500 mt-1">Communicate with your counselor</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <div class="border-b border-gray-200 p-4 bg-gray-50 rounded-t-xl">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white"><i class="fas fa-user-tie"></i></div>
+                                <div>
+                                    <div class="font-semibold text-gray-800" id="msgCounselor">Counselor</div>
+                                    <div class="text-sm text-gray-500">Your Education Counselor</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="messagesContainer" class="p-6 space-y-4 h-80 overflow-y-auto"></div>
+                        <div class="border-t border-gray-200 p-4">
+                            <div class="flex space-x-3">
+                                <input type="text" id="msgInput" placeholder="Type your message..." class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" onkeypress="if(event.key==='Enter')sendMessage()">
+                                <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition"><i class="fas fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PROFILE TAB -->
+                <div id="tab-profile" class="tab-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">My Profile</h2>
+                        <p class="text-gray-500 mt-1">Your personal information</p>
+                    </div>
+                    <div id="profileContent"></div>
+                </div>
+
+                <!-- RESOURCES TAB -->
+                <div id="tab-resources" class="tab-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Resources & Guides</h2>
+                        <p class="text-gray-500 mt-1">Helpful information for your study journey</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 card-hover">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4"><i class="fas fa-book-open text-blue-600 text-xl"></i></div>
+                            <h3 class="text-lg font-bold text-gray-800 mb-2">Application Guide</h3>
+                            <p class="text-gray-600 text-sm mb-4">Step-by-step guide to completing university applications</p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 card-hover">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4"><i class="fas fa-passport text-purple-600 text-xl"></i></div>
+                            <h3 class="text-lg font-bold text-gray-800 mb-2">UK Visa Requirements</h3>
+                            <p class="text-gray-600 text-sm mb-4">Essential information about Student Visa (Tier 4) applications</p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 card-hover">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4"><i class="fas fa-money-bill-wave text-green-600 text-xl"></i></div>
+                            <h3 class="text-lg font-bold text-gray-800 mb-2">Scholarship Info</h3>
+                            <p class="text-gray-600 text-sm mb-4">Available scholarships and funding opportunities</p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 card-hover">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4"><i class="fas fa-home text-orange-600 text-xl"></i></div>
+                            <h3 class="text-lg font-bold text-gray-800 mb-2">Accommodation Guide</h3>
+                            <p class="text-gray-600 text-sm mb-4">Tips for finding housing in the UK</p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 card-hover">
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4"><i class="fas fa-tasks text-red-600 text-xl"></i></div>
+                            <h3 class="text-lg font-bold text-gray-800 mb-2">Pre-Departure Checklist</h3>
+                            <p class="text-gray-600 text-sm mb-4">Everything you need before traveling to the UK</p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 card-hover">
+                            <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4"><i class="fas fa-language text-indigo-600 text-xl"></i></div>
+                            <h3 class="text-lg font-bold text-gray-800 mb-2">IELTS Preparation</h3>
+                            <p class="text-gray-600 text-sm mb-4">Resources and tips for IELTS exam preparation</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ===================== STATE =====================
+    let currentStudent = null;
+    let studentData = null; // Full data from ADMISSIONS_DB
+
+    // ===================== AUTH =====================
+    function checkAuth() {
+        const session = localStorage.getItem('gg_student_session');
+        if (!session) { window.location.href = '/student-login'; return false; }
+        try {
+            const data = JSON.parse(session);
+            if (!data.student || data.expiresAt < Date.now()) {
+                localStorage.removeItem('gg_student_session');
+                window.location.href = '/student-login';
+                return false;
+            }
+            currentStudent = data.student;
+            return true;
+        } catch(e) {
+            localStorage.removeItem('gg_student_session');
+            window.location.href = '/student-login';
+            return false;
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('gg_student_session');
+        window.location.href = '/student-login';
+    }
+
+    // ===================== INIT =====================
+    async function init() {
+        if (!checkAuth()) return;
+        updateHeader();
+        await loadStudentData();
+        renderDashboard();
+        switchTab('dashboard');
+    }
+
+    function updateHeader() {
+        const name = currentStudent.name.replace(/\n.*/g,'').trim();
+        const initial = name.charAt(0).toUpperCase();
+        document.getElementById('headerName').textContent = name;
+        document.getElementById('avatarCircle').textContent = initial;
+        document.getElementById('sidebarAvatar').textContent = initial;
+        document.getElementById('sidebarName').textContent = name;
+        document.getElementById('sidebarId').textContent = 'ID: ' + currentStudent.studentId;
+        document.getElementById('sidebarCounselor').textContent = 'Counselor: ' + (currentStudent.counselor || 'N/A');
+        document.getElementById('welcomeName').textContent = name.split(' ')[0];
+    }
+
+    async function loadStudentData() {
+        try {
+            const res = await fetch('/api/student-portal/data/' + currentStudent.admissionsId);
+            const data = await res.json();
+            if (data.success) {
+                studentData = data.data;
+            }
+        } catch(e) {
+            console.error('Failed to load data:', e);
+        }
+    }
+
+    // ===================== TAB SWITCHING =====================
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        const tab = document.getElementById('tab-' + tabName);
+        if (tab) tab.classList.remove('hidden');
+        const btn = document.querySelector(`[data-tab="${tabName}"]`);
+        if (btn) btn.classList.add('active');
+
+        if (tabName === 'applications') renderApplications();
+        if (tabName === 'timeline') renderTimeline();
+        if (tabName === 'documents') renderDocuments();
+        if (tabName === 'payments') renderPayments();
+        if (tabName === 'visa') renderVisa();
+        if (tabName === 'messages') renderMessages();
+        if (tabName === 'profile') renderProfile();
+    }
+
+    // ===================== HELPERS =====================
+    // University Name Mapping - converts shortcodes to full names
+    const UNIVERSITY_MAP = {
+        'Sunderland': 'University of Sunderland',
+        'Sunderland University': 'University of Sunderland',
+        'Sunderland L': 'University of Sunderland London',
+        'Sunderland London': 'University of Sunderland London',
+        'Sunderland University London': 'University of Sunderland London',
+        'Coventry': 'Coventry University',
+        'Coventry University': 'Coventry University',
+        'DMU': 'De Montfort University',
+        'DMU L': 'De Montfort University Leicester',
+        'DMU London': 'De Montfort University London',
+        'DMUIC': 'De Montfort University International College',
+        'BCU': 'Birmingham City University',
+        'UWE': 'University of the West of England',
+        'UOG': 'University of Gloucestershire',
+        'UCA': 'University for the Creative Arts',
+        'UGIC': 'University of Gloucestershire International College',
+        'Hertfordshire': 'University of Hertfordshire',
+        'Hertz': 'University of Hertfordshire',
+        'Wolverhampton': 'University of Wolverhampton',
+        'Greenwich': 'University of Greenwich',
+        'Aston': 'Aston University',
+        'Aston L': 'Aston University London',
+        'Aston London': 'Aston University London',
+        'Aston University': 'Aston University',
+        'ASton': 'Aston University',
+        'Asnton London': 'Aston University London',
+        'York St John': 'York St John University',
+        'Worcester': 'University of Worcester',
+        'Worscester': 'University of Worcester',
+        'Kent': 'University of Kent',
+        'Hull': 'University of Hull',
+        'East Anglia': 'University of East Anglia',
+        'East London': 'University of East London',
+        'Roehampton University': 'University of Roehampton',
+        'London Metropolitan University': 'London Metropolitan University',
+        'London Met': 'London Metropolitan University',
+        'NU London': 'Northumbria University London',
+        'NU L': 'Northumbria University London',
+        'Northumbria University': 'Northumbria University',
+        'Northumbria University London': 'Northumbria University London',
+        'BIL': 'Bloomsbury Institute London',
+        'BIL London': 'Bloomsbury Institute London',
+        'UCLAN': 'University of Central Lancashire',
+        'ULAW': 'University of Law',
+        'UCB': 'University College Birmingham',
+        'UCW': 'University Centre Wigan',
+        'UWTSD': 'University of Wales Trinity Saint David',
+        'RCL': 'Ravensbourne University London',
+        'Bolton': 'University of Bolton',
+        'Chester': 'University of Chester',
+        'Chester Uni': 'University of Chester',
+        'Derby': 'University of Derby',
+        'Swansea': 'Swansea University',
+        'BSBI': 'Berlin School of Business and Innovation',
+        'ICN': 'ICN Business School',
+        'NAPS': 'NAPS Education',
+        'ARU': 'Anglia Ruskin University',
+        'Anglia Ruskin': 'Anglia Ruskin University',
+        'Anglia Ruskin University': 'Anglia Ruskin University',
+        'Brunel University London': 'Brunel University London',
+        'Sheffield Hallam University': 'Sheffield Hallam University',
+        'Leeds Beckett University': 'Leeds Beckett University',
+        'Machester Met': 'Manchester Metropolitan University',
+        'Kedge Business School': 'KEDGE Business School',
+        'Schiller university': 'Schiller International University',
+        'Constructor University': 'Constructor University',
+        'Constructor Unversity': 'Constructor University',
+        'University of Europe': 'University of Europe for Applied Sciences',
+        'UNFC': 'University of Northampton',
+        'Nirojiny': 'Nirojiny'
+    };
+
+    // Partner Code Mapping
+    const PARTNER_MAP = {
+        'CZ': 'ClearZone',
+        'D': 'Direct',
+        'OX': 'Oxford International',
+        'Ox': 'Oxford International',
+        'OC': 'Oxford College',
+        'SP': 'SP Education',
+        'Infinity': 'Infinity Education',
+        'infinity': 'Infinity Education',
+        'GUS': 'Global University Systems',
+        'Gus': 'Global University Systems',
+        'CEG': 'Cambridge Education Group',
+        'Edvoy': 'Edvoy',
+        'UniVive': 'UniVive',
+        'Geebee': 'GeeBee Education',
+        'Gedu': 'Gedu Education',
+        'Mail Nashif': 'Direct (CEO)',
+        'Nashif Mail': 'Direct (CEO)',
+        'London - CZ': 'ClearZone'
+    };
+
+    function expandUniversityName(rawName) {
+        if (!rawName) return rawName;
+        // Extract partner code from parentheses
+        const partnerMatch = rawName.match(/\(([^)]+)\)\s*$/);
+        const partnerCode = partnerMatch ? partnerMatch[1].trim() : '';
+        const baseName = rawName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+        
+        // Look up full name
+        const fullName = UNIVERSITY_MAP[baseName] || null;
+        
+        if (fullName) {
+            return fullName;
+        }
+        // Try partial match
+        for (const [key, val] of Object.entries(UNIVERSITY_MAP)) {
+            if (baseName.toLowerCase().startsWith(key.toLowerCase()) || key.toLowerCase().startsWith(baseName.toLowerCase())) {
+                return val;
+            }
+        }
+        return baseName; // Return without partner code at minimum
+    }
+
+    function getPartnerInfo(rawName) {
+        if (!rawName) return '';
+        const partnerMatch = rawName.match(/\(([^)]+)\)\s*$/);
+        if (!partnerMatch) return '';
+        const code = partnerMatch[1].trim();
+        const fullPartner = PARTNER_MAP[code] || code;
+        return fullPartner;
+    }
+
+    function parseUniList(uniStr) {
+        if (!uniStr) return [];
+        return uniStr.split('\n').filter(l => l.trim()).map(l => l.replace(/^\d+\.\s*/, '').trim());
+    }
+    function parseCourseList(courseStr) {
+        if (!courseStr) return [];
+        return courseStr.split('\n').filter(l => l.trim()).map(l => l.replace(/^\d+\.\s*/, '').trim());
+    }
+    function parseStatusList(statusStr) {
+        if (!statusStr) return [];
+        return statusStr.split('\n').filter(l => l.trim()).map(l => l.replace(/^\d+\.\s*/, '').trim());
+    }
+    function parseOffers(offersStr) {
+        if (!offersStr) return [];
+        return offersStr.split('\n').filter(l => l.trim()).map(l => l.replace(/^\d+\.\s*/, '').trim());
+    }
+
+    function getStatusBadge(status) {
+        if (!status) return '<span class="status-badge badge-pending">Pending</span>';
+        const s = status.toLowerCase();
+        if (s.includes('co/payment/cas') || s.includes('uco/payment/cas')) return '<span class="status-badge badge-cas"><i class="fas fa-check-double mr-1"></i>CAS/Payment</span>';
+        if (s.includes('cas') || s.includes('loa')) return '<span class="status-badge badge-cas"><i class="fas fa-certificate mr-1"></i>CAS Issued</span>';
+        if (s.includes('payment') && s.includes('refund')) return '<span class="status-badge badge-payment"><i class="fas fa-undo mr-1"></i>Refund Req</span>';
+        if (s.includes('payment')) return '<span class="status-badge badge-payment"><i class="fas fa-pound-sign mr-1"></i>Payment</span>';
+        if (s.includes('rejected') || s.includes('not eligible') || s.includes('not meeting') || s.includes('closed') || s.includes('not succesfull') || s.includes('not accepting')) return '<span class="status-badge badge-rejected"><i class="fas fa-times mr-1"></i>Rejected</span>';
+        if (s.includes('withdrawn')) return '<span class="status-badge badge-rejected"><i class="fas fa-ban mr-1"></i>Withdrawn</span>';
+        if (s.includes('uco')) return '<span class="status-badge badge-uco"><i class="fas fa-file-signature mr-1"></i>UCO</span>';
+        if (s.includes('co')) return '<span class="status-badge badge-co"><i class="fas fa-check-circle mr-1"></i>CO</span>';
+        if (s.includes('processing') || s.includes('processed') || s.includes('sent for')) return '<span class="status-badge badge-processing"><i class="fas fa-spinner mr-1"></i>Processing</span>';
+        if (s.includes('deferred') || s.includes('defer') || s.includes('waiting')) return '<span class="status-badge badge-processing"><i class="fas fa-clock mr-1"></i>Deferred</span>';
+        return '<span class="status-badge badge-pending">' + status.substring(0,30) + '</span>';
+    }
+
+    function getZoneBadge(zone) {
+        if (!zone || zone === 'select') return '';
+        const z = zone.toLowerCase();
+        if (z === 'red') return '<span class="status-badge badge-red"><i class="fas fa-flag mr-1"></i>Red Zone</span>';
+        if (z === 'yellow') return '<span class="status-badge badge-yellow"><i class="fas fa-exclamation-triangle mr-1"></i>Yellow Zone</span>';
+        if (z === 'green') return '<span class="status-badge badge-green"><i class="fas fa-check mr-1"></i>Green Zone</span>';
+        return '';
+    }
+
+    function buildApplications() {
+        if (!studentData) return [];
+        const unis = parseUniList(studentData.uni);
+        const courses = parseCourseList(studentData.courseIntake);
+        const statuses = parseStatusList(studentData.status);
+        const offers = parseOffers(studentData.offers);
+
+        return unis.map((uni, i) => {
+            const course = courses[i] || '';
+            const status = statuses[i] || '';
+            const offerLine = offers.find(o => {
+                const num = o.match(/^(\d+)\./);
+                return num && parseInt(num[1]) === (i+1);
+            }) || offers[i] || '';
+            
+            let progress = 20;
+            const sl = status.toLowerCase();
+            if (sl.includes('processing') || sl.includes('sent for') || sl.includes('processed')) progress = 40;
+            if (sl.includes('uco')) progress = 60;
+            if (sl.includes('co') && !sl.includes('uco')) progress = 75;
+            if (sl.includes('payment')) progress = 85;
+            if (sl.includes('cas') || sl.includes('visa')) progress = 95;
+            if (sl.includes('rejected') || sl.includes('withdrawn') || sl.includes('closed') || sl.includes('not eligible')) progress = 100;
+
+            const hasCO = offerLine.toLowerCase().includes('co') || status.toLowerCase().includes(' co');
+            const hasUCO = offerLine.toLowerCase().includes('uco') || status.toLowerCase().includes('uco');
+
+            // Expand university name
+            const fullUniName = expandUniversityName(uni);
+            const partnerInfo = getPartnerInfo(uni);
+
+            return { uni: fullUniName, rawUni: uni, partner: partnerInfo, course, status, offer: offerLine, progress, hasCO, hasUCO, index: i+1 };
+        });
+    }
+
+    // ===================== DASHBOARD =====================
+    function renderDashboard() {
+        if (!studentData) {
+            document.getElementById('statsGrid').innerHTML = '<div class="col-span-full text-center text-gray-400 py-8">No data available</div>';
+            return;
+        }
+
+        const apps = buildApplications();
+        const totalApps = apps.length;
+        const coCount = apps.filter(a => a.hasCO && !a.hasUCO).length;
+        const ucoCount = apps.filter(a => a.hasUCO).length;
+        const processingCount = apps.filter(a => a.status.toLowerCase().includes('processing') || a.status.toLowerCase().includes('sent for')).length;
+        const rejectedCount = apps.filter(a => a.status.toLowerCase().includes('rejected') || a.status.toLowerCase().includes('withdrawn') || a.status.toLowerCase().includes('closed') || a.status.toLowerCase().includes('not eligible')).length;
+
+        document.getElementById('appCount').textContent = totalApps;
+
+        // Stats
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                <div class="text-3xl font-bold text-gray-800">${totalApps}</div>
+                <div class="text-gray-500 text-xs mt-1">Total Applications</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                <div class="text-3xl font-bold text-green-600">${coCount}</div>
+                <div class="text-gray-500 text-xs mt-1">Conditional Offers</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                <div class="text-3xl font-bold text-blue-600">${ucoCount}</div>
+                <div class="text-gray-500 text-xs mt-1">Unconditional Offers</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                <div class="text-3xl font-bold text-yellow-600">${processingCount}</div>
+                <div class="text-gray-500 text-xs mt-1">Processing</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                <div class="text-3xl font-bold text-red-600">${rejectedCount}</div>
+                <div class="text-gray-500 text-xs mt-1">Rejected/Closed</div>
+            </div>
+        `;
+
+        // App list
+        document.getElementById('dashAppList').innerHTML = apps.slice(0, 5).map(a => `
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="min-w-0 flex-1 mr-3">
+                    <div class="font-semibold text-gray-800 text-sm truncate">${a.uni}</div>
+                    <div class="text-xs text-gray-500 truncate">${a.course}</div>
+                </div>
+                ${getStatusBadge(a.status)}
+            </div>
+        `).join('') || '<p class="text-gray-400 text-sm">No applications yet</p>';
+
+        // Alerts
+        const alerts = [];
+        if (studentData.todo) alerts.push({ icon: 'fa-tasks', color: 'orange', text: studentData.todo });
+        if (studentData.docsStatus && studentData.docsStatus.toLowerCase().includes('pending')) alerts.push({ icon: 'fa-file-upload', color: 'red', text: 'Documents pending - please upload required documents' });
+        if (studentData.languageTests && studentData.languageTests.toLowerCase().includes('pending')) alerts.push({ icon: 'fa-language', color: 'purple', text: 'Language test pending' });
+        if (studentData.languageTests === 'No' || studentData.languageTests === 'no') alerts.push({ icon: 'fa-language', color: 'yellow', text: 'No language tests submitted yet - IELTS may be required' });
+        apps.forEach(a => {
+            if (a.status.toLowerCase().includes('payment')) alerts.push({ icon: 'fa-pound-sign', color: 'indigo', text: `Payment required for ${a.uni}` });
+        });
+
+        document.getElementById('dashAlerts').innerHTML = alerts.length > 0 ? alerts.map(a => `
+            <div class="flex items-start space-x-3 p-3 bg-${a.color}-50 border border-${a.color}-100 rounded-lg">
+                <i class="fas ${a.icon} text-${a.color}-600 mt-0.5"></i>
+                <p class="text-sm text-${a.color}-800">${a.text}</p>
+            </div>
+        `).join('') : '<p class="text-gray-400 text-sm">No actions required at this time</p>';
+
+        // Timeline preview
+        renderDashboardTimeline();
+    }
+
+    function renderDashboardTimeline() {
+        const events = buildTimelineEvents().slice(0, 5);
+        document.getElementById('dashTimeline').innerHTML = events.length > 0 ? events.map(e => `
+            <div class="timeline-item">
+                <div class="timeline-dot ${e.completed ? 'completed' : 'active'}"><i class="fas ${e.icon} text-white text-xs"></i></div>
+                <div>
+                    <p class="font-medium text-gray-800 text-sm">${e.title}</p>
+                    <p class="text-xs text-gray-500">${e.description}</p>
+                    ${e.date ? `<p class="text-xs text-gray-400 mt-1">${e.date}</p>` : ''}
+                </div>
+            </div>
+        `).join('') : '<p class="text-gray-400 text-sm">No timeline events yet</p>';
+    }
+
+    // ===================== APPLICATIONS =====================
+    function renderApplications() {
+        const apps = buildApplications();
+        const container = document.getElementById('applicationsList');
+
+        container.innerHTML = apps.map(a => {
+            const isRejected = a.status.toLowerCase().includes('rejected') || a.status.toLowerCase().includes('withdrawn') || a.status.toLowerCase().includes('closed') || a.status.toLowerCase().includes('not eligible');
+            return `
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ${isRejected ? 'opacity-70' : ''}">
+                <div class="p-5">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex-1 min-w-0 mr-3">
+                            <div class="flex items-center space-x-2 flex-wrap">
+                                <span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded font-mono">#${a.index}</span>
+                                <h3 class="font-bold text-gray-800 truncate">${a.uni}</h3>
+                                ${a.partner ? `<span class="text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-medium" title="Applied via ${a.partner}">via ${a.partner}</span>` : ''}
+                            </div>
+                            <p class="text-sm text-gray-600 mt-1">${a.course}</p>
+                        </div>
+                        <div class="flex flex-col items-end space-y-1">
+                            ${getStatusBadge(a.status)}
+                            ${a.offer ? `<span class="text-xs text-green-600 font-semibold">${a.offer}</span>` : ''}
+                        </div>
+                    </div>
+                    ${!isRejected ? `
+                    <div class="mb-2">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs text-gray-500">Progress</span>
+                            <span class="text-xs font-bold text-blue-600">${a.progress}%</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${a.progress}%"></div></div>
+                    </div>` : ''}
+                    ${a.status && a.status.length > 0 ? `<p class="text-xs text-gray-500 mt-2"><i class="fas fa-info-circle mr-1"></i>${a.status}</p>` : ''}
+                </div>
+            </div>
+        `}).join('') || '<p class="text-gray-400 text-center py-8">No applications found</p>';
+    }
+
+    // ===================== TIMELINE =====================
+    function buildTimelineEvents() {
+        if (!studentData) return [];
+        const events = [];
+        const apps = buildApplications();
+
+        // Registration
+        if (studentData.registration) {
+            events.push({ title: 'Registration', description: studentData.registration, icon: 'fa-user-plus', completed: true, date: '', priority: 1 });
+        }
+
+        // Application submissions
+        if (studentData.appSubmitDate) {
+            events.push({ title: 'Application Submitted', description: `Submitted on ${studentData.appSubmitDate}`, icon: 'fa-paper-plane', completed: true, date: studentData.appSubmitDate, priority: 2 });
+        }
+
+        // Per-university events
+        apps.forEach(a => {
+            const sl = a.status.toLowerCase();
+            if (sl.includes('processing') || sl.includes('sent for')) {
+                events.push({ title: `Application Sent - ${a.uni}`, description: a.course, icon: 'fa-paper-plane', completed: true, date: '', priority: 3 });
+            }
+            if (a.hasCO) {
+                events.push({ title: `Conditional Offer - ${a.uni}`, description: a.course, icon: 'fa-check-circle', completed: true, date: '', priority: 4 });
+            }
+            if (a.hasUCO) {
+                events.push({ title: `Unconditional Offer - ${a.uni}`, description: a.course, icon: 'fa-check-double', completed: true, date: '', priority: 5 });
+            }
+            if (sl.includes('payment')) {
+                events.push({ title: `Payment Stage - ${a.uni}`, description: 'University deposit/tuition payment', icon: 'fa-credit-card', completed: false, date: '', priority: 6 });
+            }
+            if (sl.includes('cas')) {
+                events.push({ title: `CAS Issued - ${a.uni}`, description: 'Confirmation of Acceptance for Studies', icon: 'fa-certificate', completed: true, date: '', priority: 7 });
+            }
+            if (sl.includes('rejected') || sl.includes('not eligible') || sl.includes('closed')) {
+                events.push({ title: `Application Closed - ${a.uni}`, description: a.status, icon: 'fa-times-circle', completed: true, date: '', priority: 3 });
+            }
+        });
+
+        // Summary events
+        if (studentData.summary) {
+            studentData.summary.split('\n').filter(l => l.trim()).forEach(line => {
+                events.push({ title: 'Update', description: line.replace(/^\d+\.\s*/, ''), icon: 'fa-info-circle', completed: true, date: '', priority: 5 });
+            });
+        }
+
+        // To-do items
+        if (studentData.todo) {
+            studentData.todo.split('\n').filter(l => l.trim()).forEach(line => {
+                events.push({ title: 'Action Required', description: line.replace(/^\d+\.\s*/, ''), icon: 'fa-exclamation-triangle', completed: false, date: '', priority: 8 });
+            });
+        }
+
+        return events.sort((a, b) => a.priority - b.priority);
+    }
+
+    function renderTimeline() {
+        const events = buildTimelineEvents();
+        document.getElementById('timelineList').innerHTML = events.length > 0 ? events.map(e => `
+            <div class="timeline-item">
+                <div class="timeline-dot ${e.completed ? 'completed' : 'active'}"><i class="fas ${e.icon} text-white text-xs"></i></div>
+                <div>
+                    <p class="font-semibold text-gray-800 text-sm">${e.title}</p>
+                    <p class="text-xs text-gray-600 mt-0.5">${e.description}</p>
+                    ${e.date ? `<p class="text-xs text-gray-400 mt-1"><i class="fas fa-calendar mr-1"></i>${e.date}</p>` : ''}
+                </div>
+            </div>
+        `).join('') : '<p class="text-gray-400 text-center py-8">No timeline events</p>';
+    }
+
+    // ===================== DOCUMENTS =====================
+    function renderDocuments() {
+        const container = document.getElementById('documentsList');
+        const docsStatus = (studentData?.docsStatus || '').toLowerCase();
+        const isPending = docsStatus.includes('pending');
+        const isIncomplete = docsStatus.includes('incomplete');
+
+        const requiredDocs = [
+            { name: 'Passport Copy', required: true, status: isPending || isIncomplete ? 'pending' : 'uploaded' },
+            { name: 'Academic Transcripts & Certificates', required: true, status: isPending || isIncomplete ? 'pending' : 'uploaded' },
+            { name: 'Personal Statement / SOP', required: true, status: (studentData?.todo || '').toLowerCase().includes('sop') ? 'pending' : 'uploaded' },
+            { name: 'Letter of Recommendation (LOR)', required: true, status: (studentData?.todo || '').toLowerCase().includes('lor') ? 'pending' : 'uploaded' },
+            { name: 'CV / Resume', required: false, status: 'uploaded' },
+            { name: 'English Proficiency (IELTS/PTE)', required: true, status: studentData?.languageTests === 'No' || studentData?.languageTests === 'no' ? 'pending' : (studentData?.languageTests?.toLowerCase().includes('pending') ? 'pending' : 'uploaded') },
+            { name: 'Financial Documents', required: true, status: 'uploaded' },
+            { name: 'Research Proposal', required: false, status: (studentData?.todo || '').toLowerCase().includes('research proposal') ? 'pending' : 'uploaded' },
+            { name: 'Portfolio', required: false, status: (studentData?.todo || '').toLowerCase().includes('portfolio') ? 'pending' : 'not-required' },
+        ].filter(d => d.status !== 'not-required');
+
+        const pendingCount = requiredDocs.filter(d => d.status === 'pending' && d.required).length;
+        const docPendingEl = document.getElementById('docPendingCount');
+        if (pendingCount > 0) {
+            docPendingEl.textContent = pendingCount;
+            docPendingEl.classList.remove('hidden');
+        }
+
+        const statusConfig = {
+            pending: { icon: 'fa-clock', color: 'text-orange-500', bg: 'bg-orange-50', label: 'Pending' },
+            uploaded: { icon: 'fa-check-circle', color: 'text-green-500', bg: 'bg-green-50', label: 'Uploaded' },
+            verified: { icon: 'fa-shield-alt', color: 'text-blue-500', bg: 'bg-blue-50', label: 'Verified' },
+        };
+
+        container.innerHTML = `
+            ${docsStatus ? `<div class="bg-${isPending || isIncomplete ? 'yellow' : 'green'}-50 border border-${isPending || isIncomplete ? 'yellow' : 'green'}-200 rounded-xl p-4 mb-4">
+                <p class="text-sm font-semibold text-${isPending || isIncomplete ? 'yellow' : 'green'}-800"><i class="fas fa-${isPending || isIncomplete ? 'exclamation-triangle' : 'check-circle'} mr-2"></i>Document Status: ${studentData.docsStatus}</p>
+            </div>` : ''}
+            ${requiredDocs.map(d => {
+                const cfg = statusConfig[d.status] || statusConfig.pending;
+                return `
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 ${cfg.bg} rounded-lg flex items-center justify-center">
+                                <i class="fas ${cfg.icon} ${cfg.color}"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800 text-sm">${d.name}</h4>
+                                <div class="flex items-center space-x-2 mt-0.5">
+                                    ${d.required ? '<span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Required</span>' : '<span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Optional</span>'}
+                                    <span class="text-xs ${cfg.color} font-medium">${cfg.label}</span>
+                                </div>
+                            </div>
+                        </div>
+                        ${d.status === 'pending' ? `
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 px-4 rounded-lg transition">
+                                <i class="fas fa-upload mr-1"></i>Upload
+                            </button>
+                        ` : `
+                            <button class="bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold py-2 px-4 rounded-lg transition">
+                                <i class="fas fa-eye mr-1"></i>View
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `}).join('')}
+        `;
+    }
+
+    // ===================== PAYMENTS =====================
+    function renderPayments() {
+        const container = document.getElementById('paymentsList');
+        const apps = buildApplications();
+        const payments = [];
+
+        // Extract payment info from summary
+        if (studentData?.summary) {
+            studentData.summary.split('\n').filter(l => l.trim()).forEach(line => {
+                const cleaned = line.replace(/^\d+\.\s*/, '');
+                if (cleaned.toLowerCase().includes('gbp') || cleaned.toLowerCase().includes('paid') || cleaned.toLowerCase().includes('payment')) {
+                    payments.push({ description: cleaned, type: 'payment' });
+                }
+                if (cleaned.toLowerCase().includes('refund')) {
+                    payments.push({ description: cleaned, type: 'refund' });
+                }
+            });
+        }
+
+        // Payment stages from apps
+        const paymentApps = apps.filter(a => a.status.toLowerCase().includes('payment'));
+
+        container.innerHTML = `
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+                    <div class="text-sm text-gray-500 mb-1">Payment Records</div>
+                    <div class="text-2xl font-bold text-gray-800">${payments.length}</div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+                    <div class="text-sm text-gray-500 mb-1">Universities Requiring Payment</div>
+                    <div class="text-2xl font-bold text-purple-600">${paymentApps.length}</div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+                    <div class="text-sm text-gray-500 mb-1">Status</div>
+                    <div class="text-lg font-bold ${paymentApps.length > 0 ? 'text-orange-600' : 'text-green-600'}">${paymentApps.length > 0 ? 'Action Required' : 'Up to Date'}</div>
+                </div>
+            </div>
+
+            ${payments.length > 0 ? `
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-4">
+                    <h3 class="text-base font-bold text-gray-800 mb-4"><i class="fas fa-receipt text-green-600 mr-2"></i>Payment History</h3>
+                    <div class="space-y-3">
+                        ${payments.map(p => `
+                            <div class="flex items-start space-x-3 p-3 ${p.type === 'refund' ? 'bg-red-50 border border-red-100' : 'bg-green-50 border border-green-100'} rounded-lg">
+                                <i class="fas ${p.type === 'refund' ? 'fa-undo text-red-600' : 'fa-check-circle text-green-600'} mt-0.5"></i>
+                                <p class="text-sm text-gray-800">${p.description}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            ${paymentApps.length > 0 ? `
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-base font-bold text-gray-800 mb-4"><i class="fas fa-exclamation-circle text-orange-600 mr-2"></i>Pending Payments</h3>
+                    <div class="space-y-3">
+                        ${paymentApps.map(a => `
+                            <div class="flex items-center justify-between p-3 bg-orange-50 border border-orange-100 rounded-lg">
+                                <div>
+                                    <div class="font-semibold text-gray-800 text-sm">${a.uni}</div>
+                                    <div class="text-xs text-gray-500">${a.course}</div>
+                                </div>
+                                ${getStatusBadge(a.status)}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : payments.length === 0 ? '<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400"><i class="fas fa-receipt text-4xl mb-3 block"></i>No payment records found</div>' : ''}
+        `;
+    }
+
+    // ===================== VISA =====================
+    function renderVisa() {
+        const container = document.getElementById('visaTracker');
+        const apps = buildApplications();
+        const hasVisa = apps.some(a => a.status.toLowerCase().includes('visa') || a.status.toLowerCase().includes('cas'));
+        const hasCAS = apps.some(a => a.status.toLowerCase().includes('cas'));
+
+        const steps = [
+            { name: 'University Offer', completed: apps.some(a => a.hasCO || a.hasUCO), icon: 'fa-university' },
+            { name: 'Deposit Payment', completed: apps.some(a => a.status.toLowerCase().includes('payment')), icon: 'fa-credit-card' },
+            { name: 'CAS/LOA Issued', completed: hasCAS, icon: 'fa-certificate' },
+            { name: 'Visa Application', completed: false, icon: 'fa-passport' },
+            { name: 'Biometrics', completed: false, icon: 'fa-fingerprint' },
+            { name: 'Visa Decision', completed: false, icon: 'fa-check-double' },
+        ];
+
+        container.innerHTML = `
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-4">
+                <h3 class="text-base font-bold text-gray-800 mb-6"><i class="fas fa-route text-indigo-600 mr-2"></i>Visa Application Steps</h3>
+                <div class="space-y-0">
+                    ${steps.map(s => `
+                        <div class="timeline-item">
+                            <div class="timeline-dot ${s.completed ? 'completed' : ''}"><i class="fas ${s.icon} text-white text-xs"></i></div>
+                            <div class="flex items-center justify-between">
+                                <p class="font-medium text-gray-800 text-sm">${s.name}</p>
+                                <span class="text-xs ${s.completed ? 'text-green-600 font-semibold' : 'text-gray-400'}">
+                                    ${s.completed ? '<i class="fas fa-check mr-1"></i>Complete' : 'Pending'}
+                                </span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            ${studentData?.zones && studentData.zones !== 'select' ? `
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-base font-bold text-gray-800 mb-3"><i class="fas fa-map-marker-alt text-red-600 mr-2"></i>Zone Assessment</h3>
+                    <div class="flex items-center space-x-3">
+                        ${getZoneBadge(studentData.zones)}
+                        <p class="text-sm text-gray-600">This affects visa processing times and requirements.</p>
+                    </div>
+                </div>
+            ` : ''}
+
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-4">
+                <p class="text-sm text-blue-800"><i class="fas fa-info-circle mr-2"></i>Your visa process will be managed by your counselor. You'll be notified at each step. Contact your counselor for any questions.</p>
+            </div>
+        `;
+    }
+
+    // ===================== MESSAGES =====================
+    function renderMessages() {
+        const container = document.getElementById('messagesContainer');
+        const counselor = studentData?.counselor || currentStudent?.counselor || 'Counselor';
+        document.getElementById('msgCounselor').textContent = counselor;
+
+        const messages = JSON.parse(localStorage.getItem('gg_student_msgs_' + currentStudent.studentId) || '[]');
+        if (messages.length === 0) {
+            // Default welcome messages
+            messages.push(
+                { from: 'counselor', text: `Hello ${currentStudent.name.replace(/\n.*/,'')}! Welcome to Global Guidance Student Portal. I'm ${counselor}, your education counselor.`, time: '10:00 AM' },
+                { from: 'counselor', text: 'You can reach me here anytime for updates about your applications, documents, or visa process.', time: '10:01 AM' }
+            );
+            if (studentData?.todo) {
+                messages.push({ from: 'counselor', text: `Action required: ${studentData.todo}`, time: '10:02 AM' });
+            }
+            localStorage.setItem('gg_student_msgs_' + currentStudent.studentId, JSON.stringify(messages));
+        }
+
+        container.innerHTML = messages.map(m => `
+            <div class="flex ${m.from === 'counselor' ? 'justify-start' : 'justify-end'}">
+                <div class="max-w-sm">
+                    <div class="${m.from === 'counselor' ? 'bg-gray-100 text-gray-800' : 'bg-blue-600 text-white'} rounded-lg p-3">
+                        <p class="text-sm">${m.text}</p>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1 ${m.from === 'counselor' ? 'text-left' : 'text-right'}">${m.time}</p>
+                </div>
+            </div>
+        `).join('');
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('msgInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const messages = JSON.parse(localStorage.getItem('gg_student_msgs_' + currentStudent.studentId) || '[]');
+        const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        messages.push({ from: 'student', text, time: now });
+        localStorage.setItem('gg_student_msgs_' + currentStudent.studentId, JSON.stringify(messages));
+        input.value = '';
+        renderMessages();
+
+        // Auto reply
+        setTimeout(() => {
+            const msgs = JSON.parse(localStorage.getItem('gg_student_msgs_' + currentStudent.studentId) || '[]');
+            msgs.push({ from: 'counselor', text: 'Thank you for your message. I\'ll review this and get back to you shortly.', time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) });
+            localStorage.setItem('gg_student_msgs_' + currentStudent.studentId, JSON.stringify(msgs));
+            renderMessages();
+        }, 1500);
+    }
+
+    // ===================== PROFILE =====================
+    function renderProfile() {
+        const container = document.getElementById('profileContent');
+        const name = currentStudent.name.replace(/\n.*/g,'').trim();
+        const initial = name.charAt(0).toUpperCase();
+
+        container.innerHTML = `
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 text-center">
+                    <div class="w-28 h-28 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center text-white text-5xl font-bold mb-4">${initial}</div>
+                    <h3 class="text-xl font-bold text-gray-800">${name}</h3>
+                    <p class="text-gray-500 text-sm mt-1">${currentStudent.studentId}</p>
+                    <div class="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                        <i class="fas fa-check-circle mr-1"></i>Active Student
+                    </div>
+                </div>
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Student Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <label class="text-xs text-gray-500 block mb-1"><i class="fas fa-user mr-1"></i>Full Name</label>
+                            <p class="font-semibold text-gray-800 text-sm">${name}</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <label class="text-xs text-gray-500 block mb-1"><i class="fas fa-id-card mr-1"></i>Student ID</label>
+                            <p class="font-semibold text-gray-800 text-sm">${currentStudent.studentId}</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <label class="text-xs text-gray-500 block mb-1"><i class="fas fa-user-tie mr-1"></i>Counselor</label>
+                            <p class="font-semibold text-gray-800 text-sm">${studentData?.counselor || currentStudent.counselor || 'N/A'}</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <label class="text-xs text-gray-500 block mb-1"><i class="fas fa-handshake mr-1"></i>Type</label>
+                            <p class="font-semibold text-gray-800 text-sm">${studentData?.directAgent || 'N/A'}</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <label class="text-xs text-gray-500 block mb-1"><i class="fas fa-clipboard-check mr-1"></i>Registration</label>
+                            <p class="font-semibold text-gray-800 text-sm">${studentData?.registration || 'N/A'}</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <label class="text-xs text-gray-500 block mb-1"><i class="fas fa-map-marker-alt mr-1"></i>Zone</label>
+                            <p class="font-semibold text-gray-800 text-sm">${studentData?.zones || 'N/A'} ${getZoneBadge(studentData?.zones)}</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <label class="text-xs text-gray-500 block mb-1"><i class="fas fa-file-alt mr-1"></i>Docs Status</label>
+                            <p class="font-semibold text-gray-800 text-sm">${studentData?.docsStatus || 'N/A'}</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <label class="text-xs text-gray-500 block mb-1"><i class="fas fa-language mr-1"></i>Language Tests</label>
+                            <p class="font-semibold text-gray-800 text-sm">${studentData?.languageTests || 'N/A'}</p>
+                        </div>
+                        ${studentData?.ceoInfo ? `
+                        <div class="p-3 bg-blue-50 rounded-lg md:col-span-2">
+                            <label class="text-xs text-gray-500 block mb-1"><i class="fas fa-info-circle mr-1"></i>Additional Info</label>
+                            <p class="font-semibold text-gray-800 text-sm whitespace-pre-line">${studentData.ceoInfo}</p>
+                        </div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ===================== TOAST =====================
+    function showToast(msg, type = 'info') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast toast-' + type + ' show';
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // ===================== DETECT IFRAME =====================
+    if (window.self !== window.top) document.body.classList.add('in-iframe');
+
+    // ===================== START =====================
+    init();
+    </script>
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

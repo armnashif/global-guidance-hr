@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Thasbiha S. — Admissions Head & HR Manager Portal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .priority-p1 { border-left:4px solid #dc2626; background:#fef2f2; }
+  .priority-p2 { border-left:4px solid #ea580c; background:#fff7ed; }
+  .priority-p3 { border-left:4px solid #ca8a04; background:#fefce8; }
+  .priority-p4 { border-left:4px solid #16a34a; background:#f0fdf4; }
+  .tab-active { color:#1d4ed8; border-bottom:3px solid #1d4ed8; }
+  .kpi-card { transition:.2s; }
+  .kpi-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.08); }
+</style>
+</head>
+<body class="bg-gray-50">
+
+<!-- Header -->
+<header class="bg-gradient-to-r from-indigo-700 to-purple-700 text-white shadow-lg">
+  <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold"><i class="fas fa-user-tie mr-2"></i>Thasbiha S. — Admissions Head & HR Manager</h1>
+      <p class="text-sm opacity-90 mt-1" id="todayDate"></p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="switchTab('dashboard')" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-sm"><i class="fas fa-tachometer-alt mr-1"></i> Dashboard</button>
+      <button onclick="window.print()" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-sm"><i class="fas fa-print mr-1"></i> Print Report</button>
+    </div>
+  </div>
+</header>
+
+<!-- Tabs -->
+<nav class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+  <div class="max-w-7xl mx-auto px-6 flex flex-wrap gap-1 overflow-x-auto">
+    <button class="portal-tab tab-active px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="dashboard"><i class="fas fa-tachometer-alt mr-1"></i>Dashboard</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="morning"><i class="fas fa-sun mr-1"></i>Morning Plan</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="evening"><i class="fas fa-moon mr-1"></i>Evening Report</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="admissions"><i class="fas fa-graduation-cap mr-1"></i>Admissions</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="conversion"><i class="fas fa-exchange-alt mr-1"></i>Conversion</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="interviews"><i class="fas fa-microphone-alt mr-1"></i>Interview Prep</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="escalations"><i class="fas fa-exclamation-triangle mr-1"></i>Escalations</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="uni-coord"><i class="fas fa-university mr-1"></i>University Coord</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="kpi"><i class="fas fa-chart-line mr-1"></i>KPIs</button>
+    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="hr"><i class="fas fa-users-cog mr-1"></i>HR / Admin</button>
+  </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-6 py-6" id="content"></main>
+
+<script>
+const USER = { id: 3, employeeId: 'GG003', name: 'Thasbiha S.', role: 'Admissions Head & HR Manager' };
+const TODAY = new Date().toISOString().slice(0,10);
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+// ===== STATE =====
+let state = {
+  morningPlan: null,
+  eveningReport: null,
+  kpi: null,
+  escalations: [],
+  interviews: [],
+  uniFollowUps: [],
+  conversions: []
+};
+
+async function loadAll() {
+  try {
+    const [mp, er, k, esc, iv, uf] = await Promise.all([
+      fetch('/api/staff-portal/morning-plan/GG003/' + TODAY).then(r=>r.json()).catch(()=>({})),
+      fetch('/api/staff-portal/evening-report/GG003/' + TODAY).then(r=>r.json()).catch(()=>({})),
+      fetch('/api/staff-portal/kpi/GG003').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/staff-portal/escalations/GG003').then(r=>r.json()).catch(()=>({items:[]})),
+      fetch('/api/staff-portal/interviews/GG003').then(r=>r.json()).catch(()=>({items:[]})),
+      fetch('/api/staff-portal/uni-followups/GG003').then(r=>r.json()).catch(()=>({items:[]}))
+    ]);
+    state.morningPlan = mp.plan || null;
+    state.eveningReport = er.report || null;
+    state.kpi = k.kpi || { weekly:{}, monthly:{} };
+    state.escalations = esc.items || [];
+    state.interviews = iv.items || [];
+    state.uniFollowUps = uf.items || [];
+  } catch(e) {}
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.portal-tab').forEach(t => t.classList.remove('tab-active'));
+  document.querySelector(`.portal-tab[data-tab="${name}"]`).classList.add('tab-active');
+  renderTab(name);
+}
+document.querySelectorAll('.portal-tab').forEach(t => t.onclick = () => switchTab(t.dataset.tab));
+
+async function renderTab(name) {
+  const el = document.getElementById('content');
+  el.innerHTML = '<p class="text-gray-500"><i class="fas fa-spinner fa-spin"></i> Loading…</p>';
+  await loadAll();
+  if (name === 'dashboard') return renderDashboard(el);
+  if (name === 'morning') return renderMorning(el);
+  if (name === 'evening') return renderEvening(el);
+  if (name === 'admissions') return renderAdmissions(el);
+  if (name === 'conversion') return renderConversion(el);
+  if (name === 'interviews') return renderInterviews(el);
+  if (name === 'escalations') return renderEscalations(el);
+  if (name === 'uni-coord') return renderUniCoord(el);
+  if (name === 'kpi') return renderKPI(el);
+  if (name === 'hr') return renderHR(el);
+}
+
+// ===== DASHBOARD =====
+function renderDashboard(el) {
+  const mp = state.morningPlan;
+  const er = state.eveningReport;
+  const k = state.kpi || { weekly:{}, monthly:{} };
+  el.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-l-4 border-indigo-500">
+        <p class="text-xs text-gray-500 uppercase">Today's Plan</p>
+        <p class="text-2xl font-bold text-gray-800">${mp ? '✓ Submitted' : '⏳ Pending'}</p>
+        <p class="text-xs ${mp?'text-green-600':'text-red-600'} mt-1">${mp ? (mp.priorityTasks||[]).length + ' priority tasks' : 'Submit morning plan'}</p>
+      </div>
+      <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-l-4 border-purple-500">
+        <p class="text-xs text-gray-500 uppercase">Evening Report</p>
+        <p class="text-2xl font-bold text-gray-800">${er ? '✓ Submitted' : '⏳ Pending'}</p>
+        <p class="text-xs ${er?'text-green-600':'text-orange-600'} mt-1">${er ? 'Closed for today' : 'Due by 6:00 PM'}</p>
+      </div>
+      <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-l-4 border-red-500">
+        <p class="text-xs text-gray-500 uppercase">Active Escalations</p>
+        <p class="text-2xl font-bold text-gray-800">${state.escalations.filter(e=>e.status!=='resolved').length}</p>
+        <p class="text-xs text-red-600 mt-1">${state.escalations.filter(e=>e.priority==='P1').length} critical</p>
+      </div>
+      <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-l-4 border-green-500">
+        <p class="text-xs text-gray-500 uppercase">This Week Conversions</p>
+        <p class="text-2xl font-bold text-gray-800">${k.weekly.registrationsConverted || 0}</p>
+        <p class="text-xs text-green-600 mt-1">${k.weekly.applicationsSubmitted || 0} apps submitted</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="bg-white rounded-xl shadow-sm p-5">
+        <h3 class="font-semibold text-gray-800 mb-3"><i class="fas fa-fire text-red-500 mr-2"></i>Today's Priority Tasks (P1)</h3>
+        ${(mp && mp.priorityTasks||[]).filter(t=>t.priority==='P1').map(t=>`
+          <div class="priority-p1 p-3 rounded mb-2"><strong>${t.title}</strong><p class="text-xs text-gray-600">${t.notes||''}</p></div>
+        `).join('') || '<p class="text-sm text-gray-500">No P1 tasks. <a href="#" onclick="switchTab(\'morning\')" class="text-blue-600">Add now →</a></p>'}
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-5">
+        <h3 class="font-semibold text-gray-800 mb-3"><i class="fas fa-microphone-alt text-blue-500 mr-2"></i>Upcoming Interviews</h3>
+        ${state.interviews.slice(0,5).map(i=>`
+          <div class="border-b border-gray-100 py-2"><strong>${i.studentName}</strong><span class="text-xs text-gray-500 ml-2">${i.type}</span><p class="text-xs text-gray-600">${i.scheduledFor || 'TBD'}</p></div>
+        `).join('') || '<p class="text-sm text-gray-500">None scheduled</p>'}
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-5">
+        <h3 class="font-semibold text-gray-800 mb-3"><i class="fas fa-university text-purple-500 mr-2"></i>Pending Uni Follow-Ups</h3>
+        ${state.uniFollowUps.slice(0,5).map(u=>`
+          <div class="border-b border-gray-100 py-2"><strong>${u.university}</strong> — ${u.type}<p class="text-xs text-gray-600">${u.studentName} · ${u.daysOpen||0} days open</p></div>
+        `).join('') || '<p class="text-sm text-gray-500">None</p>'}
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
+      <h3 class="font-semibold text-gray-800 mb-3"><i class="fas fa-chart-line text-green-500 mr-2"></i>Weekly KPI Snapshot</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div><p class="text-2xl font-bold text-blue-700">${k.weekly.studentFollowUps||0}</p><p class="text-xs text-gray-500">Student Follow-Ups</p></div>
+        <div><p class="text-2xl font-bold text-green-700">${k.weekly.registrationsConverted||0}</p><p class="text-xs text-gray-500">Registrations</p></div>
+        <div><p class="text-2xl font-bold text-purple-700">${k.weekly.offerLettersReceived||0}</p><p class="text-xs text-gray-500">Offer Letters</p></div>
+        <div><p class="text-2xl font-bold text-orange-700">${k.weekly.interviewsCompleted||0}</p><p class="text-xs text-gray-500">Interviews Done</p></div>
+      </div>
+    </div>
+  `;
+}
+
+// ===== MORNING PLAN =====
+function renderMorning(el) {
+  const mp = state.morningPlan || { priorityTasks:[], studentFollowUps:'', uniFollowUps:'', criticalEscalations:'', eventsTasks:'', supportNeeded:'' };
+  el.innerHTML = `
+    <div class="bg-gradient-to-r from-orange-100 to-yellow-100 rounded-xl p-4 mb-4">
+      <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-sun text-orange-500 mr-2"></i>Daily Morning Update — ${TODAY}</h2>
+      <p class="text-sm text-gray-700 mt-1">Submit this when marking attendance. Visible to CEO/COO.</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 space-y-5">
+      <div>
+        <h3 class="font-semibold text-gray-800 mb-3">A. Priority Tasks for Today (up to 5)</h3>
+        <div id="taskList"></div>
+        <button onclick="addTask()" class="text-sm text-blue-600 hover:underline"><i class="fas fa-plus"></i> Add task</button>
+      </div>
+
+      <div>
+        <h3 class="font-semibold text-gray-800 mb-2">B. Student Follow-Ups Planned</h3>
+        <textarea id="studentFollowUps" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="3" placeholder="Number, priority cases, pending registrations…">${mp.studentFollowUps||''}</textarea>
+      </div>
+      <div>
+        <h3 class="font-semibold text-gray-800 mb-2">C. University Follow-Ups Planned</h3>
+        <textarea id="uniFollowUps" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="3" placeholder="Pending responses, offers, CAS/COE, deadlines…">${mp.uniFollowUps||''}</textarea>
+      </div>
+      <div>
+        <h3 class="font-semibold text-gray-800 mb-2">D. Critical Escalations</h3>
+        <textarea id="criticalEscalations" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="3" placeholder="Students at risk, refund concerns, complaints…">${mp.criticalEscalations||''}</textarea>
+      </div>
+      <div>
+        <h3 class="font-semibold text-gray-800 mb-2">E. Events / Meetings / Operational Tasks</h3>
+        <textarea id="eventsTasks" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Meetings, seminars, internal coordination…">${mp.eventsTasks||''}</textarea>
+      </div>
+      <div>
+        <h3 class="font-semibold text-gray-800 mb-2">F. Support Required from Management</h3>
+        <textarea id="supportNeeded" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Pending approvals, decisions, operational support…">${mp.supportNeeded||''}</textarea>
+      </div>
+      <button onclick="submitMorning()" class="w-full py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white rounded-lg font-semibold hover:from-orange-600 hover:to-yellow-600">
+        <i class="fas fa-paper-plane mr-2"></i>Submit Morning Plan
+      </button>
+    </div>
+  `;
+  renderTasks(mp.priorityTasks || [{title:'',priority:'P2',notes:''}]);
+}
+
+let _tasks = [];
+function renderTasks(list) {
+  _tasks = list.length ? list : [{title:'',priority:'P2',notes:''}];
+  document.getElementById('taskList').innerHTML = _tasks.map((t,i)=>`
+    <div class="flex gap-2 mb-2 items-start">
+      <select onchange="_tasks[${i}].priority=this.value" class="border border-gray-300 rounded px-2 py-2 text-xs w-20">
+        ${['P1','P2','P3','P4'].map(p=>`<option value="${p}" ${p===t.priority?'selected':''}>${p}</option>`).join('')}
+      </select>
+      <input value="${(t.title||'').replace(/"/g,'&quot;')}" oninput="_tasks[${i}].title=this.value" class="border border-gray-300 rounded px-3 py-2 text-sm flex-1" placeholder="Task title"/>
+      <input value="${(t.notes||'').replace(/"/g,'&quot;')}" oninput="_tasks[${i}].notes=this.value" class="border border-gray-300 rounded px-3 py-2 text-sm flex-1" placeholder="Notes"/>
+      <button onclick="_tasks.splice(${i},1);renderTasks(_tasks)" class="text-red-500 px-2"><i class="fas fa-times"></i></button>
+    </div>
+  `).join('');
+}
+function addTask() { _tasks.push({title:'',priority:'P3',notes:''}); renderTasks(_tasks); }
+
+async function submitMorning() {
+  const plan = {
+    date: TODAY,
+    priorityTasks: _tasks.filter(t=>t.title.trim()),
+    studentFollowUps: document.getElementById('studentFollowUps').value,
+    uniFollowUps: document.getElementById('uniFollowUps').value,
+    criticalEscalations: document.getElementById('criticalEscalations').value,
+    eventsTasks: document.getElementById('eventsTasks').value,
+    supportNeeded: document.getElementById('supportNeeded').value
+  };
+  const res = await fetch('/api/staff-portal/morning-plan/GG003', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(plan) });
+  const j = await res.json();
+  if (j.success) { alert('Morning plan submitted ✓'); switchTab('dashboard'); }
+  else alert(j.error || 'Failed');
+}
+
+// ===== EVENING REPORT =====
+function renderEvening(el) {
+  const er = state.eveningReport || { tasksCompleted:'', studentUpdates:'', uniStatus:'', escalationsHandled:'', pendingTomorrow:'', operationalChallenges:'', supportNeeded:'' };
+  el.innerHTML = `
+    <div class="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl p-4 mb-4">
+      <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-moon text-indigo-600 mr-2"></i>End-of-Day Report — ${TODAY}</h2>
+      <p class="text-sm text-gray-700 mt-1">Mandatory before logout. KPIs auto-update from this report.</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 space-y-5">
+      <div><h3 class="font-semibold mb-2">A. Tasks Completed Today</h3>
+        <textarea id="tasksCompleted" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="3" placeholder="List completed tasks">${er.tasksCompleted||''}</textarea></div>
+      <div><h3 class="font-semibold mb-2">B. Student Conversion Updates</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+          <input id="leadsContacted" type="number" min="0" placeholder="Leads contacted" class="border border-gray-300 rounded p-2 text-sm" value="${(er.conversionUpdates||{}).leadsContacted||0}"/>
+          <input id="registrationsCompleted" type="number" min="0" placeholder="Registrations" class="border border-gray-300 rounded p-2 text-sm" value="${(er.conversionUpdates||{}).registrationsCompleted||0}"/>
+          <input id="interestedStudents" type="number" min="0" placeholder="Interested" class="border border-gray-300 rounded p-2 text-sm" value="${(er.conversionUpdates||{}).interestedStudents||0}"/>
+          <input id="lostDropped" type="number" min="0" placeholder="Lost/Dropped" class="border border-gray-300 rounded p-2 text-sm" value="${(er.conversionUpdates||{}).lostDropped||0}"/>
+        </div>
+        <textarea id="studentUpdates" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Notes on student conversion activities">${er.studentUpdates||''}</textarea></div>
+      <div><h3 class="font-semibold mb-2">C. University Update Status</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+          <input id="offersReceived" type="number" min="0" placeholder="Offers received" class="border border-gray-300 rounded p-2 text-sm" value="${(er.uniUpdates||{}).offersReceived||0}"/>
+          <input id="pendingResponses" type="number" min="0" placeholder="Pending responses" class="border border-gray-300 rounded p-2 text-sm" value="${(er.uniUpdates||{}).pendingResponses||0}"/>
+          <input id="applicationsSubmitted" type="number" min="0" placeholder="Apps submitted" class="border border-gray-300 rounded p-2 text-sm" value="${(er.uniUpdates||{}).applicationsSubmitted||0}"/>
+          <input id="escalatedUni" type="number" min="0" placeholder="Escalated" class="border border-gray-300 rounded p-2 text-sm" value="${(er.uniUpdates||{}).escalatedUni||0}"/>
+        </div>
+        <textarea id="uniStatus" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Notes">${er.uniStatus||''}</textarea></div>
+      <div><h3 class="font-semibold mb-2">D. Client Escalations Handled</h3>
+        <textarea id="escalationsHandled" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="3" placeholder="Issues resolved, urgent calls, complaints">${er.escalationsHandled||''}</textarea></div>
+      <div><h3 class="font-semibold mb-2">E. Pending Tasks for Tomorrow</h3>
+        <textarea id="pendingTomorrow" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="3" placeholder="Carry-forward tasks">${er.pendingTomorrow||''}</textarea></div>
+      <div><h3 class="font-semibold mb-2">F. Operational Challenges Faced Today</h3>
+        <textarea id="operationalChallenges" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Delays, system/process issues">${er.operationalChallenges||''}</textarea></div>
+      <div><h3 class="font-semibold mb-2">G. Support Required</h3>
+        <textarea id="supportNeededE" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Approvals, team support, escalation to management">${er.supportNeeded||''}</textarea></div>
+      <button onclick="submitEvening()" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700">
+        <i class="fas fa-check-circle mr-2"></i>Submit Evening Report & Close Day
+      </button>
+    </div>
+  `;
+}
+
+async function submitEvening() {
+  const report = {
+    date: TODAY,
+    tasksCompleted: document.getElementById('tasksCompleted').value,
+    conversionUpdates: {
+      leadsContacted: +document.getElementById('leadsContacted').value || 0,
+      registrationsCompleted: +document.getElementById('registrationsCompleted').value || 0,
+      interestedStudents: +document.getElementById('interestedStudents').value || 0,
+      lostDropped: +document.getElementById('lostDropped').value || 0
+    },
+    studentUpdates: document.getElementById('studentUpdates').value,
+    uniUpdates: {
+      offersReceived: +document.getElementById('offersReceived').value || 0,
+      pendingResponses: +document.getElementById('pendingResponses').value || 0,
+      applicationsSubmitted: +document.getElementById('applicationsSubmitted').value || 0,
+      escalatedUni: +document.getElementById('escalatedUni').value || 0
+    },
+    uniStatus: document.getElementById('uniStatus').value,
+    escalationsHandled: document.getElementById('escalationsHandled').value,
+    pendingTomorrow: document.getElementById('pendingTomorrow').value,
+    operationalChallenges: document.getElementById('operationalChallenges').value,
+    supportNeeded: document.getElementById('supportNeededE').value
+  };
+  const res = await fetch('/api/staff-portal/evening-report/GG003', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(report) });
+  const j = await res.json();
+  if (j.success) { alert('Evening report submitted ✓ KPIs updated'); switchTab('dashboard'); }
+  else alert(j.error || 'Failed');
+}
+
+// ===== ADMISSIONS =====
+function renderAdmissions(el) {
+  el.innerHTML = `
+    <div class="bg-white rounded-xl shadow-sm p-6">
+      <h2 class="text-xl font-bold mb-4"><i class="fas fa-graduation-cap text-indigo-600 mr-2"></i>Admissions Pipeline</h2>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <div class="bg-blue-50 rounded p-3 text-center"><p class="text-2xl font-bold text-blue-700" id="aPipeInquiry">—</p><p class="text-xs">Inquiry</p></div>
+        <div class="bg-purple-50 rounded p-3 text-center"><p class="text-2xl font-bold text-purple-700" id="aPipeReg">—</p><p class="text-xs">Registered</p></div>
+        <div class="bg-yellow-50 rounded p-3 text-center"><p class="text-2xl font-bold text-yellow-700" id="aPipeApp">—</p><p class="text-xs">Applied</p></div>
+        <div class="bg-green-50 rounded p-3 text-center"><p class="text-2xl font-bold text-green-700" id="aPipeOffer">—</p><p class="text-xs">Offer</p></div>
+        <div class="bg-red-50 rounded p-3 text-center"><p class="text-2xl font-bold text-red-700" id="aPipeCAS">—</p><p class="text-xs">CAS/Visa</p></div>
+      </div>
+      <p class="text-sm text-gray-600">Drill-down to <a href="/applications" class="text-blue-600 underline">Applications module</a> for full case management. All admissions counts are pulled from live application data.</p>
+    </div>
+  `;
+  // Load pipeline counts
+  fetch('/api/applications').then(r=>r.json()).then(j=>{
+    const items = j.items || j.applications || j || [];
+    const arr = Array.isArray(items) ? items : Object.values(items);
+    const c = { inquiry:0, registered:0, applied:0, offer:0, cas:0 };
+    arr.forEach(a=>{
+      const s = String(a.status||a.stage||'').toLowerCase();
+      if (s.includes('cas')) c.cas++;
+      else if (s.includes('offer') || s.includes('co')) c.offer++;
+      else if (s.includes('applied') || s.includes('processing')) c.applied++;
+      else if (s.includes('reg')) c.registered++;
+      else c.inquiry++;
+    });
+    document.getElementById('aPipeInquiry').textContent = c.inquiry;
+    document.getElementById('aPipeReg').textContent = c.registered;
+    document.getElementById('aPipeApp').textContent = c.applied;
+    document.getElementById('aPipeOffer').textContent = c.offer;
+    document.getElementById('aPipeCAS').textContent = c.cas;
+  }).catch(()=>{});
+}
+
+// ===== CONVERSION =====
+function renderConversion(el) {
+  const k = state.kpi.weekly || {};
+  el.innerHTML = `
+    <div class="bg-white rounded-xl shadow-sm p-6">
+      <h2 class="text-xl font-bold mb-4"><i class="fas fa-exchange-alt text-green-600 mr-2"></i>Lead → Student Conversion Tracker</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-blue-50 rounded p-4"><p class="text-3xl font-bold text-blue-700">${k.studentFollowUps||0}</p><p class="text-sm text-gray-600">Follow-Ups (week)</p></div>
+        <div class="bg-green-50 rounded p-4"><p class="text-3xl font-bold text-green-700">${k.registrationsConverted||0}</p><p class="text-sm text-gray-600">Conversions (week)</p></div>
+        <div class="bg-purple-50 rounded p-4"><p class="text-3xl font-bold text-purple-700">${k.applicationsSubmitted||0}</p><p class="text-sm text-gray-600">Applications</p></div>
+      </div>
+      <p class="text-sm text-gray-600 mb-3">Use the Lead Management page to log new conversions; this view auto-aggregates.</p>
+      <a href="/lead-management" class="inline-block px-4 py-2 bg-blue-600 text-white rounded">Open Lead Management →</a>
+    </div>
+  `;
+}
+
+// ===== INTERVIEW PREP =====
+function renderInterviews(el) {
+  el.innerHTML = `
+    <div class="bg-white rounded-xl shadow-sm p-6">
+      <div class="flex justify-between mb-4">
+        <h2 class="text-xl font-bold"><i class="fas fa-microphone-alt text-purple-600 mr-2"></i>Interview Preparation Tracker</h2>
+        <button onclick="addInterview()" class="px-4 py-2 bg-purple-600 text-white rounded text-sm"><i class="fas fa-plus mr-1"></i>Schedule Interview</button>
+      </div>
+      <table class="w-full text-sm border border-gray-200 rounded">
+        <thead class="bg-gray-100"><tr><th class="p-2 text-left">Student</th><th class="p-2 text-left">Type</th><th class="p-2 text-left">University</th><th class="p-2 text-left">Scheduled</th><th class="p-2 text-left">Status</th><th class="p-2"></th></tr></thead>
+        <tbody id="ivBody">
+          ${state.interviews.map(i=>`
+            <tr class="border-t border-gray-200">
+              <td class="p-2 font-medium">${i.studentName}</td>
+              <td class="p-2"><span class="px-2 py-0.5 text-xs rounded ${i.type==='Credibility'?'bg-yellow-100 text-yellow-800':i.type==='Visa'?'bg-red-100 text-red-800':'bg-blue-100 text-blue-800'}">${i.type}</span></td>
+              <td class="p-2">${i.university||'-'}</td>
+              <td class="p-2 text-xs">${i.scheduledFor||'-'}</td>
+              <td class="p-2"><span class="px-2 py-0.5 text-xs rounded bg-gray-100">${i.status||'planned'}</span></td>
+              <td class="p-2 text-right"><button onclick="delInterview('${i.id}')" class="text-red-600 text-xs"><i class="fas fa-trash"></i></button></td>
+            </tr>
+          `).join('') || '<tr><td colspan="6" class="p-4 text-center text-gray-500">No interviews scheduled</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+async function addInterview() {
+  const studentName = prompt('Student name?');
+  if (!studentName) return;
+  const type = prompt('Type? (Credibility / Visa / Mock)', 'Mock');
+  const university = prompt('University (optional)?', '');
+  const scheduledFor = prompt('Scheduled for (e.g. 2026-05-15 10:00)?', '');
+  const res = await fetch('/api/staff-portal/interviews/GG003', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ studentName, type, university, scheduledFor, status:'planned' }) });
+  const j = await res.json();
+  if (j.success) switchTab('interviews');
+}
+async function delInterview(id) {
+  if (!confirm('Delete?')) return;
+  await fetch('/api/staff-portal/interviews/GG003/' + id, { method:'DELETE' });
+  switchTab('interviews');
+}
+
+// ===== ESCALATIONS =====
+function renderEscalations(el) {
+  el.innerHTML = `
+    <div class="bg-white rounded-xl shadow-sm p-6">
+      <div class="flex justify-between mb-4">
+        <h2 class="text-xl font-bold"><i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>Client Escalation & Complaint Handling</h2>
+        <button onclick="addEscalation()" class="px-4 py-2 bg-red-600 text-white rounded text-sm"><i class="fas fa-plus mr-1"></i>Log Escalation</button>
+      </div>
+      <div class="space-y-3">
+        ${state.escalations.map(e=>`
+          <div class="priority-${(e.priority||'P2').toLowerCase()} p-4 rounded">
+            <div class="flex justify-between">
+              <div>
+                <strong>${e.studentName}</strong>
+                <span class="ml-2 text-xs px-2 py-0.5 rounded bg-white">${e.priority||'P2'}</span>
+                <span class="ml-2 text-xs px-2 py-0.5 rounded ${e.status==='resolved'?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${e.status||'open'}</span>
+              </div>
+              <div class="flex gap-2">
+                ${e.status!=='resolved'?`<button onclick="resolveEscalation('${e.id}')" class="text-xs px-2 py-1 bg-green-600 text-white rounded">Resolve</button>`:''}
+                <button onclick="delEscalation('${e.id}')" class="text-xs px-2 py-1 bg-gray-600 text-white rounded"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+            <p class="text-sm mt-2">${e.issue}</p>
+            <p class="text-xs text-gray-600 mt-1"><i class="fas fa-clock"></i> ${new Date(e.createdAt).toLocaleString()} ${e.resolvedAt?` · Resolved ${new Date(e.resolvedAt).toLocaleString()}`:''}</p>
+          </div>
+        `).join('') || '<p class="text-gray-500">No escalations logged.</p>'}
+      </div>
+    </div>
+  `;
+}
+async function addEscalation() {
+  const studentName = prompt('Student name?'); if (!studentName) return;
+  const priority = prompt('Priority? (P1/P2/P3)', 'P1');
+  const issue = prompt('Describe the issue/complaint:');
+  if (!issue) return;
+  await fetch('/api/staff-portal/escalations/GG003', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ studentName, priority, issue, status:'open' }) });
+  switchTab('escalations');
+}
+async function resolveEscalation(id) {
+  await fetch('/api/staff-portal/escalations/GG003/' + id + '/resolve', { method:'POST' });
+  switchTab('escalations');
+}
+async function delEscalation(id) {
+  if (!confirm('Delete?')) return;
+  await fetch('/api/staff-portal/escalations/GG003/' + id, { method:'DELETE' });
+  switchTab('escalations');
+}
+
+// ===== UNI COORD =====
+function renderUniCoord(el) {
+  el.innerHTML = `
+    <div class="bg-white rounded-xl shadow-sm p-6">
+      <div class="flex justify-between mb-4">
+        <h2 class="text-xl font-bold"><i class="fas fa-university text-indigo-600 mr-2"></i>University Coordination Log</h2>
+        <button onclick="addUniFU()" class="px-4 py-2 bg-indigo-600 text-white rounded text-sm"><i class="fas fa-plus mr-1"></i>Add Follow-Up</button>
+      </div>
+      <table class="w-full text-sm border border-gray-200 rounded">
+        <thead class="bg-gray-100"><tr><th class="p-2 text-left">University</th><th class="p-2 text-left">Student</th><th class="p-2 text-left">Type</th><th class="p-2 text-left">Days Open</th><th class="p-2 text-left">Status</th><th class="p-2"></th></tr></thead>
+        <tbody>
+          ${state.uniFollowUps.map(u=>`
+            <tr class="border-t border-gray-200">
+              <td class="p-2 font-medium">${u.university}</td>
+              <td class="p-2">${u.studentName}</td>
+              <td class="p-2"><span class="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700">${u.type}</span></td>
+              <td class="p-2 ${u.daysOpen>=7?'text-red-600 font-bold':''}">${u.daysOpen||0}</td>
+              <td class="p-2"><span class="text-xs px-2 py-0.5 rounded bg-gray-100">${u.status||'open'}</span></td>
+              <td class="p-2 text-right"><button onclick="delUniFU('${u.id}')" class="text-red-600 text-xs"><i class="fas fa-trash"></i></button></td>
+            </tr>
+          `).join('') || '<tr><td colspan="6" class="p-4 text-center text-gray-500">No follow-ups logged</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+async function addUniFU() {
+  const university = prompt('University?'); if (!university) return;
+  const studentName = prompt('Student?'); if (!studentName) return;
+  const type = prompt('Type? (Offer / CAS / COE / Document / Deadline)', 'Offer');
+  await fetch('/api/staff-portal/uni-followups/GG003', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ university, studentName, type, status:'open' }) });
+  switchTab('uni-coord');
+}
+async function delUniFU(id) {
+  if (!confirm('Delete?')) return;
+  await fetch('/api/staff-portal/uni-followups/GG003/' + id, { method:'DELETE' });
+  switchTab('uni-coord');
+}
+
+// ===== KPI =====
+function renderKPI(el) {
+  const w = state.kpi.weekly || {}, m = state.kpi.monthly || {};
+  el.innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-white rounded-xl shadow-sm p-6">
+        <h3 class="font-semibold mb-4 text-gray-800"><i class="fas fa-calendar-week text-blue-600 mr-2"></i>Weekly KPIs</h3>
+        <div class="grid grid-cols-2 gap-3">
+          ${[
+            ['Student Follow-Ups', w.studentFollowUps||0, 'blue'],
+            ['Registrations Converted', w.registrationsConverted||0, 'green'],
+            ['Applications Submitted', w.applicationsSubmitted||0, 'purple'],
+            ['Offer Letters Received', w.offerLettersReceived||0, 'yellow'],
+            ['Interviews Completed', w.interviewsCompleted||0, 'pink'],
+            ['Pending Cases Reduced', w.pendingReduced||0, 'indigo'],
+            ['Escalations Resolved', w.escalationsResolved||0, 'red']
+          ].map(([l,v,c])=>`
+            <div class="bg-${c}-50 rounded p-3 border border-${c}-200">
+              <p class="text-xs text-gray-600">${l}</p>
+              <p class="text-2xl font-bold text-${c}-700">${v}</p>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-6">
+        <h3 class="font-semibold mb-4 text-gray-800"><i class="fas fa-calendar-alt text-purple-600 mr-2"></i>Monthly KPIs</h3>
+        <div class="grid grid-cols-2 gap-3">
+          ${[
+            ['Total Conversions', m.totalConversions||0, 'green'],
+            ['Revenue Contribution', m.revenueContribution||0, 'yellow'],
+            ['Client Retention %', m.retentionRate||0, 'blue'],
+            ['App Success Ratio %', m.appSuccessRatio||0, 'purple'],
+            ['Operational Score', m.operationalScore||0, 'indigo'],
+            ['Team Support Score', m.teamSupportScore||0, 'pink']
+          ].map(([l,v,c])=>`
+            <div class="bg-${c}-50 rounded p-3 border border-${c}-200">
+              <p class="text-xs text-gray-600">${l}</p>
+              <p class="text-2xl font-bold text-${c}-700">${v}</p>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 mt-6">
+      <h3 class="font-semibold mb-3">KPI Trend</h3>
+      <canvas id="kpiTrend" height="80"></canvas>
+    </div>
+  `;
+  setTimeout(() => {
+    const ctx = document.getElementById('kpiTrend');
+    if (ctx) new Chart(ctx, {
+      type:'line',
+      data:{
+        labels: ['Mon','Tue','Wed','Thu','Fri','Sat'],
+        datasets:[
+          { label:'Conversions', data: w.dailyConversions || [0,0,0,0,0,0], borderColor:'#16a34a', tension:.3, fill:false },
+          { label:'Follow-ups', data: w.dailyFollowUps || [0,0,0,0,0,0], borderColor:'#2563eb', tension:.3, fill:false }
+        ]
+      },
+      options:{ responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}} }
+    });
+  }, 100);
+}
+
+// ===== HR / ADMIN =====
+function renderHR(el) {
+  el.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white rounded-xl shadow-sm p-6">
+        <h3 class="font-semibold mb-3"><i class="fas fa-money-bill-wave text-green-600 mr-2"></i>Salary Preparation Support</h3>
+        <p class="text-sm text-gray-600 mb-3">Track payroll prep tasks for monthly salary processing.</p>
+        <a href="/finance-commission" class="inline-block px-4 py-2 bg-green-600 text-white rounded">Open Finance Module →</a>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-6">
+        <h3 class="font-semibold mb-3"><i class="fas fa-clipboard-list text-blue-600 mr-2"></i>Operational Records</h3>
+        <p class="text-sm text-gray-600 mb-3">Documentation, reports, and operational logs.</p>
+        <a href="/reports" class="inline-block px-4 py-2 bg-blue-600 text-white rounded">Open Reports →</a>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-6">
+        <h3 class="font-semibold mb-3"><i class="fas fa-user-clock text-purple-600 mr-2"></i>Leave Management</h3>
+        <a href="/leave-management" class="inline-block px-4 py-2 bg-purple-600 text-white rounded">Open Leave →</a>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-6">
+        <h3 class="font-semibold mb-3"><i class="fas fa-shield-alt text-red-600 mr-2"></i>Red Flags / Risk Management</h3>
+        <a href="/red-flags" class="inline-block px-4 py-2 bg-red-600 text-white rounded">Open Red Flags →</a>
+      </div>
+    </div>
+  `;
+}
+
+// Initial load
+switchTab('dashboard');
+</script>
+
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

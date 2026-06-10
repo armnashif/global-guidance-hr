@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance & Commission Management - Global Guidance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body.in-iframe .top-nav { display: none; }
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .status-not-eligible { background: #f3f4f6; color: #6b7280; }
+        .status-eligible { background: #dbeafe; color: #1e40af; }
+        .status-approved { background: #d1fae5; color: #065f46; }
+        .status-paid { background: #d1fae5; color: #065f46; }
+        .status-blocked { background: #fee2e2; color: #991b1b; }
+        .status-expected { background: #fef3c7; color: #92400e; }
+        .status-invoiced { background: #dbeafe; color: #1e40af; }
+        .status-partially-paid { background: #fde68a; color: #92400e; }
+        .status-disputed { background: #fee2e2; color: #991b1b; }
+        .chart-container { position: relative; height: 300px; }
+        .module-card { transition: all 0.3s ease; }
+        .module-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Top Navigation -->
+    <nav class="top-nav bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-coins text-blue-600 mr-2"></i>
+                Finance & Commission Management
+            </h1>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-600" id="lastUpdate">Last updated: Just now</span>
+                <button onclick="refreshData()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-6 max-w-7xl">
+        <!-- Module Navigation Tabs -->
+        <div class="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
+            <div class="flex flex-wrap border-b border-gray-200">
+                <button onclick="switchModule('dashboard')" id="tab-dashboard" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab">
+                    <i class="fas fa-chart-line mr-2"></i>Dashboard
+                </button>
+                <button onclick="switchModule('payable')" id="tab-payable" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab">
+                    <i class="fas fa-hand-holding-usd mr-2"></i>Commission Payable
+                </button>
+                <button onclick="switchModule('receivable')" id="tab-receivable" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab">
+                    <i class="fas fa-receipt mr-2"></i>Commission Receivable
+                </button>
+                <button onclick="switchModule('banking')" id="tab-banking" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab">
+                    <i class="fas fa-university mr-2"></i>Daily Banking
+                </button>
+                <button onclick="switchModule('cashflow')" id="tab-cashflow" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab">
+                    <i class="fas fa-chart-area mr-2"></i>Cashflow
+                </button>
+                <button onclick="switchModule('petty')" id="tab-petty" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab">
+                    <i class="fas fa-money-bill-wave mr-2"></i>Petty Cash
+                </button>
+                <button onclick="switchModule('budget')" id="tab-budget" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab">
+                    <i class="fas fa-calculator mr-2"></i>Budget
+                </button>
+            </div>
+        </div>
+
+        <!-- Module Container -->
+        <div id="moduleContainer"></div>
+    </div>
+
+    <script>
+        // Check if in iframe
+        const isInIframe = window.self !== window.top;
+        if (isInIframe) document.body.classList.add('in-iframe');
+
+        // Demo Data
+        const FINANCE_DATA = {
+            commissionPayable: [
+                { id: 1, studentName: 'Kishara - kaluthatra', applicationId: 'GG-2024-001', university: 'DMU', country: 'UK', intake: 'Sep 2024', agentName: 'Winners Education', agentCode: 'WE001', commissionType: 'Standard', commissionBase: 'Year 1', rate: 10, currency: 'GBP', baseAmount: 15000, calculatedCommission: 1500, fxRate: 385, commissionLKR: 577500, status: 'Paid', eligibilityTrigger: 'Enrolment', paymentMethod: 'Bank Transfer', paymentRef: 'BT-20240115', paymentDate: '2024-01-15', processedBy: 'Razan', notes: 'Paid on time' },
+                { id: 2, studentName: 'Shiromia', applicationId: 'GG-2024-002', university: 'LSBU', country: 'UK', intake: 'Jan 2024', agentName: 'Sakeen Consultants', agentCode: 'SK002', commissionType: 'Standard', commissionBase: 'Year 1', rate: 12, currency: 'GBP', baseAmount: 14500, calculatedCommission: 1740, fxRate: 385, commissionLKR: 669900, status: 'Approved', eligibilityTrigger: 'CAS Issued', paymentMethod: 'Bank Transfer', paymentRef: '', paymentDate: '', processedBy: '', notes: 'Pending payment' },
+                { id: 3, studentName: 'Kanimoly', applicationId: 'GG-2024-003', university: 'Sunderland', country: 'UK', intake: 'Sep 2024', agentName: 'Aqeel Global', agentCode: 'AG003', commissionType: 'Top-up', commissionBase: 'Full Tuition', rate: 15, currency: 'GBP', baseAmount: 18000, calculatedCommission: 2700, fxRate: 385, commissionLKR: 1039500, status: 'Eligible', eligibilityTrigger: 'Fee Paid 100%', paymentMethod: '', paymentRef: '', paymentDate: '', processedBy: '', notes: 'Awaiting approval' },
+                { id: 4, studentName: 'Devaka', applicationId: 'GG-2024-004', university: 'UWE Bristol', country: 'UK', intake: 'Sep 2024', agentName: 'Winners Education', agentCode: 'WE001', commissionType: 'Standard', commissionBase: 'Year 1', rate: 10, currency: 'GBP', baseAmount: 16200, calculatedCommission: 1620, fxRate: 385, commissionLKR: 623700, status: 'Approved', eligibilityTrigger: 'Visa Granted', paymentMethod: 'Cash', paymentRef: '', paymentDate: '', processedBy: '', notes: 'Cash payment scheduled' },
+                { id: 5, studentName: 'Ajmal', applicationId: 'GG-2024-005', university: 'UWE Bristol', country: 'UK', intake: 'Sep 2024', agentName: 'Mushad Edu', agentCode: 'ME004', commissionType: 'Standard', commissionBase: 'Year 1', rate: 10, currency: 'GBP', baseAmount: 15800, calculatedCommission: 1580, fxRate: 385, commissionLKR: 608300, status: 'Not Eligible', eligibilityTrigger: '', paymentMethod: '', paymentRef: '', paymentDate: '', processedBy: '', notes: 'Awaiting CAS' }
+            ],
+            commissionReceivable: [
+                { id: 1, university: 'DMU', partner: 'Direct', contractType: 'Recruitment', studentName: 'Kishara - kaluthatra', program: 'MBA Global', intake: 'Sep 2024', commissionBase: 15000, rate: 15, currency: 'GBP', calculatedCommission: 2250, fxRate: 385, commissionLKR: 866250, invoiceNumber: 'INV-DMU-001', invoiceDate: '2024-01-10', status: 'Paid', paymentDueDate: '2024-02-10', amountReceived: 2250, receivedDate: '2024-01-25', bank: 'Commercial Bank', outstandingBalance: 0, riskFlag: 'On-track', notes: 'Received on time' },
+                { id: 2, university: 'LSBU', partner: 'ONCAMPUS', contractType: 'Pathway', studentName: 'Shiromia', program: 'Business Management', intake: 'Jan 2024', commissionBase: 14500, rate: 12, currency: 'GBP', calculatedCommission: 1740, fxRate: 385, commissionLKR: 669900, invoiceNumber: 'INV-LSBU-002', invoiceDate: '2024-01-15', status: 'Invoiced', paymentDueDate: '2024-02-15', amountReceived: 0, receivedDate: '', bank: '', outstandingBalance: 1740, riskFlag: 'Normal', notes: 'Payment due soon' },
+                { id: 3, university: 'Sunderland', partner: 'Direct', contractType: 'Recruitment', studentName: 'Kanimoly', program: 'Business & Events', intake: 'Sep 2024', commissionBase: 18000, rate: 18, currency: 'GBP', calculatedCommission: 3240, fxRate: 385, commissionLKR: 1247400, invoiceNumber: 'INV-SUN-003', invoiceDate: '2023-12-20', status: 'Partially Paid', paymentDueDate: '2024-01-20', amountReceived: 1620, receivedDate: '2024-01-10', bank: 'Commercial Bank', outstandingBalance: 1620, riskFlag: 'High Delay', notes: 'Partial payment received, following up for balance' },
+                { id: 4, university: 'UWE Bristol', partner: 'Direct', contractType: 'Recruitment', studentName: 'Devaka', program: 'Business & Event Management', intake: 'Sep 2024', commissionBase: 16200, rate: 14, currency: 'GBP', calculatedCommission: 2268, fxRate: 385, commissionLKR: 873180, invoiceNumber: 'INV-UWE-004', invoiceDate: '2024-01-05', status: 'Expected', paymentDueDate: '2024-03-05', amountReceived: 0, receivedDate: '', bank: '', outstandingBalance: 2268, riskFlag: 'Normal', notes: 'Awaiting enrolment confirmation' },
+                { id: 5, university: 'Coventry', partner: 'Direct', contractType: 'Recruitment', studentName: 'Mafaz', program: 'Computer Science', intake: 'Sep 2024', commissionBase: 17500, rate: 16, currency: 'GBP', calculatedCommission: 2800, fxRate: 385, commissionLKR: 1078000, invoiceNumber: '', invoiceDate: '', status: 'Expected', paymentDueDate: '', amountReceived: 0, receivedDate: '', bank: '', outstandingBalance: 2800, riskFlag: 'On-track', notes: 'Student enrolled, will invoice next week' }
+            ],
+            dailyBanking: [
+                { id: 1, date: '2026-02-08', bank: 'Commercial Bank - Personal', accountType: 'Savings', accountNumber: '****1234', currency: 'LKR', morningBalance: 2450000, eveningBalance: 2380000, movement: -70000, morningUpdate: '09:45 AM', eveningUpdate: '06:15 PM', status: 'Green', notes: 'Agent commission paid', screenshot: true },
+                { id: 2, date: '2026-02-08', bank: 'Commercial Bank - Company', accountType: 'Current', accountNumber: '****5678', currency: 'LKR', morningBalance: 5600000, eveningBalance: 5750000, movement: 150000, morningUpdate: '09:30 AM', eveningUpdate: '06:30 PM', status: 'Green', notes: 'University commission received', screenshot: true },
+                { id: 3, date: '2026-02-08', bank: 'Amana Bank - Company', accountType: 'Current', accountNumber: '****9012', currency: 'LKR', morningBalance: 1200000, eveningBalance: 1200000, movement: 0, morningUpdate: '09:50 AM', eveningUpdate: '06:20 PM', status: 'Green', notes: 'No transactions', screenshot: false },
+                { id: 4, date: '2026-02-08', bank: 'Revolut UK', accountType: 'Business', accountNumber: '****3456', currency: 'GBP', morningBalance: 8500, eveningBalance: 6200, movement: -2300, morningUpdate: '09:40 AM', eveningUpdate: '', status: 'Amber', notes: 'Evening update pending', screenshot: true },
+                { id: 5, date: '2026-02-07', bank: 'Commercial Bank - Personal', accountType: 'Savings', accountNumber: '****1234', currency: 'LKR', morningBalance: 2500000, eveningBalance: 2450000, movement: -50000, morningUpdate: '09:35 AM', eveningUpdate: '06:25 PM', status: 'Green', notes: 'Daily expenses', screenshot: true }
+            ],
+            pettyCash: [
+                { id: 1, date: '2026-02-08', category: 'Transport', description: 'Taxi to university meeting', amount: 1500, currency: 'LKR', paidBy: 'Thasbiha', mode: 'Cash', receipt: true, approvedBy: 'Nashif', status: 'Approved' },
+                { id: 2, date: '2026-02-08', category: 'Courier', description: 'DHL visa documents to UK', amount: 8500, currency: 'LKR', paidBy: 'Razan', mode: 'Card', receipt: true, approvedBy: 'Nashif', status: 'Approved' },
+                { id: 3, date: '2026-02-07', category: 'Printing', description: 'Marketing flyers for event', amount: 12000, currency: 'LKR', paidBy: 'Nafees', mode: 'Cash', receipt: true, approvedBy: 'Nashif', status: 'Approved' },
+                { id: 4, date: '2026-02-07', category: 'Snacks', description: 'Office refreshments', amount: 3500, currency: 'LKR', paidBy: 'Mohamed', mode: 'Reimbursable', receipt: true, approvedBy: 'Thasbiha', status: 'Pending' },
+                { id: 5, date: '2026-02-06', category: 'Stationery', description: 'Office supplies', amount: 6800, currency: 'LKR', paidBy: 'Sukaina', mode: 'Cash', receipt: false, approvedBy: '', status: 'Pending' }
+            ],
+            budget: [
+                { id: 1, category: 'Salaries', department: 'All', month: '2026-02', budget: 2500000, actual: 2500000, variance: 0, variancePercent: 0, status: 'Green' },
+                { id: 2, category: 'Rent', department: 'Operations', month: '2026-02', budget: 250000, actual: 250000, variance: 0, variancePercent: 0, status: 'Green' },
+                { id: 3, category: 'Marketing', department: 'Marketing', month: '2026-02', budget: 500000, actual: 385000, variance: -115000, variancePercent: -23, status: 'Green' },
+                { id: 4, category: 'Agent Commission', department: 'Finance', month: '2026-02', budget: 1000000, actual: 1270000, variance: 270000, variancePercent: 27, status: 'Amber' },
+                { id: 5, category: 'Travel', department: 'All', month: '2026-02', budget: 150000, actual: 185000, variance: 35000, variancePercent: 23, status: 'Amber' },
+                { id: 6, category: 'Miscellaneous', department: 'Operations', month: '2026-02', budget: 200000, actual: 167000, variance: -33000, variancePercent: -16.5, status: 'Green' }
+            ]
+        };
+
+        // Current module state
+        let currentModule = 'dashboard';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            switchModule('dashboard');
+        });
+
+        // Switch Module Function
+        function switchModule(module) {
+            currentModule = module;
+            
+            // Update tab styling
+            document.querySelectorAll('.module-tab').forEach(tab => {
+                tab.classList.remove('border-blue-600', 'text-blue-600');
+                tab.classList.add('border-transparent');
+            });
+            document.getElementById(`tab-${module}`).classList.add('border-blue-600', 'text-blue-600');
+            document.getElementById(`tab-${module}`).classList.remove('border-transparent');
+
+            // Render module content
+            const container = document.getElementById('moduleContainer');
+            switch(module) {
+                case 'dashboard':
+                    container.innerHTML = renderDashboard();
+                    setTimeout(initDashboardCharts, 100);
+                    break;
+                case 'payable':
+                    container.innerHTML = renderCommissionPayable();
+                    break;
+                case 'receivable':
+                    container.innerHTML = renderCommissionReceivable();
+                    break;
+                case 'banking':
+                    container.innerHTML = renderDailyBanking();
+                    setTimeout(initBankingCharts, 100);
+                    break;
+                case 'cashflow':
+                    container.innerHTML = renderCashflow();
+                    setTimeout(initCashflowCharts, 100);
+                    break;
+                case 'petty':
+                    container.innerHTML = renderPettyCash();
+                    break;
+                case 'budget':
+                    container.innerHTML = renderBudget();
+                    setTimeout(initBudgetCharts, 100);
+                    break;
+            }
+        }
+
+        // Dashboard Module
+        function renderDashboard() {
+            const totalReceivable = FINANCE_DATA.commissionReceivable.reduce((sum, c) => sum + c.outstandingBalance * c.fxRate, 0);
+            const totalPayable = FINANCE_DATA.commissionPayable.filter(c => c.status !== 'Paid').reduce((sum, c) => sum + c.commissionLKR, 0);
+            const netCommission = totalReceivable - totalPayable;
+            const overdue = FINANCE_DATA.commissionReceivable.filter(c => c.riskFlag === 'High Delay').reduce((sum, c) => sum + c.outstandingBalance * c.fxRate, 0);
+            const thisMonthPaid = FINANCE_DATA.commissionPayable.filter(c => c.status === 'Paid').reduce((sum, c) => sum + c.commissionLKR, 0);
+            const thisMonthReceived = FINANCE_DATA.commissionReceivable.filter(c => c.status === 'Paid').reduce((sum, c) => sum + c.commissionLKR, 0);
+
+            return `
+                <div class="space-y-6">
+                    <!-- Summary Tiles -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">Commission Receivable</p>
+                                    <p class="text-2xl font-bold text-gray-800 mt-1">LKR ${totalReceivable.toLocaleString()}</p>
+                                </div>
+                                <i class="fas fa-arrow-down text-green-500 text-3xl"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-red-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">Commission Payable</p>
+                                    <p class="text-2xl font-bold text-gray-800 mt-1">LKR ${totalPayable.toLocaleString()}</p>
+                                </div>
+                                <i class="fas fa-arrow-up text-red-500 text-3xl"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">Net Commission</p>
+                                    <p class="text-2xl font-bold text-gray-800 mt-1">LKR ${netCommission.toLocaleString()}</p>
+                                </div>
+                                <i class="fas fa-balance-scale text-blue-500 text-3xl"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-orange-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">Overdue Commission</p>
+                                    <p class="text-2xl font-bold text-gray-800 mt-1">LKR ${overdue.toLocaleString()}</p>
+                                </div>
+                                <i class="fas fa-exclamation-triangle text-orange-500 text-3xl"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-purple-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">This Month Paid to Agents</p>
+                                    <p class="text-2xl font-bold text-gray-800 mt-1">LKR ${thisMonthPaid.toLocaleString()}</p>
+                                </div>
+                                <i class="fas fa-hand-holding-usd text-purple-500 text-3xl"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-teal-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">This Month Received from Unis</p>
+                                    <p class="text-2xl font-bold text-gray-800 mt-1">LKR ${thisMonthReceived.toLocaleString()}</p>
+                                </div>
+                                <i class="fas fa-university text-teal-500 text-3xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-lg shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Commission by Country</h3>
+                            <div class="chart-container">
+                                <canvas id="countryChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Agents by Commission</h3>
+                            <div class="chart-container">
+                                <canvas id="agentChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Transactions</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2024-01-25</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Kishara - kaluthatra</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Commission Received</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">LKR 866,250</td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><span class="status-badge status-paid">Paid</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2024-01-15</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Kishara - kaluthatra</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Agent Commission</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">LKR 577,500</td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><span class="status-badge status-paid">Paid</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initDashboardCharts() {
+            // Country Chart
+            const countryCtx = document.getElementById('countryChart');
+            if (countryCtx) {
+                new Chart(countryCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['UK', 'Canada', 'Australia', 'Other'],
+                        datasets: [{
+                            data: [85, 10, 3, 2],
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#6b7280']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            }
+
+            // Agent Chart
+            const agentCtx = document.getElementById('agentChart');
+            if (agentCtx) {
+                new Chart(agentCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Winners Edu', 'Sakeen', 'Aqeel Global', 'Mushad Edu'],
+                        datasets: [{
+                            label: 'Commission (LKR)',
+                            data: [1201200, 669900, 1039500, 608300],
+                            backgroundColor: '#3b82f6'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Commission Payable Module
+        function renderCommissionPayable() {
+            return `
+                <div class="space-y-6">
+                    <!-- Filters -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <input type="text" placeholder="Search student..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option>All Agents</option>
+                                <option>Winners Education</option>
+                                <option>Sakeen Consultants</option>
+                                <option>Aqeel Global</option>
+                            </select>
+                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option>All Status</option>
+                                <option>Not Eligible</option>
+                                <option>Eligible</option>
+                                <option>Approved</option>
+                                <option>Paid</option>
+                            </select>
+                            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-download mr-2"></i>Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">University</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Agent</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commission (LKR)</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    ${FINANCE_DATA.commissionPayable.map(c => `
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm font-medium text-gray-900">${c.studentName}</div>
+                                                <div class="text-xs text-gray-500">${c.applicationId}</div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm text-gray-900">${c.university}</div>
+                                                <div class="text-xs text-gray-500">${c.country} - ${c.intake}</div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm text-gray-900">${c.agentName}</div>
+                                                <div class="text-xs text-gray-500">${c.agentCode}</div>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-900">${c.commissionType}</td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm font-medium text-gray-900">LKR ${c.commissionLKR.toLocaleString()}</div>
+                                                <div class="text-xs text-gray-500">${c.currency} ${c.calculatedCommission} @ ${c.fxRate}</div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <span class="status-badge status-${c.status.toLowerCase().replace(' ', '-')}">${c.status}</span>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <button class="text-blue-600 hover:text-blue-800 mr-3">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="text-green-600 hover:text-green-800">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Commission Receivable Module  
+        function renderCommissionReceivable() {
+            return `
+                <div class="space-y-6">
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-yellow-500">
+                            <p class="text-xs text-gray-600">Expected</p>
+                            <p class="text-xl font-bold text-gray-800 mt-1">LKR ${FINANCE_DATA.commissionReceivable.filter(c => c.status === 'Expected').reduce((sum, c) => sum + c.commissionLKR, 0).toLocaleString()}</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-blue-500">
+                            <p class="text-xs text-gray-600">Invoiced</p>
+                            <p class="text-xl font-bold text-gray-800 mt-1">LKR ${FINANCE_DATA.commissionReceivable.filter(c => c.status === 'Invoiced').reduce((sum, c) => sum + c.commissionLKR, 0).toLocaleString()}</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-orange-500">
+                            <p class="text-xs text-gray-600">Overdue</p>
+                            <p class="text-xl font-bold text-gray-800 mt-1">LKR ${FINANCE_DATA.commissionReceivable.filter(c => c.riskFlag === 'High Delay').reduce((sum, c) => sum + c.commissionLKR, 0).toLocaleString()}</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-green-500">
+                            <p class="text-xs text-gray-600">Received</p>
+                            <p class="text-xl font-bold text-gray-800 mt-1">LKR ${FINANCE_DATA.commissionReceivable.filter(c => c.status === 'Paid').reduce((sum, c) => sum + c.commissionLKR, 0).toLocaleString()}</p>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <input type="text" placeholder="Search..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option>All Universities</option>
+                                <option>DMU</option>
+                                <option>LSBU</option>
+                                <option>Sunderland</option>
+                            </select>
+                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option>All Status</option>
+                                <option>Expected</option>
+                                <option>Invoiced</option>
+                                <option>Paid</option>
+                            </select>
+                            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-download mr-2"></i>Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">University/Student</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Program</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commission (LKR)</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Outstanding</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    ${FINANCE_DATA.commissionReceivable.map(c => `
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm font-medium text-gray-900">${c.university}</div>
+                                                <div class="text-xs text-gray-500">${c.studentName}</div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm text-gray-900">${c.program}</div>
+                                                <div class="text-xs text-gray-500">${c.intake}</div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm text-gray-900">${c.invoiceNumber || 'Pending'}</div>
+                                                <div class="text-xs text-gray-500">${c.invoiceDate || '-'}</div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm font-medium text-gray-900">LKR ${c.commissionLKR.toLocaleString()}</div>
+                                                <div class="text-xs text-gray-500">${c.currency} ${c.calculatedCommission}</div>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm font-medium ${c.outstandingBalance > 0 ? 'text-red-600' : 'text-green-600'}">
+                                                ${c.currency} ${c.outstandingBalance}
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <span class="status-badge status-${c.status.toLowerCase().replace(' ', '-')}">${c.status}</span>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded ${
+                                                    c.riskFlag === 'On-track' ? 'bg-green-100 text-green-800' :
+                                                    c.riskFlag === 'Normal' ? 'bg-yellow-100 text-yellow-800' :
+                                                    'bg-red-100 text-red-800'
+                                                }">${c.riskFlag}</span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Daily Banking Module
+        function renderDailyBanking() {
+            return `
+                <div class="space-y-6">
+                    <!-- Alert Banner -->
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                        <div class="flex">
+                            <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                            <div>
+                                <p class="font-medium text-blue-800">Daily Banking Updates Required</p>
+                                <p class="text-sm text-blue-700 mt-1">Morning update: Before 10 AM | Evening update: After 6 PM</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Today's Status -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Today's Banking Status - ${new Date().toLocaleDateString()}</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <p class="text-sm font-medium text-green-800">Morning Updates</p>
+                                    <i class="fas fa-sun text-green-600"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-green-700">4/7</p>
+                                <p class="text-xs text-green-600 mt-1">Accounts updated</p>
+                            </div>
+                            <div class="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <p class="text-sm font-medium text-orange-800">Evening Updates</p>
+                                    <i class="fas fa-moon text-orange-600"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-orange-700">3/7</p>
+                                <p class="text-xs text-orange-600 mt-1">Accounts pending</p>
+                            </div>
+                            <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <p class="text-sm font-medium text-blue-800">Net Movement</p>
+                                    <i class="fas fa-exchange-alt text-blue-600"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-blue-700">LKR 80K</p>
+                                <p class="text-xs text-blue-600 mt-1">Positive flow</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bank Balances Table -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-800">Bank Account Balances</h3>
+                            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                                <i class="fas fa-plus mr-2"></i>Add Update
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bank / Account</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Morning Balance</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Evening Balance</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Movement</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    ${FINANCE_DATA.dailyBanking.filter(b => b.date === '2026-02-08').map(b => `
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm font-medium text-gray-900">${b.bank}</div>
+                                                <div class="text-xs text-gray-500">${b.accountNumber} • ${b.currency}</div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm font-medium text-gray-900">${b.currency} ${b.morningBalance.toLocaleString()}</div>
+                                                <div class="text-xs text-gray-500">${b.morningUpdate}</div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm font-medium text-gray-900">${b.eveningBalance ? b.currency + ' ' + b.eveningBalance.toLocaleString() : 'Pending'}</div>
+                                                <div class="text-xs text-gray-500">${b.eveningUpdate || '-'}</div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm font-medium ${b.movement > 0 ? 'text-green-600' : b.movement < 0 ? 'text-red-600' : 'text-gray-600'}">
+                                                    ${b.movement > 0 ? '+' : ''}${b.currency} ${b.movement.toLocaleString()}
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded ${
+                                                    b.status === 'Green' ? 'bg-green-100 text-green-800' :
+                                                    b.status === 'Amber' ? 'bg-yellow-100 text-yellow-800' :
+                                                    'bg-red-100 text-red-800'
+                                                }">
+                                                    <i class="fas fa-circle mr-1"></i>${b.status}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-600">${b.notes}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 7-Day Chart -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">7-Day Cash Movement</h3>
+                        <div class="chart-container">
+                            <canvas id="bankingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initBankingCharts() {
+            const ctx = document.getElementById('bankingChart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Feb 2', 'Feb 3', 'Feb 4', 'Feb 5', 'Feb 6', 'Feb 7', 'Feb 8'],
+                        datasets: [{
+                            label: 'Total Balance (LKR)',
+                            data: [9200000, 9350000, 9280000, 9420000, 9380000, 9350000, 9430000],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: false }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Cashflow Module
+        function renderCashflow() {
+            return `
+                <div class="space-y-6">
+                    <!-- Summary Tiles -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
+                            <p class="text-sm text-gray-600">Opening Balance</p>
+                            <p class="text-2xl font-bold text-gray-800 mt-1">LKR 9.2M</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
+                            <p class="text-sm text-gray-600">Expected Inflow</p>
+                            <p class="text-2xl font-bold text-gray-800 mt-1">LKR 3.5M</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-red-500">
+                            <p class="text-sm text-gray-600">Expected Outflow</p>
+                            <p class="text-2xl font-bold text-gray-800 mt-1">LKR 4.2M</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-purple-500">
+                            <p class="text-sm text-gray-600">Projected Balance</p>
+                            <p class="text-2xl font-bold text-gray-800 mt-1">LKR 8.5M</p>
+                        </div>
+                    </div>
+
+                    <!-- Cashflow Chart -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">30-Day Cashflow Projection</h3>
+                        <div class="chart-container">
+                            <canvas id="cashflowChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Transactions -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-lg shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <i class="fas fa-arrow-down text-green-600 mr-2"></i>
+                                Expected Inflows
+                            </h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center p-3 bg-green-50 rounded">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">DMU Commission</p>
+                                        <p class="text-xs text-gray-600">Due: Feb 10</p>
+                                    </div>
+                                    <p class="text-sm font-bold text-green-600">LKR 866K</p>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-green-50 rounded">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">LSBU Commission</p>
+                                        <p class="text-xs text-gray-600">Due: Feb 15</p>
+                                    </div>
+                                    <p class="text-sm font-bold text-green-600">LKR 670K</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <i class="fas fa-arrow-up text-red-600 mr-2"></i>
+                                Expected Outflows
+                            </h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center p-3 bg-red-50 rounded">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">Salaries</p>
+                                        <p class="text-xs text-gray-600">Due: Feb 25</p>
+                                    </div>
+                                    <p class="text-sm font-bold text-red-600">LKR 2.5M</p>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-red-50 rounded">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">Agent Commissions</p>
+                                        <p class="text-xs text-gray-600">Due: Feb 20</p>
+                                    </div>
+                                    <p class="text-sm font-bold text-red-600">LKR 1.2M</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initCashflowCharts() {
+            const ctx = document.getElementById('cashflowChart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                        datasets: [
+                            {
+                                label: 'Projected',
+                                data: [9200000, 8900000, 8600000, 8500000],
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderDash: [5, 5]
+                            },
+                            {
+                                label: 'Actual',
+                                data: [9200000, 9100000, null, null],
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: false }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Petty Cash Module
+        function renderPettyCash() {
+            const totalPettyCash = FINANCE_DATA.pettyCash.reduce((sum, p) => sum + p.amount, 0);
+            const approved = FINANCE_DATA.pettyCash.filter(p => p.status === 'Approved').reduce((sum, p) => sum + p.amount, 0);
+            const pending = FINANCE_DATA.pettyCash.filter(p => p.status === 'Pending').reduce((sum, p) => sum + p.amount, 0);
+
+            return `
+                <div class="space-y-6">
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
+                            <p class="text-sm text-gray-600">Petty Cash Balance</p>
+                            <p class="text-2xl font-bold text-gray-800 mt-1">LKR ${(100000 - totalPettyCash).toLocaleString()}</p>
+                            <p class="text-xs text-gray-500 mt-1">From LKR 100,000 fund</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
+                            <p class="text-sm text-gray-600">Approved Expenses</p>
+                            <p class="text-2xl font-bold text-gray-800 mt-1">LKR ${approved.toLocaleString()}</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-yellow-500">
+                            <p class="text-sm text-gray-600">Pending Approval</p>
+                            <p class="text-2xl font-bold text-gray-800 mt-1">LKR ${pending.toLocaleString()}</p>
+                        </div>
+                    </div>
+
+                    <!-- Add Entry Button -->
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <button class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-plus mr-2"></i>Add Petty Cash Entry
+                        </button>
+                    </div>
+
+                    <!-- Entries Table -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paid By</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mode</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    ${FINANCE_DATA.pettyCash.map(p => `
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 text-sm text-gray-900">${p.date}</td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-800">
+                                                    ${p.category}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-900">${p.description}</td>
+                                            <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                                ${p.currency} ${p.amount.toLocaleString()}
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-600">${p.paidBy}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-600">${p.mode}</td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded ${
+                                                    p.status === 'Approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                                }">
+                                                    ${p.status}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                ${p.receipt ? '<i class="fas fa-file-image text-blue-600 mr-2" title="Has receipt"></i>' : ''}
+                                                <button class="text-green-600 hover:text-green-800">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Budget Module
+        function renderBudget() {
+            return `
+                <div class="space-y-6">
+                    <!-- Month Selector -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-800">Budget Overview - February 2026</h3>
+                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option>February 2026</option>
+                                <option>January 2026</option>
+                                <option>December 2025</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Budget Summary -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
+                            <p class="text-sm text-gray-600">Total Budget</p>
+                            <p class="text-2xl font-bold text-gray-800 mt-1">LKR ${FINANCE_DATA.budget.reduce((s, b) => s + b.budget, 0).toLocaleString()}</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-orange-500">
+                            <p class="text-sm text-gray-600">Total Actual</p>
+                            <p class="text-2xl font-bold text-gray-800 mt-1">LKR ${FINANCE_DATA.budget.reduce((s, b) => s + b.actual, 0).toLocaleString()}</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
+                            <p class="text-sm text-gray-600">Variance</p>
+                            <p class="text-2xl font-bold text-gray-800 mt-1">LKR ${FINANCE_DATA.budget.reduce((s, b) => s + b.variance, 0).toLocaleString()}</p>
+                        </div>
+                    </div>
+
+                    <!-- Budget Chart -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Budget vs Actual</h3>
+                        <div class="chart-container">
+                            <canvas id="budgetChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Budget Table -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Budget</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actual</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Variance</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">%</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    ${FINANCE_DATA.budget.map(b => `
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 text-sm font-medium text-gray-900">${b.category}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-600">${b.department}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-900">LKR ${b.budget.toLocaleString()}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-900">LKR ${b.actual.toLocaleString()}</td>
+                                            <td class="px-6 py-4 text-sm font-medium ${b.variance < 0 ? 'text-green-600' : 'text-red-600'}">
+                                                ${b.variance > 0 ? '+' : ''}LKR ${b.variance.toLocaleString()}
+                                            </td>
+                                            <td class="px-6 py-4 text-sm ${Math.abs(b.variancePercent) > 10 ? 'text-red-600 font-bold' : 'text-gray-600'}">
+                                                ${b.variancePercent > 0 ? '+' : ''}${b.variancePercent}%
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded ${
+                                                    b.status === 'Green' ? 'bg-green-100 text-green-800' :
+                                                    b.status === 'Amber' ? 'bg-yellow-100 text-yellow-800' :
+                                                    'bg-red-100 text-red-800'
+                                                }">
+                                                    <i class="fas fa-circle mr-1"></i>${b.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initBudgetCharts() {
+            const ctx = document.getElementById('budgetChart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: FINANCE_DATA.budget.map(b => b.category),
+                        datasets: [
+                            {
+                                label: 'Budget',
+                                data: FINANCE_DATA.budget.map(b => b.budget),
+                                backgroundColor: '#3b82f6'
+                            },
+                            {
+                                label: 'Actual',
+                                data: FINANCE_DATA.budget.map(b => b.actual),
+                                backgroundColor: '#10b981'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Utility Functions
+        function refreshData() {
+            const currentTime = new Date().toLocaleTimeString();
+            document.getElementById('lastUpdate').textContent = `Last updated: ${currentTime}`;
+            switchModule(currentModule);
+        }
+    </script>
+    <script src="/shared-auth.js"></script>
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

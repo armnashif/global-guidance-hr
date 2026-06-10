@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheets Integration - Global Guidance HR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .tab-btn { border-bottom: 3px solid transparent; }
+        .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; background: #eff6ff; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="min-h-screen">
+        <nav id="topNav" class="bg-blue-600 text-white p-4 shadow-lg" style="display: none;">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold"><i class="fab fa-google mr-2"></i>Google Sheets Integration</h1>
+                <div class="flex items-center gap-4">
+                    <span id="userName" class="text-sm"></span>
+                    <a href="/" class="bg-white text-blue-600 px-4 py-2 rounded hover:bg-gray-100 transition">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto p-6">
+            <!-- Instructions Card -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                <h2 class="text-xl font-bold text-blue-900 mb-3">
+                    <i class="fas fa-info-circle mr-2"></i>How to Use Google Sheets Integration
+                </h2>
+                <div class="space-y-2 text-blue-800">
+                    <p><strong>Option 1: Export to CSV</strong></p>
+                    <ul class="list-disc ml-6 space-y-1">
+                        <li>Click "Export to CSV" below</li>
+                        <li>Open the downloaded CSV file in Google Sheets</li>
+                        <li>Edit the data in Google Sheets as needed</li>
+                    </ul>
+                    
+                    <p class="mt-4"><strong>Option 2: Import from Google Sheets</strong></p>
+                    <ul class="list-disc ml-6 space-y-1">
+                        <li>Open your Google Sheet with lead data</li>
+                        <li>Download as CSV: File → Download → CSV</li>
+                        <li>Click "Import CSV File" below and select your CSV</li>
+                        <li>Or copy cells from Google Sheets and paste in "Paste from Sheets" tab</li>
+                    </ul>
+                    
+                    <p class="mt-4"><strong>CSV Format Required:</strong></p>
+                    <p class="text-sm">Headers: Full Name, Email, Phone, Destination Country, Intake Period, Status, Lead Source, Assigned Counselor, Notes</p>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="bg-white rounded-lg shadow-sm mb-6">
+                <div class="flex border-b">
+                    <button onclick="showView('export')" id="tab-export" class="tab-btn flex-1 px-6 py-4 font-semibold active">
+                        <i class="fas fa-upload mr-2"></i>Export to CSV
+                    </button>
+                    <button onclick="showView('import-csv')" id="tab-import-csv" class="tab-btn flex-1 px-6 py-4 font-semibold">
+                        <i class="fas fa-file-csv mr-2"></i>Import CSV File
+                    </button>
+                    <button onclick="showView('paste')" id="tab-paste" class="tab-btn flex-1 px-6 py-4 font-semibold">
+                        <i class="fas fa-paste mr-2"></i>Paste from Sheets
+                    </button>
+                    <button onclick="showView('status')" id="tab-status" class="tab-btn flex-1 px-6 py-4 font-semibold">
+                        <i class="fas fa-chart-bar mr-2"></i>Sync Status
+                    </button>
+                </div>
+            </div>
+
+            <!-- Export View -->
+            <div id="view-export" class="view-content">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-bold mb-4">Export Leads to CSV</h3>
+                    <p class="text-gray-600 mb-6">
+                        Download all your leads as a CSV file that can be opened in Google Sheets.
+                    </p>
+                    
+                    <div class="flex gap-4">
+                        <button onclick="exportCSV()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+                            <i class="fas fa-download"></i>
+                            Export All Leads to CSV
+                        </button>
+                        
+                        <button onclick="openInSheets()" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition flex items-center gap-2">
+                            <i class="fab fa-google"></i>
+                            Open in Google Sheets
+                        </button>
+                    </div>
+                    
+                    <div id="exportStatus" class="mt-6"></div>
+                </div>
+            </div>
+
+            <!-- Import CSV View -->
+            <div id="view-import-csv" class="view-content hidden">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-bold mb-4">Import Leads from CSV File</h3>
+                    <p class="text-gray-600 mb-6">
+                        Upload a CSV file exported from Google Sheets or Excel.
+                    </p>
+                    
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-4">
+                        <i class="fas fa-cloud-upload-alt text-6xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-600 mb-4">Drag and drop your CSV file here, or click to browse</p>
+                        <input type="file" id="csvFile" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
+                        <button onclick="document.getElementById('csvFile').click()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                            <i class="fas fa-folder-open mr-2"></i>
+                            Choose CSV File
+                        </button>
+                    </div>
+                    
+                    <div id="importStatus" class="mt-6"></div>
+                </div>
+            </div>
+
+            <!-- Paste View -->
+            <div id="view-paste" class="view-content hidden">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-bold mb-4">Paste Data from Google Sheets</h3>
+                    <p class="text-gray-600 mb-6">
+                        Copy data from Google Sheets (including headers) and paste it below:
+                    </p>
+                    
+                    <textarea id="pasteArea" rows="12" 
+                        class="w-full border border-gray-300 rounded-lg p-4 font-mono text-sm mb-4"
+                        placeholder="Select cells in Google Sheets, press Ctrl+C (or Cmd+C), then paste here...
+
+Example format:
+Full Name	Email	Phone	Destination Country	Intake Period	Status
+John Doe	john@example.com	+1234567890	UK	September 2025	new"></textarea>
+                    
+                    <div class="flex gap-4">
+                        <button onclick="importPastedData()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                            <i class="fas fa-file-import mr-2"></i>
+                            Import Pasted Data
+                        </button>
+                        <button onclick="clearPaste()" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition">
+                            <i class="fas fa-eraser mr-2"></i>
+                            Clear
+                        </button>
+                    </div>
+                    
+                    <div id="pasteStatus" class="mt-6"></div>
+                </div>
+            </div>
+
+            <!-- Status View -->
+            <div id="view-status" class="view-content hidden">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-bold mb-4">Sync Activity Log</h3>
+                    
+                    <div id="syncLog" class="space-y-4">
+                        <p class="text-gray-500 italic">No sync activity yet. Try exporting or importing data.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let syncHistory = [];
+
+        // Initialize
+        (function() {
+            // Show nav bar only if not in iframe
+            if (window.self === window.top) {
+                document.getElementById('topNav').style.display = 'block';
+            }
+            
+            // Get user from localStorage (set by main app)
+            const userData = localStorage.getItem('gg_hr_session');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+                document.getElementById('userName').textContent = currentUser.name;
+            } else {
+                console.log('[Sheets Integration] No session found');
+            }
+
+            // Load sync history from localStorage
+            const history = localStorage.getItem('syncHistory');
+            if (history) {
+                syncHistory = JSON.parse(history);
+                renderSyncLog();
+            }
+        })();
+
+        function showView(viewName) {
+            // Hide all views
+            document.querySelectorAll('.view-content').forEach(v => v.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            // Show selected view
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+            document.getElementById(`tab-${viewName}`).classList.add('active');
+        }
+
+        async function exportCSV() {
+            const statusDiv = document.getElementById('exportStatus');
+            statusDiv.innerHTML = '<p class="text-blue-600"><i class="fas fa-spinner fa-spin mr-2"></i>Exporting leads...</p>';
+            
+            try {
+                const response = await fetch('/api/leads/export/csv');
+                
+                if (!response.ok) {
+                    throw new Error('Export failed');
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `leads_export_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                statusDiv.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p class="text-green-800"><i class="fas fa-check-circle mr-2"></i>CSV file downloaded successfully!</p>
+                        <p class="text-sm text-green-700 mt-2">Open this file in Google Sheets to view and edit your leads.</p>
+                    </div>
+                `;
+                
+                addSyncLog('export', 'CSV Export', 'success');
+            } catch (error) {
+                console.error('Export error:', error);
+                statusDiv.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p class="text-red-800"><i class="fas fa-exclamation-circle mr-2"></i>Export failed. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function openInSheets() {
+            const statusDiv = document.getElementById('exportStatus');
+            statusDiv.innerHTML = `
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p class="text-blue-800"><i class="fas fa-info-circle mr-2"></i>To open in Google Sheets:</p>
+                    <ol class="list-decimal ml-6 mt-2 text-sm text-blue-700">
+                        <li>Click "Export All Leads to CSV" above</li>
+                        <li>Go to <a href="https://sheets.google.com" target="_blank" class="underline">Google Sheets</a></li>
+                        <li>Click File → Import → Upload → Select the downloaded CSV</li>
+                        <li>Choose "Replace spreadsheet" and click "Import data"</li>
+                    </ol>
+                </div>
+            `;
+        }
+
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const statusDiv = document.getElementById('importStatus');
+            statusDiv.innerHTML = '<p class="text-blue-600"><i class="fas fa-spinner fa-spin mr-2"></i>Processing CSV file...</p>';
+            
+            try {
+                const text = await file.text();
+                
+                const response = await fetch('/api/leads/import/csv', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ csvData: text })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusDiv.innerHTML = `
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <p class="text-green-800 font-bold mb-2"><i class="fas fa-check-circle mr-2"></i>Import Successful!</p>
+                            <div class="grid grid-cols-3 gap-4 text-sm">
+                                <div class="text-center p-3 bg-white rounded">
+                                    <p class="text-2xl font-bold text-green-600">${result.imported}</p>
+                                    <p class="text-gray-600">New Leads</p>
+                                </div>
+                                <div class="text-center p-3 bg-white rounded">
+                                    <p class="text-2xl font-bold text-blue-600">${result.updated}</p>
+                                    <p class="text-gray-600">Updated</p>
+                                </div>
+                                <div class="text-center p-3 bg-white rounded">
+                                    <p class="text-2xl font-bold text-red-600">${result.errors}</p>
+                                    <p class="text-gray-600">Errors</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    addSyncLog('import', `CSV Import: ${result.imported} new, ${result.updated} updated`, 'success');
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <p class="text-red-800"><i class="fas fa-exclamation-circle mr-2"></i>${result.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Import error:', error);
+                statusDiv.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p class="text-red-800"><i class="fas fa-exclamation-circle mr-2"></i>Import failed. Please check your CSV format.</p>
+                    </div>
+                `;
+            }
+            
+            // Reset file input
+            event.target.value = '';
+        }
+
+        async function importPastedData() {
+            const pasteArea = document.getElementById('pasteArea');
+            const pasteData = pasteArea.value.trim();
+            
+            if (!pasteData) {
+                alert('Please paste data from Google Sheets first.');
+                return;
+            }
+            
+            const statusDiv = document.getElementById('pasteStatus');
+            statusDiv.innerHTML = '<p class="text-blue-600"><i class="fas fa-spinner fa-spin mr-2"></i>Processing pasted data...</p>';
+            
+            try {
+                const response = await fetch('/api/leads/import/paste', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pasteData })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusDiv.innerHTML = `
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <p class="text-green-800 font-bold mb-2"><i class="fas fa-check-circle mr-2"></i>Import Successful!</p>
+                            <div class="grid grid-cols-3 gap-4 text-sm">
+                                <div class="text-center p-3 bg-white rounded">
+                                    <p class="text-2xl font-bold text-green-600">${result.imported}</p>
+                                    <p class="text-gray-600">New Leads</p>
+                                </div>
+                                <div class="text-center p-3 bg-white rounded">
+                                    <p class="text-2xl font-bold text-blue-600">${result.updated}</p>
+                                    <p class="text-gray-600">Updated</p>
+                                </div>
+                                <div class="text-center p-3 bg-white rounded">
+                                    <p class="text-2xl font-bold text-red-600">${result.errors}</p>
+                                    <p class="text-gray-600">Errors</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    addSyncLog('import', `Paste Import: ${result.imported} new, ${result.updated} updated`, 'success');
+                    
+                    // Clear the textarea
+                    pasteArea.value = '';
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <p class="text-red-800"><i class="fas fa-exclamation-circle mr-2"></i>${result.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Import error:', error);
+                statusDiv.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p class="text-red-800"><i class="fas fa-exclamation-circle mr-2"></i>Import failed. Please check your data format.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function clearPaste() {
+            document.getElementById('pasteArea').value = '';
+            document.getElementById('pasteStatus').innerHTML = '';
+        }
+
+        function addSyncLog(type, description, status) {
+            const entry = {
+                type,
+                description,
+                status,
+                timestamp: new Date().toISOString(),
+                user: currentUser.name
+            };
+            
+            syncHistory.unshift(entry);
+            
+            // Keep only last 20 entries
+            if (syncHistory.length > 20) {
+                syncHistory = syncHistory.slice(0, 20);
+            }
+            
+            localStorage.setItem('syncHistory', JSON.stringify(syncHistory));
+            renderSyncLog();
+        }
+
+        function renderSyncLog() {
+            const logDiv = document.getElementById('syncLog');
+            
+            if (syncHistory.length === 0) {
+                logDiv.innerHTML = '<p class="text-gray-500 italic">No sync activity yet.</p>';
+                return;
+            }
+            
+            logDiv.innerHTML = syncHistory.map(entry => {
+                const iconClass = entry.type === 'export' ? 'fa-upload text-blue-600' : 'fa-download text-green-600';
+                const date = new Date(entry.timestamp);
+                
+                return `
+                    <div class="border-l-4 ${entry.status === 'success' ? 'border-green-500' : 'border-red-500'} pl-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <i class="fas ${iconClass} text-lg"></i>
+                            <div class="flex-1">
+                                <p class="font-semibold">${entry.description}</p>
+                                <p class="text-sm text-gray-500">
+                                    by ${entry.user} • ${date.toLocaleString()}
+                                </p>
+                            </div>
+                            <span class="px-3 py-1 rounded text-sm ${entry.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                ${entry.status}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    </script>
+    <script src="/shared-auth.js"></script>
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

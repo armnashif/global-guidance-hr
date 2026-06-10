@@ -1,0 +1,467 @@
+        const { useState, useEffect } = React;
+        const { createClient } = supabase;
+
+        // Mock Supabase client (users need to configure this)
+        const supabaseUrl = 'YOUR_SUPABASE_URL';
+        const supabaseKey = 'YOUR_SUPABASE_KEY';
+        let supabaseClient = null;
+
+        try {
+            if (supabaseUrl !== 'YOUR_SUPABASE_URL' && supabaseKey !== 'YOUR_SUPABASE_KEY') {
+                supabaseClient = createClient(supabaseUrl, supabaseKey);
+            }
+        } catch (e) {
+            console.log('Supabase not configured yet');
+        }
+
+        // Mock user database for demo (replace with Supabase in production)
+        const USERS_DB = [
+            { id: 1, employeeId: 'GG001', username: 'nashif.razzak', password: 'password123', name: 'Nashif A. Razzak', role: 'Super Admin', department: 'Executive', level: 100 },
+            { id: 2, employeeId: 'GG002', username: 'nafees.razzak', password: 'password123', name: 'Nafees Razzak', role: 'Super Admin', department: 'Executive', level: 100 },
+            { id: 3, employeeId: 'GG003', username: 'thasbiha.s', password: 'password123', name: 'Thasbiha S.', role: 'HR Manager', department: 'Admin/HR', level: 80 },
+            { id: 4, employeeId: 'GG004', username: 'umair', password: 'password123', name: 'Umair', role: 'HR Staff', department: 'Admin/HR', level: 40 },
+            { id: 5, employeeId: 'GG005', username: 'mohamed.s', password: 'password123', name: 'Mohamed S.', role: 'HR Staff', department: 'Admin/HR', level: 40 },
+            { id: 6, employeeId: 'GG006', username: 'razan.thawus', password: 'password123', name: 'Razan Thawus', role: 'Department Manager', department: 'BD & Visa', level: 60 },
+            { id: 7, employeeId: 'GG007', username: 'sukaina', password: 'password123', name: 'Sukaina', role: 'Employee', department: 'BD & Visa', level: 20 },
+            { id: 8, employeeId: 'GG008', username: 'binupa', password: 'password123', name: 'Binupa', role: 'Employee', department: 'Marketing', level: 20 },
+            { id: 9, employeeId: 'GG009', username: 'shiran', password: 'password123', name: 'Shiran', role: 'Employee', department: 'Marketing', level: 20 }
+        ];
+
+        // Login Component
+        function LoginPage({ onLogin }) {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                setError('');
+                setLoading(true);
+
+                // Simulate authentication delay
+                setTimeout(() => {
+                    const user = USERS_DB.find(u => u.username === username && u.password === password);
+                    
+                    if (user) {
+                        onLogin(user);
+                    } else {
+                        setError('Invalid username or password');
+                        setLoading(false);
+                    }
+                }, 500);
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                        {/* Header */}
+                        <div className="bg-primary-600 p-8 text-white text-center">
+                            <i className="fas fa-building text-5xl mb-4"></i>
+                            <h1 className="text-3xl font-bold">Global Guidance</h1>
+                            <p className="text-primary-100 mt-2">HR Management System</p>
+                        </div>
+
+                        {/* Login Form */}
+                        <form onSubmit={handleSubmit} className="p-8">
+                            <div className="mb-6">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome Back</h2>
+                                <p className="text-gray-600">Sign in to your account</p>
+                            </div>
+
+                            {error && (
+                                <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded">
+                                    <div className="flex items-center">
+                                        <i className="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                                        <p className="text-red-700 text-sm">{error}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Username */}
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="username">
+                                    <i className="fas fa-user mr-2"></i>
+                                    Username
+                                </label>
+                                <input
+                                    id="username"
+                                    type="text"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    placeholder="Enter your username"
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
+
+                            {/* Password */}
+                            <div className="mb-6">
+                                <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="password">
+                                    <i className="fas fa-lock mr-2"></i>
+                                    Password
+                                </label>
+                                <input
+                                    id="password"
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    placeholder="Enter your password"
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
+
+                            {/* Submit Button */}
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loading ? (
+                                    <>
+                                        <i className="fas fa-spinner fa-spin mr-2"></i>
+                                        Signing in...
+                                    </>
+                                ) : (
+                                    <>
+                                        <i className="fas fa-sign-in-alt mr-2"></i>
+                                        Sign In
+                                    </>
+                                )}
+                            </button>
+                        </form>
+
+                        {/* Demo Credentials */}
+                        <div className="bg-gray-50 px-8 py-6 border-t border-gray-200">
+                            <p className="text-xs text-gray-600 mb-3 font-semibold">Demo Credentials:</p>
+                            <div className="space-y-2 text-xs text-gray-500">
+                                <div className="flex justify-between bg-white p-2 rounded">
+                                    <span>CEO:</span>
+                                    <code className="text-primary-600">nashif.razzak</code>
+                                </div>
+                                <div className="flex justify-between bg-white p-2 rounded">
+                                    <span>HR Manager:</span>
+                                    <code className="text-primary-600">thasbiha.s</code>
+                                </div>
+                                <div className="flex justify-between bg-white p-2 rounded">
+                                    <span>Employee:</span>
+                                    <code className="text-primary-600">sukaina</code>
+                                </div>
+                                <p className="text-center mt-2 text-gray-500">Password: <code className="text-primary-600">password123</code></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Sidebar Component
+        function Sidebar({ currentView, setCurrentView, currentUser, onLogout }) {
+            const menuItems = [
+                { id: 'dashboard', label: 'Dashboard', icon: 'fa-home' },
+                { id: 'employees', label: 'Employees', icon: 'fa-users' },
+                { id: 'skills', label: 'Skills Matrix', icon: 'fa-chart-bar' },
+                { id: 'performance', label: 'Performance', icon: 'fa-trophy' },
+                { id: 'leave', label: 'Leave Management', icon: 'fa-calendar-alt' },
+                { id: 'training', label: 'Training', icon: 'fa-graduation-cap' },
+                { id: 'messaging', label: 'Messaging', icon: 'fa-comments' },
+                { id: 'documents', label: 'Documents', icon: 'fa-folder-open' },
+                { id: 'analytics', label: 'Analytics', icon: 'fa-chart-pie' },
+            ];
+
+            return (
+                <div className="w-64 bg-white shadow-lg flex flex-col h-screen">
+                    <div className="p-6 border-b border-gray-200">
+                        <h1 className="text-xl font-bold text-primary-600">Global Guidance</h1>
+                        <p className="text-sm text-gray-500">HR Management System</p>
+                    </div>
+
+                    {currentUser && (
+                        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-primary-50 to-primary-100">
+                            <div className="flex items-center">
+                                <div className="w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                    {currentUser.name.charAt(0)}{currentUser.name.split(' ')[1]?.charAt(0) || ''}
+                                </div>
+                                <div className="ml-3 flex-1">
+                                    <p className="text-sm font-bold text-gray-800">{currentUser.name}</p>
+                                    <div className="flex items-center mt-1">
+                                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
+                                            currentUser.level === 100 ? 'bg-red-100 text-red-800' :
+                                            currentUser.level === 80 ? 'bg-orange-100 text-orange-800' :
+                                            currentUser.level === 60 ? 'bg-yellow-100 text-yellow-800' :
+                                            currentUser.level === 40 ? 'bg-blue-100 text-blue-800' :
+                                            'bg-gray-100 text-gray-800'
+                                        }`}>
+                                            {currentUser.role}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-gray-600 mt-1">{currentUser.employeeId} • {currentUser.department}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <nav className="flex-1 overflow-y-auto py-4">
+                        {menuItems.map((item) => (
+                            <button
+                                key={item.id}
+                                onClick={() => setCurrentView(item.id)}
+                                className={`w-full flex items-center px-6 py-3 text-left transition-colors ${
+                                    currentView === item.id
+                                        ? 'bg-primary-50 text-primary-600 border-r-4 border-primary-600'
+                                        : 'text-gray-700 hover:bg-gray-50'
+                                }`}
+                            >
+                                <i className={`fas ${item.icon} w-5`}></i>
+                                <span className="ml-3">{item.label}</span>
+                            </button>
+                        ))}
+                    </nav>
+
+                    <div className="p-4 border-t border-gray-200">
+                        <button
+                            onClick={onLogout}
+                            className="w-full flex items-center justify-center px-4 py-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                        >
+                            <i className="fas fa-sign-out-alt mr-2"></i>
+                            <span>Logout</span>
+                        </button>
+                        <p className="text-xs text-gray-500 text-center mt-4">© 2026 Global Guidance</p>
+                    </div>
+                </div>
+            );
+        }
+
+        // Dashboard Component
+        function Dashboard() {
+            return (
+                <div className="p-8">
+                    <div className="mb-8">
+                        <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+                        <p className="text-gray-600 mt-2">Welcome to Global Guidance HR Management System</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <StatCard title="Total Employees" value="9" icon="fa-users" color="bg-blue-500" />
+                        <StatCard title="Departments" value="4" icon="fa-building" color="bg-green-500" />
+                        <StatCard title="Pending Leave" value="0" icon="fa-calendar-check" color="bg-yellow-500" />
+                        <StatCard title="Training Programs" value="6" icon="fa-graduation-cap" color="bg-purple-500" />
+                    </div>
+
+                    <div className="bg-white rounded-lg shadow p-6 mb-6">
+                        <h2 className="text-xl font-bold text-gray-800 mb-4">Setup Required</h2>
+                        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                            <div className="flex">
+                                <i className="fas fa-exclamation-triangle text-yellow-400 mt-1 mr-3"></i>
+                                <div>
+                                    <p className="text-yellow-800 font-medium">Supabase Configuration Needed</p>
+                                    <p className="text-yellow-700 text-sm mt-1">
+                                        To see live data, please configure your Supabase credentials in the source code.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                            <SetupStep 
+                                number="1" 
+                                title="Create Supabase Account" 
+                                description="Visit https://supabase.com and create a free account"
+                            />
+                            <SetupStep 
+                                number="2" 
+                                title="Run Database Schema" 
+                                description="Execute the database-schema.sql file in Supabase SQL Editor"
+                            />
+                            <SetupStep 
+                                number="3" 
+                                title="Configure Credentials" 
+                                description="Update supabaseUrl and supabaseKey in the HTML file"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h2 className="text-xl font-bold text-gray-800 mb-4">Department Overview</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <DepartmentCard name="Executive" count={2} color="bg-purple-500" />
+                            <DepartmentCard name="Admin/HR" count={3} color="bg-blue-500" />
+                            <DepartmentCard name="BD & Visa" count={2} color="bg-green-500" />
+                            <DepartmentCard name="Marketing" count={2} color="bg-orange-500" />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function StatCard({ title, value, icon, color }) {
+            return (
+                <div className="bg-white rounded-lg shadow p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-gray-500 text-sm">{title}</p>
+                            <p className="text-3xl font-bold text-gray-800 mt-2">{value}</p>
+                        </div>
+                        <div className={`w-12 h-12 ${color} rounded-lg flex items-center justify-center`}>
+                            <i className={`fas ${icon} text-white text-xl`}></i>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function DepartmentCard({ name, count, color }) {
+            return (
+                <div className="flex items-center p-4 bg-gray-50 rounded-lg">
+                    <div className={`w-10 h-10 ${color} rounded-lg flex items-center justify-center mr-3`}>
+                        <i className="fas fa-users text-white"></i>
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500">{name}</p>
+                        <p className="text-xl font-bold text-gray-800">{count} employees</p>
+                    </div>
+                </div>
+            );
+        }
+
+        function SetupStep({ number, title, description }) {
+            return (
+                <div className="flex items-start">
+                    <div className="flex-shrink-0 w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white font-bold mr-3">
+                        {number}
+                    </div>
+                    <div>
+                        <h3 className="font-medium text-gray-800">{title}</h3>
+                        <p className="text-sm text-gray-600 mt-1">{description}</p>
+                    </div>
+                </div>
+            );
+        }
+
+        // Placeholder components for other views
+        function Employees() {
+            return <PlaceholderView title="Employees" icon="fa-users" description="Employee directory with 9 pre-loaded employees (GG001-GG009)" />;
+        }
+
+        function SkillsMatrix() {
+            return <PlaceholderView title="Skills Matrix" icon="fa-chart-bar" description="Visual skills heat map with 5 proficiency levels" />;
+        }
+
+        function Performance() {
+            return <PlaceholderView title="Performance" icon="fa-trophy" description="KPI tracking and bonus calculations" />;
+        }
+
+        function LeaveManagement() {
+            return <PlaceholderView title="Leave Management" icon="fa-calendar-alt" description="22 days annual leave tracking system" />;
+        }
+
+        function Training() {
+            return <PlaceholderView title="Training" icon="fa-graduation-cap" description="$15,000 budget - Q1-Q4 2026 roadmap" />;
+        }
+
+        function Messaging() {
+            return <PlaceholderView title="Messaging" icon="fa-comments" description="Real-time communication with Supabase" />;
+        }
+
+        function Documents() {
+            return <PlaceholderView title="Documents" icon="fa-folder-open" description="Document management with cloud storage" />;
+        }
+
+        function Analytics() {
+            return <PlaceholderView title="Analytics" icon="fa-chart-pie" description="Charts and reports dashboard" />;
+        }
+
+        function PlaceholderView({ title, icon, description }) {
+            return (
+                <div className="p-8">
+                    <div className="mb-8">
+                        <h1 className="text-3xl font-bold text-gray-800 flex items-center">
+                            <i className={`fas ${icon} mr-3`}></i>
+                            {title}
+                        </h1>
+                        <p className="text-gray-600 mt-2">{description}</p>
+                    </div>
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <div className="text-center py-12">
+                            <i className={`fas ${icon} text-gray-300 text-6xl mb-4`}></i>
+                            <p className="text-gray-600 text-lg">Configure Supabase to see live data</p>
+                            <p className="text-gray-500 text-sm mt-2">Follow the setup guide in the dashboard</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Main App Component
+        function App() {
+            const [currentView, setCurrentView] = useState('dashboard');
+            const [currentUser, setCurrentUser] = useState(null);
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+            // Check for existing session on mount
+            useEffect(() => {
+                const sessionData = localStorage.getItem('gghr_session');
+                if (sessionData) {
+                    try {
+                        const user = JSON.parse(sessionData);
+                        setCurrentUser(user);
+                        setIsAuthenticated(true);
+                    } catch (e) {
+                        localStorage.removeItem('gghr_session');
+                    }
+                }
+            }, []);
+
+            const handleLogin = (user) => {
+                setCurrentUser(user);
+                setIsAuthenticated(true);
+                localStorage.setItem('gghr_session', JSON.stringify(user));
+            };
+
+            const handleLogout = () => {
+                setCurrentUser(null);
+                setIsAuthenticated(false);
+                setCurrentView('dashboard');
+                localStorage.removeItem('gghr_session');
+            };
+
+            // Show login page if not authenticated
+            if (!isAuthenticated) {
+                return <LoginPage onLogin={handleLogin} />;
+            }
+
+            const renderView = () => {
+                switch (currentView) {
+                    case 'dashboard': return <Dashboard />;
+                    case 'employees': return <Employees />;
+                    case 'skills': return <SkillsMatrix />;
+                    case 'performance': return <Performance />;
+                    case 'leave': return <LeaveManagement />;
+                    case 'training': return <Training />;
+                    case 'messaging': return <Messaging />;
+                    case 'documents': return <Documents />;
+                    case 'analytics': return <Analytics />;
+                    default: return <Dashboard />;
+                }
+            };
+
+            return (
+                <div className="flex h-screen bg-gray-50">
+                    <Sidebar 
+                        currentView={currentView} 
+                        setCurrentView={setCurrentView} 
+                        currentUser={currentUser}
+                        onLogout={handleLogout}
+                    />
+                    <div className="flex-1 overflow-auto">
+                        {renderView()}
+                    </div>
+                </div>
+            );
+        }
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports & Analytics - Global Guidance HR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .tab-btn { border-bottom: 3px solid transparent; transition: all 0.3s; }
+        .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; background: #eff6ff; }
+        .stat-card { transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="min-h-screen">
+        <nav id="topNav" class="bg-blue-600 text-white p-4 shadow-lg" style="display: none;">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold"><i class="fas fa-chart-bar mr-2"></i>Reports & Analytics</h1>
+                <div class="flex items-center gap-4">
+                    <span id="userName" class="text-sm"></span>
+                    <a href="/" class="bg-white text-blue-600 px-4 py-2 rounded hover:bg-gray-100 transition">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto p-6">
+            <!-- Tab Navigation -->
+            <div class="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
+                <div class="flex border-b">
+                    <button onclick="switchTab('overview')" class="tab-btn active px-6 py-4 font-semibold">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Overview
+                    </button>
+                    <button onclick="switchTab('leads')" class="tab-btn px-6 py-4 font-semibold">
+                        <i class="fas fa-user-plus mr-2"></i>Lead Reports
+                    </button>
+                    <button onclick="switchTab('staff')" class="tab-btn px-6 py-4 font-semibold">
+                        <i class="fas fa-users mr-2"></i>Staff Performance
+                    </button>
+                    <button onclick="switchTab('operations')" class="tab-btn px-6 py-4 font-semibold">
+                        <i class="fas fa-tasks mr-2"></i>Operations
+                    </button>
+                </div>
+            </div>
+
+            <!-- Overview Tab -->
+            <div id="tab-overview" class="tab-content">
+                <div class="grid grid-cols-4 gap-6 mb-6">
+                    <div class="stat-card bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <i class="fas fa-users text-4xl opacity-80"></i>
+                            <div class="text-right">
+                                <div class="text-3xl font-bold" id="totalLeads">0</div>
+                                <div class="text-sm opacity-80">Total Leads</div>
+                            </div>
+                        </div>
+                        <div class="text-xs opacity-80">All time</div>
+                    </div>
+
+                    <div class="stat-card bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <i class="fas fa-check-circle text-4xl opacity-80"></i>
+                            <div class="text-right">
+                                <div class="text-3xl font-bold" id="totalRegistered">0</div>
+                                <div class="text-sm opacity-80">Registered</div>
+                            </div>
+                        </div>
+                        <div class="text-xs opacity-80" id="conversionRate">0% conversion</div>
+                    </div>
+
+                    <div class="stat-card bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <i class="fas fa-clock text-4xl opacity-80"></i>
+                            <div class="text-right">
+                                <div class="text-3xl font-bold" id="avgResponseTime">0</div>
+                                <div class="text-sm opacity-80">Avg Response</div>
+                            </div>
+                        </div>
+                        <div class="text-xs opacity-80">Hours</div>
+                    </div>
+
+                    <div class="stat-card bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <i class="fas fa-flag text-4xl opacity-80"></i>
+                            <div class="text-right">
+                                <div class="text-3xl font-bold" id="totalFlags">0</div>
+                                <div class="text-sm opacity-80">Red Flags</div>
+                            </div>
+                        </div>
+                        <div class="text-xs opacity-80">Requires attention</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold mb-4">Lead Conversion Funnel</h3>
+                        <canvas id="funnelChart"></canvas>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold mb-4">Monthly Lead Trends</h3>
+                        <canvas id="trendsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-bold mb-4">Lead Sources Distribution</h3>
+                    <canvas id="sourcesChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+
+            <!-- Lead Reports Tab -->
+            <div id="tab-leads" class="tab-content" style="display: none;">
+                <div class="grid grid-cols-3 gap-6 mb-6">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h4 class="font-semibold text-gray-600 mb-2">Total Leads</h4>
+                        <div class="text-3xl font-bold text-blue-600" id="leadTotal">0</div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h4 class="font-semibold text-gray-600 mb-2">This Month</h4>
+                        <div class="text-3xl font-bold text-purple-600" id="leadThisMonth">0</div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h4 class="font-semibold text-gray-600 mb-2">Growth Rate</h4>
+                        <div class="text-3xl font-bold text-green-600" id="leadGrowth">0%</div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                    <h3 class="text-lg font-bold mb-4">Lead Status Breakdown</h3>
+                    <div id="statusBreakdown" class="space-y-3"></div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-bold mb-4">Top Performing Counselors</h3>
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="text-left py-3">Counselor</th>
+                                <th class="text-left py-3">Assigned</th>
+                                <th class="text-left py-3">Converted</th>
+                                <th class="text-left py-3">Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="counselorStats"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Staff Performance Tab -->
+            <div id="tab-staff" class="tab-content" style="display: none;">
+                <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                    <h3 class="text-lg font-bold mb-4">Staff Performance Overview</h3>
+                    <div class="grid grid-cols-3 gap-6">
+                        <div class="border-l-4 border-blue-500 pl-4">
+                            <div class="text-sm text-gray-600">Total Staff</div>
+                            <div class="text-2xl font-bold">3</div>
+                        </div>
+                        <div class="border-l-4 border-green-500 pl-4">
+                            <div class="text-sm text-gray-600">Active Today</div>
+                            <div class="text-2xl font-bold" id="activeStaff">0</div>
+                        </div>
+                        <div class="border-l-4 border-purple-500 pl-4">
+                            <div class="text-sm text-gray-600">Avg Performance</div>
+                            <div class="text-2xl font-bold" id="avgPerformance">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-bold mb-4">Individual Performance</h3>
+                    <div id="staffList" class="space-y-4"></div>
+                </div>
+            </div>
+
+            <!-- Operations Tab -->
+            <div id="tab-operations" class="tab-content" style="display: none;">
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold mb-4">Daily Reports Submitted</h3>
+                        <canvas id="dailyReportsChart"></canvas>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold mb-4">Task Completion Rate</h3>
+                        <canvas id="taskCompletionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-bold mb-4">Recent Activities</h3>
+                    <div id="recentActivities" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentTab = 'overview';
+        let charts = {};
+
+        // Initialize
+        (function() {
+            if (window.self === window.top) {
+                document.getElementById('topNav').style.display = 'block';
+            }
+            
+            const userData = localStorage.getItem('gg_hr_session');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+                document.getElementById('userName').textContent = currentUser.name;
+                loadAllData();
+            } else {
+                // Don't force logout - just show empty state
+                console.log('[Reports] No session found');
+            }
+        })();
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.tab-btn').classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+            document.getElementById('tab-' + tabName).style.display = 'block';
+        }
+
+        async function loadAllData() {
+            try {
+                // Fetch leads data
+                const [leadsResponse, statsResponse, reportsResponse, flagsResponse] = await Promise.all([
+                    fetch('/api/leads'),
+                    fetch('/api/leads/stats'),
+                    fetch('/api/daily-reports'),
+                    fetch('/api/red-flags')
+                ]);
+
+                const leads = await leadsResponse.json();
+                const stats = await statsResponse.json();
+                const reports = await reportsResponse.json();
+                const flags = await flagsResponse.json();
+
+                // Update overview metrics
+                document.getElementById('totalLeads').textContent = stats.total;
+                document.getElementById('totalRegistered').textContent = stats.registered;
+                document.getElementById('conversionRate').textContent = 
+                    `${((stats.registered / stats.total) * 100).toFixed(1)}% conversion`;
+                document.getElementById('avgResponseTime').textContent = '12'; // Mock data
+                document.getElementById('totalFlags').textContent = flags.length;
+
+                // Lead Reports Tab
+                document.getElementById('leadTotal').textContent = stats.total;
+                document.getElementById('leadThisMonth').textContent = stats.thisMonth;
+                document.getElementById('leadGrowth').textContent = `${stats.growthRate}%`;
+
+                // Render charts
+                renderFunnelChart(stats.pipeline);
+                renderTrendsChart();
+                renderSourcesChart(leads);
+                renderStatusBreakdown(stats.pipeline);
+                renderCounselorStats(leads);
+                renderStaffPerformance(reports);
+                renderDailyReportsChart(reports);
+                renderTaskCompletionChart();
+                renderRecentActivities(leads, reports);
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        function renderFunnelChart(pipeline) {
+            const ctx = document.getElementById('funnelChart');
+            if (charts.funnel) charts.funnel.destroy();
+            
+            charts.funnel = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['New', 'Contacted', 'Qualified', 'Registered'],
+                    datasets: [{
+                        label: 'Leads',
+                        data: [pipeline.new, pipeline.contacted, pipeline.qualified, pipeline.registered],
+                        backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderTrendsChart() {
+            const ctx = document.getElementById('trendsChart');
+            if (charts.trends) charts.trends.destroy();
+            
+            charts.trends = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'New Leads',
+                        data: [12, 19, 15, 25, 22, 30],
+                        borderColor: '#3b82f6',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true } }
+                }
+            });
+        }
+
+        function renderSourcesChart(leads) {
+            const ctx = document.getElementById('sourcesChart');
+            if (charts.sources) charts.sources.destroy();
+            
+            const sources = {};
+            leads.forEach(lead => {
+                sources[lead.source] = (sources[lead.source] || 0) + 1;
+            });
+
+            charts.sources = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(sources),
+                    datasets: [{
+                        data: Object.values(sources),
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true
+                }
+            });
+        }
+
+        function renderStatusBreakdown(pipeline) {
+            const statuses = [
+                { name: 'New', count: pipeline.new, color: 'blue' },
+                { name: 'Contacted', count: pipeline.contacted, color: 'yellow' },
+                { name: 'Qualified', count: pipeline.qualified, color: 'green' },
+                { name: 'Registered', count: pipeline.registered, color: 'purple' },
+                { name: 'Dropped', count: pipeline.dropped, color: 'red' }
+            ];
+
+            const total = Object.values(pipeline).reduce((a, b) => a + b, 0);
+            
+            document.getElementById('statusBreakdown').innerHTML = statuses.map(status => {
+                const percentage = total > 0 ? ((status.count / total) * 100).toFixed(1) : 0;
+                return `
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <span class="font-semibold">${status.name}</span>
+                            <span class="text-gray-600">${status.count} (${percentage}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-${status.color}-500 h-2 rounded-full" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderCounselorStats(leads) {
+            const counselors = {};
+            leads.forEach(lead => {
+                const counselor = lead.assignedCounselor || 'Unassigned';
+                if (!counselors[counselor]) {
+                    counselors[counselor] = { assigned: 0, converted: 0 };
+                }
+                counselors[counselor].assigned++;
+                if (lead.status === 'registered') {
+                    counselors[counselor].converted++;
+                }
+            });
+
+            document.getElementById('counselorStats').innerHTML = Object.entries(counselors)
+                .sort((a, b) => b[1].converted - a[1].converted)
+                .slice(0, 5)
+                .map(([name, stats]) => {
+                    const rate = stats.assigned > 0 ? ((stats.converted / stats.assigned) * 100).toFixed(1) : 0;
+                    return `
+                        <tr class="border-b">
+                            <td class="py-3">${name}</td>
+                            <td class="py-3">${stats.assigned}</td>
+                            <td class="py-3">${stats.converted}</td>
+                            <td class="py-3"><span class="font-semibold text-green-600">${rate}%</span></td>
+                        </tr>
+                    `;
+                }).join('');
+        }
+
+        function renderStaffPerformance(reports) {
+            const staff = [
+                { name: 'Nashif A. Razzak', role: 'CEO', performance: 95 },
+                { name: 'Sukaina Khan', role: 'HR Manager', performance: 88 },
+                { name: 'Aathina Shah', role: 'Staff', performance: 82 }
+            ];
+
+            const active = reports.filter(r => {
+                const today = new Date().toISOString().split('T')[0];
+                return r.date === today;
+            }).length;
+
+            document.getElementById('activeStaff').textContent = active;
+            document.getElementById('avgPerformance').textContent = 
+                Math.round(staff.reduce((sum, s) => sum + s.performance, 0) / staff.length) + '%';
+
+            document.getElementById('staffList').innerHTML = staff.map(person => `
+                <div class="border rounded-lg p-4">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <div class="font-bold">${person.name}</div>
+                            <div class="text-sm text-gray-600">${person.role}</div>
+                        </div>
+                        <div class="text-2xl font-bold text-${person.performance >= 90 ? 'green' : person.performance >= 80 ? 'blue' : 'yellow'}-600">
+                            ${person.performance}%
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-${person.performance >= 90 ? 'green' : person.performance >= 80 ? 'blue' : 'yellow'}-500 h-2 rounded-full" 
+                             style="width: ${person.performance}%"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderDailyReportsChart(reports) {
+            const ctx = document.getElementById('dailyReportsChart');
+            if (charts.dailyReports) charts.dailyReports.destroy();
+            
+            const last7Days = Array.from({length: 7}, (_, i) => {
+                const d = new Date();
+                d.setDate(d.getDate() - (6 - i));
+                return d.toISOString().split('T')[0];
+            });
+
+            const counts = last7Days.map(date => 
+                reports.filter(r => r.date === date).length
+            );
+
+            charts.dailyReports = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: last7Days.map(d => new Date(d).toLocaleDateString('en-US', {month: 'short', day: 'numeric'})),
+                    datasets: [{
+                        label: 'Reports',
+                        data: counts,
+                        backgroundColor: '#3b82f6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderTaskCompletionChart() {
+            const ctx = document.getElementById('taskCompletionChart');
+            if (charts.taskCompletion) charts.taskCompletion.destroy();
+            
+            charts.taskCompletion = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Pending'],
+                    datasets: [{
+                        data: [75, 25],
+                        backgroundColor: ['#10b981', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function renderRecentActivities(leads, reports) {
+            const activities = [
+                ...leads.slice(0, 3).map(lead => ({
+                    icon: 'fa-user-plus',
+                    color: 'blue',
+                    text: `New lead: ${lead.name}`,
+                    time: lead.createdDate
+                })),
+                ...reports.slice(0, 2).map(report => ({
+                    icon: 'fa-file-alt',
+                    color: 'green',
+                    text: `Report submitted by ${report.userName}`,
+                    time: report.createdAt
+                }))
+            ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 5);
+
+            document.getElementById('recentActivities').innerHTML = activities.map(activity => `
+                <div class="flex items-center gap-4 p-3 bg-gray-50 rounded">
+                    <div class="w-10 h-10 bg-${activity.color}-100 rounded-full flex items-center justify-center">
+                        <i class="fas ${activity.icon} text-${activity.color}-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-semibold">${activity.text}</div>
+                        <div class="text-sm text-gray-500">${new Date(activity.time).toLocaleString()}</div>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-gray-500">No recent activities</p>';
+        }
+    </script>
+    <script src="/shared-auth.js"></script>
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Flags & Risk Management - Global Guidance HR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .priority-high { background: #fee2e2; color: #991b1b; }
+        .priority-medium { background: #fef3c7; color: #92400e; }
+        .priority-low { background: #e0e7ff; color: #3730a3; }
+        .status-open { background: #dbeafe; color: #1e40af; }
+        .status-in-progress { background: #fef3c7; color: #92400e; }
+        .status-resolved { background: #d1fae5; color: #065f46; }
+        .status-closed { background: #f3f4f6; color: #6b7280; }
+        .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="min-h-screen">
+        <nav id="topNav" class="bg-red-600 text-white p-4 shadow-lg" style="display: none;">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold"><i class="fas fa-flag mr-2"></i>Red Flags & Risk Management</h1>
+                <div class="flex items-center gap-4">
+                    <span id="userName" class="text-sm"></span>
+                    <a href="/" class="bg-white text-red-600 px-4 py-2 rounded hover:bg-gray-100 transition">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto p-6">
+            <!-- Dashboard Stats -->
+            <div id="stats" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6"></div>
+
+            <!-- Controls -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div class="flex flex-wrap items-center gap-4">
+                    <button onclick="showAddModal()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
+                        <i class="fas fa-plus mr-2"></i>Add Red Flag
+                    </button>
+                    <input type="text" id="searchInput" placeholder="Search red flags..." 
+                        class="border border-gray-300 rounded px-4 py-2 flex-1 min-w-[200px]"
+                        oninput="handleSearch()">
+                    <select id="categoryFilter" class="border border-gray-300 rounded px-4 py-2" onchange="fetchFlags()">
+                        <option value="">All Categories</option>
+                        <option value="Staff-related">Staff-related</option>
+                        <option value="Application-related">Application-related</option>
+                        <option value="Visa-related">Visa-related</option>
+                        <option value="Financial">Financial</option>
+                        <option value="Operational">Operational</option>
+                        <option value="Quality">Quality</option>
+                        <option value="Partnership">Partnership</option>
+                    </select>
+                    <select id="priorityFilter" class="border border-gray-300 rounded px-4 py-2" onchange="fetchFlags()">
+                        <option value="">All Priorities</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                    <select id="statusFilter" class="border border-gray-300 rounded px-4 py-2" onchange="fetchFlags()">
+                        <option value="">All Status</option>
+                        <option value="open">Open</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Red Flags Table -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned To</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="flagsTable" class="divide-y divide-gray-200"></tbody>
+                </table>
+                <div id="loadingMessage" class="p-8 text-center text-gray-500">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>Loading red flags...
+                </div>
+                <div id="emptyMessage" class="p-8 text-center text-gray-500 hidden">
+                    No red flags found. Click "Add Red Flag" to create one!
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Modal -->
+        <div id="flagModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="modalTitle" class="text-2xl font-bold">Add New Red Flag</h2>
+                    <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+                <form id="flagForm" onsubmit="handleSubmit(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                            <input type="text" id="title" required class="w-full border border-gray-300 rounded px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                            <textarea id="description" rows="3" required class="w-full border border-gray-300 rounded px-3 py-2"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                                <select id="category" required class="w-full border border-gray-300 rounded px-3 py-2">
+                                    <option value="">Select Category</option>
+                                    <option value="Staff-related">Staff-related</option>
+                                    <option value="Application-related">Application-related</option>
+                                    <option value="Visa-related">Visa-related</option>
+                                    <option value="Financial">Financial</option>
+                                    <option value="Operational">Operational</option>
+                                    <option value="Quality">Quality</option>
+                                    <option value="Partnership">Partnership</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Priority *</label>
+                                <select id="priority" required class="w-full border border-gray-300 rounded px-3 py-2">
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select id="status" class="w-full border border-gray-300 rounded px-3 py-2">
+                                    <option value="open">Open</option>
+                                    <option value="in-progress">In Progress</option>
+                                    <option value="resolved">Resolved</option>
+                                    <option value="closed">Closed</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                                <input type="date" id="dueDate" class="w-full border border-gray-300 rounded px-3 py-2">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Assign To</label>
+                            <select id="assignedTo" class="w-full border border-gray-300 rounded px-3 py-2">
+                                <option value="">Select Staff Member</option>
+                                <option value="Nashif A. Razzak|GG001">Nashif A. Razzak (CEO)</option>
+                                <option value="Sukaina Khan|GG002">Sukaina Khan (HR Manager)</option>
+                                <option value="Aathina Shums|GG003">Aathina Shums (Staff)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Resolution Notes</label>
+                            <textarea id="resolutionNotes" rows="3" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Add notes about resolution or progress..."></textarea>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 mt-6">
+                        <button type="submit" class="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
+                            <i class="fas fa-save mr-2"></i>Save Red Flag
+                        </button>
+                        <button type="button" onclick="closeModal()" class="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let flags = [];
+        let currentEditId = null;
+
+        // Initialize
+        (function() {
+            if (window.self === window.top) {
+                document.getElementById('topNav').style.display = 'block';
+            }
+            
+            const userData = localStorage.getItem('gg_hr_session');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+                document.getElementById('userName').textContent = currentUser.name;
+                fetchStats();
+                fetchFlags();
+            } else {
+                // Don't force logout - just show empty state
+                console.log('[Red Flags] No session found');
+            }
+        })();
+
+        async function fetchStats() {
+            try {
+                const response = await fetch('/api/red-flags/stats');
+                const stats = await response.json();
+                
+                document.getElementById('stats').innerHTML = `
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Total Red Flags</p>
+                                <p class="text-3xl font-bold text-red-600">${stats.total}</p>
+                            </div>
+                            <i class="fas fa-flag text-4xl text-red-200"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Open</p>
+                                <p class="text-3xl font-bold text-blue-600">${stats.open}</p>
+                            </div>
+                            <i class="fas fa-exclamation-circle text-4xl text-blue-200"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">In Progress</p>
+                                <p class="text-3xl font-bold text-yellow-600">${stats.inProgress}</p>
+                            </div>
+                            <i class="fas fa-tasks text-4xl text-yellow-200"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Critical Issues</p>
+                                <p class="text-3xl font-bold text-red-700">${stats.critical}</p>
+                            </div>
+                            <i class="fas fa-exclamation-triangle text-4xl text-red-300"></i>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+
+        async function fetchFlags() {
+            const category = document.getElementById('categoryFilter').value;
+            const priority = document.getElementById('priorityFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            
+            let url = '/api/red-flags?';
+            if (category) url += `category=${encodeURIComponent(category)}&`;
+            if (priority) url += `priority=${priority}&`;
+            if (status) url += `status=${status}`;
+            
+            try {
+                const response = await fetch(url);
+                flags = await response.json();
+                renderFlags();
+            } catch (error) {
+                console.error('Error fetching flags:', error);
+                document.getElementById('loadingMessage').innerHTML = 
+                    '<p class="text-red-600"><i class="fas fa-exclamation-circle mr-2"></i>Error loading red flags</p>';
+            }
+        }
+
+        function renderFlags() {
+            const tbody = document.getElementById('flagsTable');
+            const loading = document.getElementById('loadingMessage');
+            const empty = document.getElementById('emptyMessage');
+            
+            loading.classList.add('hidden');
+            
+            if (flags.length === 0) {
+                tbody.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+            
+            empty.classList.add('hidden');
+            
+            tbody.innerHTML = flags.map(flag => {
+                const daysText = flag.daysPending ? `${flag.daysPending} days` : 'New';
+                return `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <div>
+                            <p class="font-medium text-gray-900">${flag.title}</p>
+                            <p class="text-sm text-gray-500">${flag.description.substring(0, 60)}...</p>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${flag.category}</td>
+                    <td class="px-6 py-4">
+                        <span class="badge priority-${flag.priority}">${flag.priority.toUpperCase()}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="badge status-${flag.status}">${flag.status.replace('-', ' ').toUpperCase()}</span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${flag.assignedTo || 'Unassigned'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        ${flag.dueDate ? new Date(flag.dueDate).toLocaleDateString() : '-'}
+                        <br><span class="text-xs text-gray-400">${daysText}</span>
+                    </td>
+                    <td class="px-6 py-4 text-sm">
+                        <div class="flex gap-2">
+                            <button onclick="editFlag(${flag.id})" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteFlag(${flag.id})" class="text-red-600 hover:text-red-800">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        function showAddModal() {
+            currentEditId = null;
+            document.getElementById('modalTitle').textContent = 'Add New Red Flag';
+            document.getElementById('flagForm').reset();
+            document.getElementById('flagModal').classList.remove('hidden');
+        }
+
+        function editFlag(id) {
+            const flag = flags.find(f => f.id === id);
+            if (!flag) return;
+            
+            currentEditId = id;
+            document.getElementById('modalTitle').textContent = 'Edit Red Flag';
+            document.getElementById('title').value = flag.title;
+            document.getElementById('description').value = flag.description;
+            document.getElementById('category').value = flag.category;
+            document.getElementById('priority').value = flag.priority;
+            document.getElementById('status').value = flag.status;
+            document.getElementById('dueDate').value = flag.dueDate || '';
+            document.getElementById('resolutionNotes').value = flag.resolutionNotes || '';
+            
+            if (flag.assignedTo && flag.assignedToId) {
+                document.getElementById('assignedTo').value = `${flag.assignedTo}|${flag.assignedToId}`;
+            }
+            
+            document.getElementById('flagModal').classList.remove('hidden');
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            const assignedValue = document.getElementById('assignedTo').value;
+            const [assignedTo, assignedToId] = assignedValue ? assignedValue.split('|') : ['', ''];
+            
+            const formData = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                category: document.getElementById('category').value,
+                priority: document.getElementById('priority').value,
+                status: document.getElementById('status').value,
+                dueDate: document.getElementById('dueDate').value || null,
+                assignedTo: assignedTo || null,
+                assignedToId: assignedToId || null,
+                resolutionNotes: document.getElementById('resolutionNotes').value || '',
+                createdBy: currentUser.name,
+                createdById: currentUser.employeeId
+            };
+            
+            try {
+                const url = currentEditId ? `/api/red-flags/${currentEditId}` : '/api/red-flags';
+                const method = currentEditId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    closeModal();
+                    fetchStats();
+                    fetchFlags();
+                    alert(currentEditId ? 'Red flag updated successfully!' : 'Red flag added successfully!');
+                } else {
+                    alert('Error: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error saving flag:', error);
+                alert('Failed to save red flag. Please try again.');
+            }
+        }
+
+        async function deleteFlag(id) {
+            if (!confirm('Are you sure you want to delete this red flag?')) return;
+            
+            try {
+                const response = await fetch(`/api/red-flags/${id}`, { method: 'DELETE' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    fetchStats();
+                    fetchFlags();
+                    alert('Red flag deleted successfully!');
+                } else {
+                    alert('Error deleting flag: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error deleting flag:', error);
+                alert('Failed to delete red flag. Please try again.');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('flagModal').classList.add('hidden');
+            document.getElementById('flagForm').reset();
+            currentEditId = null;
+        }
+
+        let searchTimeout;
+        function handleSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const search = document.getElementById('searchInput').value.toLowerCase();
+                if (!search) {
+                    renderFlags();
+                    return;
+                }
+                
+                const filtered = flags.filter(f => 
+                    f.title.toLowerCase().includes(search) ||
+                    f.description.toLowerCase().includes(search) ||
+                    f.category.toLowerCase().includes(search) ||
+                    f.assignedTo?.toLowerCase().includes(search)
+                );
+                
+                const tbody = document.getElementById('flagsTable');
+                if (filtered.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">No matching red flags found.</td></tr>';
+                } else {
+                    flags = filtered;
+                    renderFlags();
+                }
+            }, 500);
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            fetchStats();
+            fetchFlags();
+        }, 30000);
+    </script>
+    <script src="/shared-auth.js"></script>
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

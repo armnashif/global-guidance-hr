@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login - Global Guidance Education</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%); min-height: 100vh; }
+        .glass-card { background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.15); }
+        .glow-btn { background: linear-gradient(135deg, #3b82f6, #8b5cf6); box-shadow: 0 4px 30px rgba(59,130,246,0.4); transition: all 0.3s; }
+        .glow-btn:hover { box-shadow: 0 6px 40px rgba(59,130,246,0.6); transform: translateY(-2px); }
+        .input-focus:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+        .float-anim { animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .toast { position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 16px 24px; border-radius: 12px; color: white; font-weight: 600; box-shadow: 0 10px 40px rgba(0,0,0,0.3); transform: translateX(120%); transition: transform 0.4s ease; }
+        .toast.show { transform: translateX(0); }
+        .toast-success { background: linear-gradient(135deg, #10b981, #059669); }
+        .toast-error { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .toast-info { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .pulse-ring { animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse-ring { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+    <div id="toast" class="toast"></div>
+
+    <!-- Login Container -->
+    <div class="w-full max-w-5xl flex flex-col lg:flex-row gap-8 items-center">
+        <!-- Left Side - Branding -->
+        <div class="flex-1 text-center lg:text-left px-4">
+            <div class="float-anim inline-block mb-6">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl">
+                    <i class="fas fa-graduation-cap text-white text-3xl"></i>
+                </div>
+            </div>
+            <h1 class="text-4xl lg:text-5xl font-bold text-white mb-4">Global Guidance</h1>
+            <p class="text-xl text-blue-200 mb-6">Student Portal</p>
+            <p class="text-gray-400 mb-8 max-w-md">Track your university applications, manage documents, communicate with your counselor, and stay updated on your visa status - all in one place.</p>
+            
+            <div class="space-y-4 hidden lg:block">
+                <div class="flex items-center space-x-3 text-gray-300">
+                    <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-chart-line text-blue-400"></i>
+                    </div>
+                    <span>Real-time application tracking</span>
+                </div>
+                <div class="flex items-center space-x-3 text-gray-300">
+                    <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-file-alt text-purple-400"></i>
+                    </div>
+                    <span>Document management & upload</span>
+                </div>
+                <div class="flex items-center space-x-3 text-gray-300">
+                    <div class="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-comments text-green-400"></i>
+                    </div>
+                    <span>Direct counselor messaging</span>
+                </div>
+                <div class="flex items-center space-x-3 text-gray-300">
+                    <div class="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-passport text-orange-400"></i>
+                    </div>
+                    <span>Visa status monitoring</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Login Form -->
+        <div class="w-full max-w-md">
+            <div class="glass-card rounded-2xl p-8">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-white mb-2">Welcome Back</h2>
+                    <p class="text-gray-400">Sign in to your student account</p>
+                </div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">
+                            <i class="fas fa-id-badge mr-2 text-blue-400"></i>Student ID
+                        </label>
+                        <input type="text" id="studentId" placeholder="e.g. GG-STU-001 or your name"
+                            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 input-focus outline-none transition">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">
+                            <i class="fas fa-lock mr-2 text-purple-400"></i>Password
+                        </label>
+                        <div class="relative">
+                            <input type="password" id="password" placeholder="Enter your password"
+                                class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 input-focus outline-none transition pr-12">
+                            <button type="button" onclick="togglePassword()" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition">
+                                <i class="fas fa-eye" id="eyeIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-sm">
+                        <label class="flex items-center text-gray-400 cursor-pointer">
+                            <input type="checkbox" id="rememberMe" class="mr-2 rounded bg-white/10 border-white/20">
+                            Remember me
+                        </label>
+                        <a href="#" onclick="showForgotPassword()" class="text-blue-400 hover:text-blue-300 transition">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" id="loginBtn" class="w-full glow-btn text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center space-x-2">
+                        <span>Sign In</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+
+                <div class="mt-6 pt-6 border-t border-white/10 text-center">
+                    <p class="text-gray-400 text-sm mb-4">Or find your account</p>
+                    <button onclick="showStudentFinder()" class="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-6 rounded-xl transition flex items-center justify-center space-x-2">
+                        <i class="fas fa-search"></i>
+                        <span>Find My Account</span>
+                    </button>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <p class="text-gray-500 text-xs">
+                        Staff member? <a href="/" class="text-blue-400 hover:text-blue-300">Login here</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Help Box -->
+            <div class="glass-card rounded-xl p-4 mt-4 text-center">
+                <p class="text-gray-400 text-sm">
+                    <i class="fas fa-headset mr-2 text-blue-400"></i>
+                    Need help? Contact <a href="mailto:hr@globalguidance.lk" class="text-blue-400 hover:text-blue-300">hr@globalguidance.lk</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Finder Modal -->
+    <div id="finderModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl p-8 w-full max-w-lg max-h-[80vh] flex flex-col">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white"><i class="fas fa-search mr-2 text-blue-400"></i>Find Your Account</h3>
+                <button onclick="closeFinderModal()" class="text-gray-400 hover:text-white transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="mb-4">
+                <input type="text" id="searchInput" oninput="searchStudents()" placeholder="Type your name to find your account..."
+                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 input-focus outline-none transition">
+            </div>
+            <div id="searchResults" class="flex-1 overflow-y-auto space-y-2 min-h-0">
+                <p class="text-gray-500 text-center py-8"><i class="fas fa-user-search text-3xl mb-3 block"></i>Start typing to find your account</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl p-8 w-full max-w-md">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white"><i class="fas fa-key mr-2 text-yellow-400"></i>Reset Password</h3>
+                <button onclick="closeForgotModal()" class="text-gray-400 hover:text-white transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <p class="text-gray-400 mb-4">Your default password is your Student ID (e.g., GG-STU-001). Contact your counselor if you need further help.</p>
+            <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-4">
+                <p class="text-blue-300 text-sm"><i class="fas fa-info-circle mr-2"></i>Default password for all students: <strong>Your Student ID</strong></p>
+            </div>
+            <button onclick="closeForgotModal()" class="w-full glow-btn text-white font-bold py-3 px-6 rounded-xl">Got it</button>
+        </div>
+    </div>
+
+    <script>
+        // Student accounts will be loaded from the API
+        let ALL_STUDENTS = [];
+
+        // Load students list on page load
+        async function loadStudentsList() {
+            try {
+                const res = await fetch('/api/student-portal/accounts');
+                const data = await res.json();
+                if (data.success) {
+                    ALL_STUDENTS = data.students;
+                }
+            } catch(e) {
+                console.error('Failed to load students:', e);
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const studentId = document.getElementById('studentId').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const btn = document.getElementById('loginBtn');
+
+            if (!studentId || !password) {
+                showToast('Please enter both Student ID and Password', 'error');
+                return;
+            }
+
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing in...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/student-portal/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ studentId, password })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    // Store session
+                    localStorage.setItem('gg_student_session', JSON.stringify({
+                        student: data.student,
+                        loginTime: Date.now(),
+                        expiresAt: Date.now() + (24 * 60 * 60 * 1000)
+                    }));
+                    
+                    showToast(`Welcome back, ${data.student.name}!`, 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = '/student-portal';
+                    }, 1000);
+                } else {
+                    showToast(data.message || 'Invalid credentials', 'error');
+                    btn.innerHTML = '<span>Sign In</span><i class="fas fa-arrow-right"></i>';
+                    btn.disabled = false;
+                }
+            } catch(err) {
+                showToast('Connection error. Please try again.', 'error');
+                btn.innerHTML = '<span>Sign In</span><i class="fas fa-arrow-right"></i>';
+                btn.disabled = false;
+            }
+        }
+
+        function togglePassword() {
+            const input = document.getElementById('password');
+            const icon = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+
+        function showStudentFinder() {
+            document.getElementById('finderModal').classList.remove('hidden');
+            document.getElementById('searchInput').focus();
+        }
+
+        function closeFinderModal() {
+            document.getElementById('finderModal').classList.add('hidden');
+        }
+
+        function showForgotPassword() {
+            document.getElementById('forgotModal').classList.remove('hidden');
+        }
+
+        function closeForgotModal() {
+            document.getElementById('forgotModal').classList.add('hidden');
+        }
+
+        function searchStudents() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const container = document.getElementById('searchResults');
+            
+            if (query.length < 2) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8"><i class="fas fa-user-search text-3xl mb-3 block"></i>Type at least 2 characters to search</p>';
+                return;
+            }
+
+            const matches = ALL_STUDENTS.filter(s => 
+                s.name.toLowerCase().includes(query) || 
+                s.studentId.toLowerCase().includes(query)
+            );
+
+            if (matches.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8"><i class="fas fa-user-slash text-3xl mb-3 block"></i>No students found matching your search</p>';
+                return;
+            }
+
+            container.innerHTML = matches.map(s => `
+                <div class="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 cursor-pointer transition" onclick="selectStudent('${s.studentId}')">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                            ${s.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-white truncate">${s.name}</h4>
+                            <p class="text-sm text-gray-400">ID: ${s.studentId}</p>
+                            <p class="text-xs text-gray-500">Counselor: ${s.counselor || 'N/A'}</p>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <span class="text-xs px-2 py-1 rounded-full ${s.hasOffers ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}">
+                                ${s.hasOffers ? 'Has Offers' : 'Processing'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectStudent(studentId) {
+            document.getElementById('studentId').value = studentId;
+            closeFinderModal();
+            document.getElementById('password').focus();
+            showToast('Account found! Enter your password to sign in.', 'info');
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast toast-${type} show`;
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        // Check if already logged in
+        function checkSession() {
+            const session = localStorage.getItem('gg_student_session');
+            if (session) {
+                try {
+                    const data = JSON.parse(session);
+                    if (data.expiresAt > Date.now()) {
+                        window.location.href = '/student-portal';
+                        return;
+                    } else {
+                        localStorage.removeItem('gg_student_session');
+                    }
+                } catch(e) {
+                    localStorage.removeItem('gg_student_session');
+                }
+            }
+        }
+
+        // Init
+        checkSession();
+        loadStudentsList();
+    </script>
+</body>
+</html>

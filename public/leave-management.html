@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Management - Global Guidance HR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .tab-btn { border-bottom: 3px solid transparent; transition: all 0.3s; }
+        .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; background: #eff6ff; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-approved { background: #d1fae5; color: #065f46; }
+        .status-rejected { background: #fee2e2; color: #991b1b; }
+        .status-cancelled { background: #f3f4f6; color: #6b7280; }
+        .modal-overlay { display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-overlay.show { display: flex; align-items: center; justify-content: center; }
+        .calendar-day { min-height: 90px; border: 1px solid #e5e7eb; }
+        .calendar-day.today { background: #eff6ff; border-color: #3b82f6; }
+        .leave-type-annual { border-left: 4px solid #3b82f6; }
+        .leave-type-sick { border-left: 4px solid #ef4444; }
+        .leave-type-unpaid { border-left: 4px solid #6b7280; }
+        .leave-type-emergency { border-left: 4px solid #f59e0b; }
+        .leave-type-maternity { border-left: 4px solid #a855f7; }
+        .leave-type-paternity { border-left: 4px solid #a855f7; }
+        .leave-type-marriage { border-left: 4px solid #ec4899; }
+        .leave-type-pilgrimage { border-left: 4px solid #14b8a6; }
+        .leave-type-study { border-left: 4px solid #6366f1; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .progress-ring { position: relative; width: 80px; height: 80px; }
+        .progress-ring svg { transform: rotate(-90deg); }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="min-h-screen">
+        <nav id="topNav" class="bg-gradient-to-r from-blue-700 to-indigo-700 text-white p-4 shadow-lg" style="display: none;">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <h1 class="text-xl font-bold"><i class="fas fa-calendar-alt mr-2"></i>Leave Management System</h1>
+                <div class="flex items-center gap-4">
+                    <span id="navUserName" class="text-sm opacity-90"></span>
+                    <span id="navUserRole" class="text-xs bg-white/20 px-2 py-1 rounded"></span>
+                    <a href="/" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-100 transition"><i class="fas fa-home mr-1"></i>Dashboard</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto p-6">
+            <!-- User Info Banner -->
+            <div id="userBanner" class="bg-white rounded-xl shadow-sm p-4 mb-6 flex items-center justify-between fade-in">
+                <div class="flex items-center gap-4">
+                    <div id="userAvatar" class="avatar bg-blue-600 w-12 h-12 text-lg"></div>
+                    <div>
+                        <div class="font-bold text-gray-800" id="displayName">Loading...</div>
+                        <div class="text-sm text-gray-500" id="displayRole"></div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="text-right">
+                        <div class="text-xs text-gray-500">Leave Year</div>
+                        <div class="font-semibold text-gray-800">Jan 2026 - Dec 2026</div>
+                    </div>
+                    <button onclick="showRequestModal()" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-sm">
+                        <i class="fas fa-plus"></i> Request Leave
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
+                <div class="flex border-b overflow-x-auto">
+                    <button onclick="switchTab('overview')" class="tab-btn active px-5 py-3 font-semibold text-sm whitespace-nowrap" data-tab="overview">
+                        <i class="fas fa-tachometer-alt mr-1"></i>Overview
+                    </button>
+                    <button onclick="switchTab('my-leaves')" class="tab-btn px-5 py-3 font-semibold text-sm whitespace-nowrap" data-tab="my-leaves">
+                        <i class="fas fa-user mr-1"></i>My Leaves
+                    </button>
+                    <button onclick="switchTab('team-leaves')" class="tab-btn px-5 py-3 font-semibold text-sm whitespace-nowrap" data-tab="team-leaves" id="teamTab" style="display: none;">
+                        <i class="fas fa-users mr-1"></i>Team Leaves
+                    </button>
+                    <button onclick="switchTab('all-leaves')" class="tab-btn px-5 py-3 font-semibold text-sm whitespace-nowrap" data-tab="all-leaves" id="allLeavesTab" style="display: none;">
+                        <i class="fas fa-building mr-1"></i>All Staff
+                    </button>
+                    <button onclick="switchTab('calendar')" class="tab-btn px-5 py-3 font-semibold text-sm whitespace-nowrap" data-tab="calendar">
+                        <i class="fas fa-calendar mr-1"></i>Calendar
+                    </button>
+                    <button onclick="switchTab('team-balances')" class="tab-btn px-5 py-3 font-semibold text-sm whitespace-nowrap" data-tab="team-balances" id="balancesTab" style="display: none;">
+                        <i class="fas fa-chart-bar mr-1"></i>Balances
+                    </button>
+                    <button onclick="switchTab('policies')" class="tab-btn px-5 py-3 font-semibold text-sm whitespace-nowrap" data-tab="policies">
+                        <i class="fas fa-book mr-1"></i>Policies
+                    </button>
+                </div>
+            </div>
+
+            <!-- Overview Tab -->
+            <div id="tab-overview" class="tab-content fade-in">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="balanceCards"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold mb-4"><i class="fas fa-bolt text-yellow-500 mr-2"></i>Quick Actions</h3>
+                        <div class="space-y-3">
+                            <button onclick="showRequestModal()" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition text-sm"><i class="fas fa-plus mr-2"></i>Request Leave</button>
+                            <button onclick="switchTab('my-leaves')" class="w-full bg-gray-100 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-200 transition text-sm"><i class="fas fa-list mr-2"></i>View My Requests</button>
+                            <button onclick="switchTab('calendar')" class="w-full bg-gray-100 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-200 transition text-sm"><i class="fas fa-calendar mr-2"></i>View Calendar</button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold mb-4"><i class="fas fa-clock text-blue-500 mr-2"></i>Upcoming & Recent</h3>
+                        <div id="upcomingLeaves" class="space-y-3"></div>
+                    </div>
+                </div>
+                <!-- Pending Approvals (for managers) -->
+                <div id="pendingSection" class="mt-6" style="display:none">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold mb-4"><i class="fas fa-bell text-orange-500 mr-2"></i>Pending Approvals <span id="pendingCount" class="text-sm bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full"></span></h3>
+                        <div id="pendingApprovalCards"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- My Leaves Tab -->
+            <div id="tab-my-leaves" class="tab-content fade-in" style="display: none;">
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-4 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <button onclick="showRequestModal()" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition text-sm"><i class="fas fa-plus mr-1"></i>New Leave Request</button>
+                        <select id="myLeaveFilter" onchange="renderMyLeaves()" class="border rounded-lg px-3 py-2 text-sm">
+                            <option value="">All Types</option>
+                            <option value="Annual">Annual</option>
+                            <option value="Sick">Sick</option>
+                            <option value="Emergency">Emergency</option>
+                            <option value="Unpaid">Unpaid</option>
+                            <option value="Maternity">Maternity</option>
+                            <option value="Paternity">Paternity</option>
+                            <option value="Marriage">Marriage</option>
+                            <option value="Study">Study</option>
+                        </select>
+                    </div>
+                    <div class="text-sm text-gray-500" id="myLeaveSummary"></div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Days</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Approved By</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="myLeavesTable" class="divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Team Leaves Tab (Managers) -->
+            <div id="tab-team-leaves" class="tab-content fade-in" style="display: none;">
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-4 flex items-center justify-between">
+                    <h3 class="font-bold text-gray-800"><i class="fas fa-users text-blue-500 mr-2"></i>Team Leave Requests</h3>
+                    <select id="teamLeaveFilter" onchange="renderTeamLeaves()" class="border rounded-lg px-3 py-2 text-sm">
+                        <option value="">All Status</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Days</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teamLeavesTable" class="divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- All Staff Leaves Tab (CEO/COO/HR only) -->
+            <div id="tab-all-leaves" class="tab-content fade-in" style="display: none;">
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-4 flex items-center justify-between flex-wrap gap-3">
+                    <h3 class="font-bold text-gray-800"><i class="fas fa-building text-indigo-500 mr-2"></i>All Staff Leave Overview</h3>
+                    <div class="flex gap-2">
+                        <select id="allStaffFilter" onchange="renderAllLeaves()" class="border rounded-lg px-3 py-2 text-sm">
+                            <option value="">All Staff</option>
+                        </select>
+                        <select id="allStatusFilter" onchange="renderAllLeaves()" class="border rounded-lg px-3 py-2 text-sm">
+                            <option value="">All Status</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Days</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allLeavesTable" class="divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Calendar Tab -->
+            <div id="tab-calendar" class="tab-content fade-in" style="display: none;">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold" id="calendarMonth">February 2026</h3>
+                        <div class="flex gap-2 items-center">
+                            <label class="flex items-center gap-1 text-sm"><input type="checkbox" id="showAllTeam" checked onchange="renderCalendar()"> <span>Show Team</span></label>
+                            <button onclick="changeMonth(-1)" class="px-3 py-1.5 bg-gray-100 rounded hover:bg-gray-200 text-sm"><i class="fas fa-chevron-left"></i></button>
+                            <button onclick="goToday()" class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 text-sm">Today</button>
+                            <button onclick="changeMonth(1)" class="px-3 py-1.5 bg-gray-100 rounded hover:bg-gray-200 text-sm"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
+                    <div class="mt-4 flex items-center gap-4 flex-wrap">
+                        <div class="flex items-center gap-1"><div class="w-3 h-3 bg-blue-400 rounded"></div><span class="text-xs">Annual</span></div>
+                        <div class="flex items-center gap-1"><div class="w-3 h-3 bg-red-400 rounded"></div><span class="text-xs">Sick</span></div>
+                        <div class="flex items-center gap-1"><div class="w-3 h-3 bg-orange-400 rounded"></div><span class="text-xs">Emergency</span></div>
+                        <div class="flex items-center gap-1"><div class="w-3 h-3 bg-gray-400 rounded"></div><span class="text-xs">Unpaid</span></div>
+                        <div class="flex items-center gap-1"><div class="w-3 h-3 bg-purple-400 rounded"></div><span class="text-xs">Special</span></div>
+                        <div class="flex items-center gap-1"><div class="w-3 h-3 bg-indigo-400 rounded"></div><span class="text-xs">Study</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Balances Tab (Managers/HR) -->
+            <div id="tab-team-balances" class="tab-content fade-in" style="display: none;">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-bold mb-4"><i class="fas fa-chart-bar text-blue-500 mr-2"></i>Team Leave Balances</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Annual (22)</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Sick (10)</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Emergency (5)</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Unpaid</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Total Used</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teamBalancesTable" class="divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policies Tab -->
+            <div id="tab-policies" class="tab-content fade-in" style="display: none;">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-2xl font-bold mb-6">Leave Policies - Global Guidance Education Consultancy</h3>
+                    <div class="space-y-6">
+                        <div class="border-l-4 border-blue-500 pl-6">
+                            <h4 class="text-lg font-bold mb-3"><i class="fas fa-umbrella-beach mr-2 text-blue-500"></i>Annual Leave (22 days/year)</h4>
+                            <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
+                                <li>Accrues at 1.83 days per month</li><li>Must be requested at least 2 weeks in advance</li>
+                                <li>Maximum 10 consecutive days without special approval</li><li>Unused days carry forward (max 5 days)</li>
+                                <li>Peak admission season (Aug-Oct): Limited approvals</li><li>Can be combined with public holidays</li>
+                            </ul>
+                        </div>
+                        <div class="border-l-4 border-red-500 pl-6">
+                            <h4 class="text-lg font-bold mb-3"><i class="fas fa-hospital mr-2 text-red-500"></i>Sick Leave (10 days/year)</h4>
+                            <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
+                                <li>Medical certificate required for 2+ consecutive days</li><li>Inform manager before 9 AM on sick day</li>
+                                <li>Unused sick days don't carry forward</li><li>Extended illness: Contact HR for special arrangements</li>
+                            </ul>
+                        </div>
+                        <div class="border-l-4 border-orange-500 pl-6">
+                            <h4 class="text-lg font-bold mb-3"><i class="fas fa-exclamation-triangle mr-2 text-orange-500"></i>Emergency Leave (5 days/year)</h4>
+                            <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
+                                <li>For immediate family emergencies only</li><li>Death of immediate family: 3 days</li>
+                                <li>Hospitalization of dependent: 2 days</li><li>Notify HR within 24 hours with documentation</li>
+                            </ul>
+                        </div>
+                        <div class="border-l-4 border-gray-500 pl-6">
+                            <h4 class="text-lg font-bold mb-3"><i class="fas fa-clock mr-2 text-gray-500"></i>Unpaid Leave</h4>
+                            <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
+                                <li>Available after exhausting all paid leave</li><li>Requires manager and HR approval</li>
+                                <li>Maximum 10 days per year</li><li>Affects monthly salary proportionally</li>
+                                <li>Not allowed during peak admission season</li>
+                            </ul>
+                        </div>
+                        <div class="border-l-4 border-purple-500 pl-6">
+                            <h4 class="text-lg font-bold mb-3"><i class="fas fa-gift mr-2 text-purple-500"></i>Special Leave</h4>
+                            <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
+                                <li><strong>Maternity:</strong> 84 days (12 weeks) paid</li>
+                                <li><strong>Paternity:</strong> 7 days paid</li>
+                                <li><strong>Marriage:</strong> 5 days paid (once per employment)</li>
+                                <li><strong>Pilgrimage (Hajj):</strong> 30 days (once per employment)</li>
+                                <li><strong>Study Leave:</strong> Up to 10 days/year with approval</li>
+                            </ul>
+                        </div>
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <h4 class="font-bold text-yellow-800 mb-2"><i class="fas fa-info-circle mr-2"></i>Important Notes</h4>
+                            <ul class="list-disc list-inside space-y-1 text-sm text-yellow-800">
+                                <li>Peak season: August to October (university applications)</li>
+                                <li>All leave requests subject to business needs</li>
+                                <li>Handover required for leaves exceeding 3 days</li>
+                                <li>Public holidays: As per Sri Lankan government calendar</li>
+                                <li>Questions? Contact HR - Thasbiha S.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave Request Modal -->
+    <div id="leaveModal" class="modal-overlay">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex justify-between items-center rounded-t-xl sticky top-0 z-10">
+                <h2 class="text-lg font-bold"><i class="fas fa-calendar-plus mr-2"></i>Request Leave</h2>
+                <button onclick="closeModal('leaveModal')" class="text-white/80 hover:text-white text-lg"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="leaveForm" onsubmit="submitLeave(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Leave Type *</label>
+                    <select id="leaveType" required class="w-full border rounded-lg px-3 py-2.5 text-sm" onchange="updateLeaveInfo()">
+                        <option value="">Select Type</option>
+                        <option value="Annual">Annual Leave (22 days/yr)</option>
+                        <option value="Sick">Sick Leave (10 days/yr)</option>
+                        <option value="Emergency">Emergency Leave (5 days/yr)</option>
+                        <option value="Unpaid">Unpaid Leave</option>
+                    </select>
+                    <div id="specialLeaveOptions"></div>
+                    <div id="leaveTypeInfo" class="text-xs text-gray-500 mt-1"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Start Date *</label>
+                        <input type="date" id="startDate" required class="w-full border rounded-lg px-3 py-2.5 text-sm" onchange="calculateDays()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">End Date *</label>
+                        <input type="date" id="endDate" required class="w-full border rounded-lg px-3 py-2.5 text-sm" onchange="calculateDays()">
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="halfDay" onchange="calculateDays()"> Half Day</label>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 flex-1">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-semibold text-gray-700">Total Days:</span>
+                            <span id="totalDays" class="text-lg font-bold text-blue-600">0</span>
+                        </div>
+                        <div class="text-xs text-gray-500" id="balanceWarning"></div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Reason *</label>
+                    <textarea id="leaveReason" required rows="3" class="w-full border rounded-lg px-3 py-2.5 text-sm" placeholder="Please provide reason for leave..."></textarea>
+                </div>
+                <div id="medicalCertNote" class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800" style="display: none;">
+                    <i class="fas fa-exclamation-triangle mr-1"></i><strong>Note:</strong> Medical certificate required for sick leave exceeding 1 day.
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Handover Notes <span class="text-gray-400">(optional)</span></label>
+                    <textarea id="handoverNotes" rows="2" class="w-full border rounded-lg px-3 py-2.5 text-sm" placeholder="Brief handover instructions for your tasks..."></textarea>
+                </div>
+                <div id="coveringPerson" class="hidden">
+                    <label class="block text-sm font-medium mb-1">Covering Person</label>
+                    <select id="coverPerson" class="w-full border rounded-lg px-3 py-2.5 text-sm">
+                        <option value="">Select (optional)</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeModal('leaveModal')" class="px-5 py-2.5 border rounded-lg hover:bg-gray-50 transition text-sm">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-semibold"><i class="fas fa-paper-plane mr-1"></i>Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Approval/Rejection Modal -->
+    <div id="actionModal" class="modal-overlay">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+            <div class="px-6 py-4 border-b">
+                <h2 class="text-lg font-bold" id="actionModalTitle">Review Leave Request</h2>
+            </div>
+            <div class="p-6">
+                <div id="actionModalBody"></div>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium mb-1">Comments</label>
+                    <textarea id="actionComments" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Optional comments..."></textarea>
+                </div>
+                <div class="flex justify-end gap-3 mt-4">
+                    <button onclick="closeModal('actionModal')" class="px-4 py-2 border rounded-lg hover:bg-gray-50 text-sm">Cancel</button>
+                    <button id="actionRejectBtn" onclick="processAction('Rejected')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"><i class="fas fa-times mr-1"></i>Reject</button>
+                    <button id="actionApproveBtn" onclick="processAction('Approved')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"><i class="fas fa-check mr-1"></i>Approve</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =================== EMPLOYEE DATABASE ===================
+        const EMPLOYEES = [
+            { id: 1, employeeId: 'GG001', name: 'Nashif A. Razzak', role: 'CEO', department: 'Executive', level: 100, reportsTo: null, color: '#1e40af' },
+            { id: 2, employeeId: 'GG002', name: 'Nafees Razzak', role: 'COO', department: 'Executive', level: 100, reportsTo: 'GG001', color: '#1e3a5f' },
+            { id: 3, employeeId: 'GG003', name: 'Thasbiha S.', role: 'Head of Admissions/HR', department: 'Admin/HR', level: 80, reportsTo: 'GG001', color: '#7c3aed' },
+            { id: 4, employeeId: 'GG004', name: 'Umair', role: 'Sr. Admin Exec', department: 'Admin/HR', level: 60, reportsTo: 'GG003', color: '#059669' },
+            { id: 5, employeeId: 'GG005', name: 'Mohamed Salih', role: 'Communications & Exec Coord', department: 'Admin/HR', level: 60, reportsTo: 'GG003', color: '#d97706' },
+            { id: 6, employeeId: 'GG006', name: 'Razan Thawus', role: 'Head of BD/Visa', department: 'BD & Visa', level: 80, reportsTo: 'GG001', color: '#dc2626' },
+            { id: 7, employeeId: 'GG007', name: 'Sukaina', role: 'Student Counsellor & Front Desk', department: 'Admissions & Front Office', level: 40, reportsTo: 'GG003', color: '#ec4899' },
+            { id: 8, employeeId: 'GG008', name: 'Binupa', role: 'Jr. Counsellor & TikTok Specialist', department: 'Admissions & Marketing', level: 40, reportsTo: 'GG003', color: '#f59e0b' },
+            { id: 9, employeeId: 'GG009', name: 'Shiran', role: 'Graphic Designer & Social Lead', department: 'Marketing', level: 40, reportsTo: 'GG002', color: '#06b6d4' }
+        ];
+
+        // Role-based leave entitlements
+        function getLeaveEntitlements(emp) {
+            const base = { annual: 22, sick: 10, emergency: 5 };
+            // Executive level - extra annual
+            if (emp.level >= 100) { base.annual = 25; }
+            // Head level - slightly more
+            else if (emp.level >= 80) { base.annual = 24; }
+            return base;
+        }
+
+        // Role-based special leave types
+        function getSpecialLeaveTypes(emp) {
+            const types = [];
+            types.push({ value: 'Maternity', label: 'Maternity Leave (84 days)', days: 84 });
+            types.push({ value: 'Paternity', label: 'Paternity Leave (7 days)', days: 7 });
+            types.push({ value: 'Marriage', label: 'Marriage Leave (5 days)', days: 5 });
+            types.push({ value: 'Pilgrimage', label: 'Pilgrimage/Hajj (30 days)', days: 30 });
+            types.push({ value: 'Study', label: 'Study Leave (10 days/yr)', days: 10 });
+            return types;
+        }
+
+        // Determine who this user can approve
+        function canApproveFor(currentEmp) {
+            if (!currentEmp) return [];
+            // CEO/COO can approve everyone
+            if (currentEmp.level >= 100) return EMPLOYEES.filter(e => e.employeeId !== currentEmp.employeeId);
+            // Head level can approve their direct reports + others in dept
+            if (currentEmp.level >= 80) return EMPLOYEES.filter(e => e.reportsTo === currentEmp.employeeId || (e.department === currentEmp.department && e.level < currentEmp.level));
+            return [];
+        }
+
+        // =================== STATE ===================
+        let currentUser = null;
+        let currentEmployee = null;
+        let leaveRequests = [];
+        let leaveBalances = {};
+        let currentMonth = new Date();
+        let currentActionLeaveId = null;
+        const STORAGE_KEY = 'gg_leave_data';
+
+        // =================== INITIALIZATION ===================
+        (function init() {
+            if (window.self === window.top) document.getElementById('topNav').style.display = 'block';
+
+            const userData = localStorage.getItem('gg_hr_session');
+            if (userData) {
+                try {
+                    currentUser = JSON.parse(userData);
+                    currentEmployee = EMPLOYEES.find(e => e.employeeId === currentUser.employeeId) || 
+                                     EMPLOYEES.find(e => e.name === currentUser.name) ||
+                                     EMPLOYEES.find(e => e.name.toLowerCase().includes((currentUser.name || '').toLowerCase()));
+                } catch(e) { console.warn('Session parse error:', e); }
+            }
+
+            if (!currentEmployee) {
+                // Fallback: create a guest session for testing
+                currentEmployee = EMPLOYEES[3]; // Default to Umair
+                currentUser = { name: currentEmployee.name, employeeId: currentEmployee.employeeId, level: currentEmployee.level };
+            }
+
+            // Set user info
+            document.getElementById('displayName').textContent = currentEmployee.name;
+            document.getElementById('displayRole').textContent = `${currentEmployee.role} | ${currentEmployee.department}`;
+            document.getElementById('userAvatar').textContent = currentEmployee.name.charAt(0);
+            document.getElementById('userAvatar').style.background = currentEmployee.color;
+            document.getElementById('navUserName').textContent = currentEmployee.name;
+            document.getElementById('navUserRole').textContent = currentEmployee.role;
+
+            // Show tabs based on role
+            const canApprove = canApproveFor(currentEmployee);
+            if (canApprove.length > 0) {
+                document.getElementById('teamTab').style.display = 'inline-flex';
+                document.getElementById('pendingSection').style.display = 'block';
+                document.getElementById('balancesTab').style.display = 'inline-flex';
+            }
+            if (currentEmployee.level >= 80) {
+                document.getElementById('allLeavesTab').style.display = 'inline-flex';
+            }
+
+            // Populate cover person dropdown
+            const coverSelect = document.getElementById('coverPerson');
+            EMPLOYEES.filter(e => e.employeeId !== currentEmployee.employeeId).forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e.employeeId; opt.textContent = `${e.name} (${e.role})`;
+                coverSelect.appendChild(opt);
+            });
+
+            // Populate all staff filter
+            const allStaffFilter = document.getElementById('allStaffFilter');
+            EMPLOYEES.forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e.employeeId; opt.textContent = e.name;
+                allStaffFilter.appendChild(opt);
+            });
+
+            // Special leave types
+            const specialDiv = document.getElementById('specialLeaveOptions');
+            const specialTypes = getSpecialLeaveTypes(currentEmployee);
+            specialTypes.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.value; opt.textContent = t.label;
+                document.getElementById('leaveType').appendChild(opt);
+            });
+
+            loadData();
+            renderAll();
+        })();
+
+        // =================== DATA PERSISTENCE ===================
+        function loadData() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    leaveRequests = data.requests || [];
+                    leaveBalances = data.balances || {};
+                } else {
+                    initializeDefaultData();
+                }
+            } catch(e) { initializeDefaultData(); }
+
+            // Ensure all employees have balances
+            EMPLOYEES.forEach(emp => {
+                if (!leaveBalances[emp.employeeId]) {
+                    const entitlements = getLeaveEntitlements(emp);
+                    leaveBalances[emp.employeeId] = {
+                        annual: { used: 0, total: entitlements.annual },
+                        sick: { used: 0, total: entitlements.sick },
+                        emergency: { used: 0, total: entitlements.emergency },
+                        unpaid: { used: 0 },
+                        maternity: { used: 0, total: 84 },
+                        paternity: { used: 0, total: 7 },
+                        marriage: { used: 0, total: 5 },
+                        pilgrimage: { used: 0, total: 30 },
+                        study: { used: 0, total: 10 }
+                    };
+                }
+            });
+        }
+
+        function initializeDefaultData() {
+            leaveRequests = [
+                { id: 1, employeeId: 'GG001', employeeName: 'Nashif A. Razzak', type: 'Annual', startDate: '2026-01-05', endDate: '2026-01-09', days: 5, reason: 'New Year family vacation', status: 'Approved', approvedBy: 'Self', submittedDate: '2025-12-20', comments: '' },
+                { id: 2, employeeId: 'GG003', employeeName: 'Thasbiha S.', type: 'Sick', startDate: '2026-01-20', endDate: '2026-01-21', days: 2, reason: 'Flu and fever', status: 'Approved', approvedBy: 'Nashif A. Razzak', submittedDate: '2026-01-20', comments: 'Get well soon' },
+                { id: 3, employeeId: 'GG004', employeeName: 'Umair', type: 'Annual', startDate: '2026-02-25', endDate: '2026-02-27', days: 3, reason: 'Family event', status: 'Approved', approvedBy: 'Thasbiha S.', submittedDate: '2026-02-10', comments: '' },
+                { id: 4, employeeId: 'GG006', employeeName: 'Razan Thawus', type: 'Emergency', startDate: '2026-02-05', endDate: '2026-02-06', days: 2, reason: 'Family medical emergency', status: 'Approved', approvedBy: 'Nashif A. Razzak', submittedDate: '2026-02-05', comments: '' },
+                { id: 5, employeeId: 'GG007', employeeName: 'Sukaina', type: 'Annual', startDate: '2026-03-10', endDate: '2026-03-14', days: 5, reason: 'Planned holiday', status: 'Pending', approvedBy: '', submittedDate: '2026-02-18', comments: '' },
+                { id: 6, employeeId: 'GG008', employeeName: 'Binupa', type: 'Sick', startDate: '2026-02-12', endDate: '2026-02-12', days: 1, reason: 'Dental appointment', status: 'Approved', approvedBy: 'Thasbiha S.', submittedDate: '2026-02-11', comments: '' },
+                { id: 7, employeeId: 'GG009', employeeName: 'Shiran', type: 'Study', startDate: '2026-03-20', endDate: '2026-03-22', days: 3, reason: 'Adobe certification exam preparation', status: 'Pending', approvedBy: '', submittedDate: '2026-02-19', comments: '' },
+                { id: 8, employeeId: 'GG005', employeeName: 'Mohamed Salih', type: 'Annual', startDate: '2026-03-01', endDate: '2026-03-03', days: 3, reason: 'Personal commitment', status: 'Pending', approvedBy: '', submittedDate: '2026-02-17', comments: '' },
+                { id: 9, employeeId: 'GG002', employeeName: 'Nafees Razzak', type: 'Annual', startDate: '2026-01-15', endDate: '2026-01-16', days: 2, reason: 'Business trip follow-up', status: 'Approved', approvedBy: 'Self', submittedDate: '2026-01-10', comments: '' },
+                { id: 10, employeeId: 'GG004', employeeName: 'Umair', type: 'Sick', startDate: '2026-01-28', endDate: '2026-01-29', days: 2, reason: 'Back pain', status: 'Approved', approvedBy: 'Thasbiha S.', submittedDate: '2026-01-28', comments: '' },
+            ];
+
+            // Initialize balances from existing requests
+            EMPLOYEES.forEach(emp => {
+                const entitlements = getLeaveEntitlements(emp);
+                leaveBalances[emp.employeeId] = {
+                    annual: { used: 0, total: entitlements.annual },
+                    sick: { used: 0, total: entitlements.sick },
+                    emergency: { used: 0, total: entitlements.emergency },
+                    unpaid: { used: 0 },
+                    maternity: { used: 0, total: 84 },
+                    paternity: { used: 0, total: 7 },
+                    marriage: { used: 0, total: 5 },
+                    pilgrimage: { used: 0, total: 30 },
+                    study: { used: 0, total: 10 }
+                };
+            });
+
+            // Calculate used from approved requests
+            leaveRequests.filter(r => r.status === 'Approved').forEach(r => {
+                const key = r.type.toLowerCase();
+                if (leaveBalances[r.employeeId] && leaveBalances[r.employeeId][key]) {
+                    leaveBalances[r.employeeId][key].used += r.days;
+                }
+            });
+
+            saveData();
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ requests: leaveRequests, balances: leaveBalances }));
+        }
+
+        // =================== TAB MANAGEMENT ===================
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            const el = document.getElementById('tab-' + tabName);
+            if (el) el.style.display = 'block';
+
+            if (tabName === 'calendar') renderCalendar();
+            if (tabName === 'team-balances') renderTeamBalances();
+            if (tabName === 'my-leaves') renderMyLeaves();
+            if (tabName === 'team-leaves') renderTeamLeaves();
+            if (tabName === 'all-leaves') renderAllLeaves();
+        }
+
+        // =================== RENDER FUNCTIONS ===================
+        function renderAll() {
+            renderBalanceCards();
+            renderMyLeaves();
+            renderTeamLeaves();
+            renderAllLeaves();
+            renderUpcomingLeaves();
+            renderPendingApprovals();
+            renderCalendar();
+            renderTeamBalances();
+        }
+
+        function renderBalanceCards() {
+            const bal = leaveBalances[currentEmployee.employeeId];
+            if (!bal) return;
+
+            const cards = [
+                { key: 'annual', label: 'Annual Leave', icon: 'fa-umbrella-beach', color: 'blue', total: bal.annual.total },
+                { key: 'sick', label: 'Sick Leave', icon: 'fa-hospital', color: 'red', total: bal.sick.total },
+                { key: 'emergency', label: 'Emergency', icon: 'fa-exclamation-triangle', color: 'orange', total: bal.emergency.total },
+                { key: 'unpaid', label: 'Unpaid Taken', icon: 'fa-clock', color: 'gray', total: null }
+            ];
+
+            document.getElementById('balanceCards').innerHTML = cards.map(c => {
+                const used = bal[c.key].used;
+                const remaining = c.total ? c.total - used : null;
+                const pct = c.total ? Math.round((used / c.total) * 100) : 0;
+                const barColor = pct > 80 ? 'bg-red-500' : pct > 50 ? 'bg-yellow-500' : `bg-${c.color}-500`;
+
+                return `<div class="bg-white rounded-lg shadow-sm p-4 leave-type-${c.key}">
+                    <div class="flex items-center justify-between mb-2">
+                        <i class="fas ${c.icon} text-2xl text-${c.color}-500"></i>
+                        <div class="text-right">
+                            <div class="text-xl font-bold">${c.total ? `${used}/${c.total}` : used}</div>
+                            <div class="text-xs text-gray-500">${c.label}</div>
+                        </div>
+                    </div>
+                    ${c.total ? `<div class="w-full bg-gray-200 rounded-full h-1.5 mt-2"><div class="${barColor} h-1.5 rounded-full" style="width:${pct}%"></div></div>
+                    <div class="text-xs text-gray-500 mt-1">${remaining} days remaining</div>` : `<div class="text-xs text-gray-500 mt-2">Days taken this year</div>`}
+                </div>`;
+            }).join('');
+        }
+
+        function renderMyLeaves() {
+            const filter = document.getElementById('myLeaveFilter')?.value || '';
+            let myLeaves = leaveRequests.filter(r => r.employeeId === currentEmployee.employeeId);
+            if (filter) myLeaves = myLeaves.filter(r => r.type === filter);
+            myLeaves.sort((a, b) => new Date(b.submittedDate) - new Date(a.submittedDate));
+
+            const summary = document.getElementById('myLeaveSummary');
+            if (summary) {
+                const total = myLeaves.reduce((sum, r) => sum + r.days, 0);
+                const approved = myLeaves.filter(r => r.status === 'Approved').reduce((sum, r) => sum + r.days, 0);
+                summary.textContent = `${myLeaves.length} requests | ${total} total days | ${approved} approved days`;
+            }
+
+            const tbody = document.getElementById('myLeavesTable');
+            tbody.innerHTML = myLeaves.map(leave => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3"><div class="flex items-center gap-2"><i class="fas ${getLeaveIcon(leave.type)} text-${getLeaveColor(leave.type)}-500"></i><span class="text-sm font-medium">${leave.type}</span></div></td>
+                    <td class="px-4 py-3"><div class="text-sm">${formatDate(leave.startDate)}</div><div class="text-xs text-gray-400">to ${formatDate(leave.endDate)}</div></td>
+                    <td class="px-4 py-3 font-semibold text-sm">${leave.days}</td>
+                    <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold status-${leave.status.toLowerCase()}">${leave.status}</span></td>
+                    <td class="px-4 py-3 text-xs text-gray-600 max-w-[200px] truncate">${leave.reason}</td>
+                    <td class="px-4 py-3 text-xs text-gray-500">${leave.approvedBy || '-'}</td>
+                    <td class="px-4 py-3">
+                        ${leave.status === 'Pending' ? `<button onclick="cancelLeave(${leave.id})" class="text-red-500 hover:text-red-700 text-xs"><i class="fas fa-times mr-1"></i>Cancel</button>` : '<span class="text-xs text-gray-400">-</span>'}
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="7" class="px-6 py-8 text-center text-gray-400"><i class="fas fa-inbox text-3xl mb-2"></i><br>No leave requests found</td></tr>';
+        }
+
+        function renderTeamLeaves() {
+            const filter = document.getElementById('teamLeaveFilter')?.value || '';
+            const approvable = canApproveFor(currentEmployee);
+            const approvableIds = approvable.map(e => e.employeeId);
+            let teamLeaves = leaveRequests.filter(r => approvableIds.includes(r.employeeId));
+            if (filter) teamLeaves = teamLeaves.filter(r => r.status === filter);
+            teamLeaves.sort((a, b) => new Date(b.submittedDate) - new Date(a.submittedDate));
+
+            const tbody = document.getElementById('teamLeavesTable');
+            tbody.innerHTML = teamLeaves.map(leave => {
+                const emp = EMPLOYEES.find(e => e.employeeId === leave.employeeId);
+                return `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3"><div class="flex items-center gap-2">
+                        <div class="avatar" style="background:${emp?.color || '#6b7280'}">${(leave.employeeName || '?').charAt(0)}</div>
+                        <span class="text-sm font-medium">${leave.employeeName}</span>
+                    </div></td>
+                    <td class="px-4 py-3 text-xs text-gray-500">${emp?.role || '-'}</td>
+                    <td class="px-4 py-3"><div class="flex items-center gap-1"><i class="fas ${getLeaveIcon(leave.type)} text-${getLeaveColor(leave.type)}-500 text-xs"></i><span class="text-sm">${leave.type}</span></div></td>
+                    <td class="px-4 py-3"><div class="text-sm">${formatDate(leave.startDate)}</div><div class="text-xs text-gray-400">to ${formatDate(leave.endDate)}</div></td>
+                    <td class="px-4 py-3 font-semibold text-sm">${leave.days}</td>
+                    <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold status-${leave.status.toLowerCase()}">${leave.status}</span></td>
+                    <td class="px-4 py-3">
+                        ${leave.status === 'Pending' ? `
+                            <div class="flex gap-1">
+                                <button onclick="showActionModal(${leave.id})" class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs hover:bg-blue-100"><i class="fas fa-eye mr-1"></i>Review</button>
+                            </div>
+                        ` : `<span class="text-xs text-gray-400">${leave.approvedBy ? 'By ' + leave.approvedBy : '-'}</span>`}
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="7" class="px-6 py-8 text-center text-gray-400">No team leave requests</td></tr>';
+        }
+
+        function renderAllLeaves() {
+            const staffFilter = document.getElementById('allStaffFilter')?.value || '';
+            const statusFilter = document.getElementById('allStatusFilter')?.value || '';
+            let all = [...leaveRequests];
+            if (staffFilter) all = all.filter(r => r.employeeId === staffFilter);
+            if (statusFilter) all = all.filter(r => r.status === statusFilter);
+            all.sort((a, b) => new Date(b.submittedDate) - new Date(a.submittedDate));
+
+            const tbody = document.getElementById('allLeavesTable');
+            tbody.innerHTML = all.map(leave => {
+                const emp = EMPLOYEES.find(e => e.employeeId === leave.employeeId);
+                const canAct = leave.status === 'Pending' && canApproveFor(currentEmployee).some(e => e.employeeId === leave.employeeId);
+                return `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3"><div class="flex items-center gap-2">
+                        <div class="avatar" style="background:${emp?.color || '#6b7280'}">${(leave.employeeName || '?').charAt(0)}</div>
+                        <div><div class="text-sm font-medium">${leave.employeeName}</div><div class="text-xs text-gray-400">${emp?.employeeId || ''}</div></div>
+                    </div></td>
+                    <td class="px-4 py-3 text-xs text-gray-500">${emp?.department || '-'}</td>
+                    <td class="px-4 py-3"><div class="flex items-center gap-1"><i class="fas ${getLeaveIcon(leave.type)} text-${getLeaveColor(leave.type)}-500 text-xs"></i><span class="text-sm">${leave.type}</span></div></td>
+                    <td class="px-4 py-3"><div class="text-xs">${formatDate(leave.startDate)} - ${formatDate(leave.endDate)}</div></td>
+                    <td class="px-4 py-3 font-semibold text-sm">${leave.days}</td>
+                    <td class="px-4 py-3 text-xs text-gray-600 max-w-[150px] truncate">${leave.reason}</td>
+                    <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold status-${leave.status.toLowerCase()}">${leave.status}</span></td>
+                    <td class="px-4 py-3">
+                        ${canAct ? `<button onclick="showActionModal(${leave.id})" class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs hover:bg-blue-100"><i class="fas fa-eye mr-1"></i>Review</button>` : '<span class="text-xs text-gray-400">-</span>'}
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="8" class="px-6 py-8 text-center text-gray-400">No leave requests found</td></tr>';
+        }
+
+        function renderUpcomingLeaves() {
+            const today = new Date().toISOString().split('T')[0];
+            const relevant = leaveRequests
+                .filter(r => r.employeeId === currentEmployee.employeeId && (r.status === 'Approved' || r.status === 'Pending'))
+                .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
+                .slice(0, 5);
+
+            document.getElementById('upcomingLeaves').innerHTML = relevant.length === 0
+                ? '<p class="text-gray-400 text-sm">No upcoming or recent leaves</p>'
+                : relevant.map(leave => {
+                    const isPast = leave.endDate < today;
+                    return `<div class="flex items-center justify-between p-3 ${isPast ? 'bg-gray-50' : 'bg-blue-50'} rounded-lg">
+                        <div>
+                            <div class="font-semibold text-sm">${leave.type} Leave ${isPast ? '<span class="text-xs text-gray-400">(past)</span>' : ''}</div>
+                            <div class="text-xs text-gray-500">${formatDate(leave.startDate)} - ${leave.days} day${leave.days > 1 ? 's' : ''}</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold status-${leave.status.toLowerCase()}">${leave.status}</span>
+                            <i class="fas ${getLeaveIcon(leave.type)} text-${getLeaveColor(leave.type)}-500"></i>
+                        </div>
+                    </div>`;
+                }).join('');
+        }
+
+        function renderPendingApprovals() {
+            const approvable = canApproveFor(currentEmployee);
+            const approvableIds = approvable.map(e => e.employeeId);
+            const pending = leaveRequests.filter(r => r.status === 'Pending' && approvableIds.includes(r.employeeId));
+
+            document.getElementById('pendingCount').textContent = pending.length;
+            if (pending.length === 0) {
+                document.getElementById('pendingApprovalCards').innerHTML = '<p class="text-gray-400 text-sm">No pending approvals</p>';
+                return;
+            }
+
+            document.getElementById('pendingApprovalCards').innerHTML = pending.map(leave => {
+                const emp = EMPLOYEES.find(e => e.employeeId === leave.employeeId);
+                return `<div class="border rounded-lg p-4 mb-3 hover:bg-gray-50 transition">
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-center gap-3">
+                            <div class="avatar w-10 h-10 text-sm" style="background:${emp?.color || '#6b7280'}">${leave.employeeName.charAt(0)}</div>
+                            <div>
+                                <div class="font-bold text-sm">${leave.employeeName}</div>
+                                <div class="text-xs text-gray-500">${emp?.role || ''} | ${emp?.department || ''}</div>
+                                <div class="text-xs text-gray-600 mt-1">${leave.type} - ${leave.days} day${leave.days > 1 ? 's' : ''} | ${formatDate(leave.startDate)} to ${formatDate(leave.endDate)}</div>
+                                <div class="text-xs text-gray-500 mt-0.5">Reason: ${leave.reason}</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="quickApprove(${leave.id})" class="bg-green-600 text-white px-3 py-1.5 rounded text-xs hover:bg-green-700"><i class="fas fa-check mr-1"></i>Approve</button>
+                            <button onclick="showActionModal(${leave.id})" class="bg-gray-100 text-gray-700 px-3 py-1.5 rounded text-xs hover:bg-gray-200"><i class="fas fa-eye mr-1"></i>Review</button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderTeamBalances() {
+            const employees = currentEmployee.level >= 100 ? EMPLOYEES : 
+                             currentEmployee.level >= 80 ? EMPLOYEES.filter(e => e.reportsTo === currentEmployee.employeeId || e.employeeId === currentEmployee.employeeId || e.department === currentEmployee.department) :
+                             [currentEmployee];
+
+            const tbody = document.getElementById('teamBalancesTable');
+            tbody.innerHTML = employees.map(emp => {
+                const bal = leaveBalances[emp.employeeId];
+                if (!bal) return '';
+                const totalUsed = (bal.annual?.used || 0) + (bal.sick?.used || 0) + (bal.emergency?.used || 0) + (bal.unpaid?.used || 0);
+                return `<tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3"><div class="flex items-center gap-2">
+                        <div class="avatar" style="background:${emp.color}">${emp.name.charAt(0)}</div>
+                        <span class="text-sm font-medium">${emp.name}</span>
+                    </div></td>
+                    <td class="px-4 py-3 text-xs text-gray-500">${emp.role}</td>
+                    <td class="px-4 py-3 text-center"><span class="text-sm font-medium ${bal.annual.used >= bal.annual.total ? 'text-red-600' : ''}">${bal.annual.used}/${bal.annual.total}</span></td>
+                    <td class="px-4 py-3 text-center"><span class="text-sm font-medium ${bal.sick.used >= bal.sick.total ? 'text-red-600' : ''}">${bal.sick.used}/${bal.sick.total}</span></td>
+                    <td class="px-4 py-3 text-center"><span class="text-sm font-medium ${bal.emergency.used >= bal.emergency.total ? 'text-red-600' : ''}">${bal.emergency.used}/${bal.emergency.total}</span></td>
+                    <td class="px-4 py-3 text-center"><span class="text-sm font-medium">${bal.unpaid.used}</span></td>
+                    <td class="px-4 py-3 text-center"><span class="text-sm font-bold ${totalUsed > 20 ? 'text-red-600' : 'text-gray-800'}">${totalUsed}</span></td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderCalendar() {
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+            document.getElementById('calendarMonth').textContent = new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date().toISOString().split('T')[0];
+            const showAll = document.getElementById('showAllTeam')?.checked;
+
+            let approvedLeaves = leaveRequests.filter(l => l.status === 'Approved');
+            if (!showAll) approvedLeaves = approvedLeaves.filter(l => l.employeeId === currentEmployee.employeeId);
+
+            let html = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                .map(day => `<div class="text-center font-semibold py-2 bg-gray-50 text-xs text-gray-600">${day}</div>`).join('');
+
+            for (let i = 0; i < firstDay; i++) html += '<div class="calendar-day bg-gray-50/50"></div>';
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isToday = dateStr === today;
+                const leaves = approvedLeaves.filter(l => dateStr >= l.startDate && dateStr <= l.endDate);
+
+                html += `<div class="calendar-day ${isToday ? 'today' : ''} p-1">
+                    <div class="font-semibold text-xs ${isToday ? 'text-blue-700' : 'text-gray-700'} mb-0.5">${day}</div>
+                    ${leaves.slice(0, 3).map(l => {
+                        const emp = EMPLOYEES.find(e => e.employeeId === l.employeeId);
+                        return `<div class="text-[10px] bg-${getLeaveColor(l.type)}-100 text-${getLeaveColor(l.type)}-800 rounded px-1 mb-0.5 truncate border-l-2 border-${getLeaveColor(l.type)}-400" title="${l.employeeName} - ${l.type}">
+                            ${showAll ? l.employeeName.split(' ')[0] : l.type}
+                        </div>`;
+                    }).join('')}
+                    ${leaves.length > 3 ? `<div class="text-[10px] text-gray-500">+${leaves.length - 3} more</div>` : ''}
+                </div>`;
+            }
+
+            document.getElementById('calendarGrid').innerHTML = html;
+        }
+
+        // =================== ACTIONS ===================
+        function showRequestModal() {
+            document.getElementById('leaveModal').classList.add('show');
+            document.getElementById('leaveForm').reset();
+            document.getElementById('totalDays').textContent = '0';
+            document.getElementById('balanceWarning').textContent = '';
+            document.getElementById('medicalCertNote').style.display = 'none';
+            document.getElementById('coveringPerson').classList.add('hidden');
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+        function updateLeaveInfo() {
+            const type = document.getElementById('leaveType').value;
+            const info = document.getElementById('leaveTypeInfo');
+            const medical = document.getElementById('medicalCertNote');
+            const cover = document.getElementById('coveringPerson');
+
+            const infoTexts = {
+                'Annual': `Requires 2 weeks advance notice. ${getLeaveEntitlements(currentEmployee).annual} days/year. Max 10 consecutive days.`,
+                'Sick': 'Medical certificate required for 2+ days. Inform before 9 AM.',
+                'Emergency': 'For immediate family emergencies. Documentation required within 24hrs.',
+                'Unpaid': 'Affects salary. Requires manager + HR approval. Max 10 days/year.',
+                'Maternity': 'Up to 84 days (12 weeks) paid maternity leave.',
+                'Paternity': 'Up to 7 days paid paternity leave.',
+                'Marriage': '5 days paid marriage leave (once per employment).',
+                'Pilgrimage': '30 days pilgrimage/Hajj leave (once per employment).',
+                'Study': 'Up to 10 days/year for professional development/exams.'
+            };
+
+            info.textContent = infoTexts[type] || '';
+            medical.style.display = type === 'Sick' ? 'block' : 'none';
+            cover.classList.toggle('hidden', !['Annual', 'Study', 'Maternity', 'Paternity', 'Marriage', 'Pilgrimage'].includes(type));
+            calculateDays();
+        }
+
+        function calculateDays() {
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            const halfDay = document.getElementById('halfDay').checked;
+
+            if (start && end) {
+                let days = Math.ceil((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24)) + 1;
+                if (days <= 0) days = 0;
+                if (halfDay && days === 1) days = 0.5;
+                document.getElementById('totalDays').textContent = days;
+
+                // Check balance
+                const type = document.getElementById('leaveType').value?.toLowerCase();
+                const bal = leaveBalances[currentEmployee.employeeId];
+                if (bal && bal[type] && bal[type].total) {
+                    const remaining = bal[type].total - bal[type].used;
+                    if (days > remaining) {
+                        document.getElementById('balanceWarning').innerHTML = `<span class="text-red-600"><i class="fas fa-exclamation-circle"></i> Exceeds remaining balance (${remaining} days left)</span>`;
+                    } else {
+                        document.getElementById('balanceWarning').textContent = `${remaining} days remaining after this request`;
+                    }
+                } else {
+                    document.getElementById('balanceWarning').textContent = '';
+                }
+            }
+        }
+
+        function submitLeave(event) {
+            event.preventDefault();
+            const type = document.getElementById('leaveType').value;
+            const days = parseFloat(document.getElementById('totalDays').textContent);
+            if (days <= 0) { alert('Please select valid dates.'); return; }
+
+            const newLeave = {
+                id: Date.now(),
+                employeeId: currentEmployee.employeeId,
+                employeeName: currentEmployee.name,
+                type: type,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                days: days,
+                reason: document.getElementById('leaveReason').value,
+                handover: document.getElementById('handoverNotes').value,
+                coverPerson: document.getElementById('coverPerson').value,
+                status: (currentEmployee.level >= 100) ? 'Approved' : 'Pending',
+                approvedBy: (currentEmployee.level >= 100) ? 'Self' : '',
+                submittedDate: new Date().toISOString().split('T')[0],
+                comments: ''
+            };
+
+            // CEO/COO auto-approve
+            if (newLeave.status === 'Approved') {
+                const key = type.toLowerCase();
+                if (leaveBalances[currentEmployee.employeeId][key]) {
+                    leaveBalances[currentEmployee.employeeId][key].used += days;
+                }
+            }
+
+            leaveRequests.unshift(newLeave);
+            saveData();
+            closeModal('leaveModal');
+            renderAll();
+
+            const msg = newLeave.status === 'Approved' ? 'Leave auto-approved!' : 'Leave request submitted! Your manager will review it.';
+            showToast(msg, 'success');
+        }
+
+        function cancelLeave(id) {
+            if (!confirm('Are you sure you want to cancel this leave request?')) return;
+            const leave = leaveRequests.find(r => r.id === id);
+            if (!leave) return;
+
+            // Restore balance if it was approved
+            if (leave.status === 'Approved') {
+                const key = leave.type.toLowerCase();
+                if (leaveBalances[leave.employeeId][key]) {
+                    leaveBalances[leave.employeeId][key].used = Math.max(0, leaveBalances[leave.employeeId][key].used - leave.days);
+                }
+            }
+
+            leave.status = 'Cancelled';
+            saveData();
+            renderAll();
+            showToast('Leave request cancelled.', 'info');
+        }
+
+        function showActionModal(id) {
+            currentActionLeaveId = id;
+            const leave = leaveRequests.find(r => r.id === id);
+            if (!leave) return;
+            const emp = EMPLOYEES.find(e => e.employeeId === leave.employeeId);
+
+            document.getElementById('actionModalTitle').textContent = `Review: ${leave.employeeName}'s ${leave.type} Leave`;
+            document.getElementById('actionModalBody').innerHTML = `
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <div class="avatar w-10 h-10" style="background:${emp?.color || '#6b7280'}">${leave.employeeName.charAt(0)}</div>
+                        <div><div class="font-bold">${leave.employeeName}</div><div class="text-xs text-gray-500">${emp?.role || ''} | ${emp?.department || ''}</div></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div><span class="text-gray-500">Type:</span> <strong>${leave.type}</strong></div>
+                        <div><span class="text-gray-500">Days:</span> <strong>${leave.days}</strong></div>
+                        <div><span class="text-gray-500">From:</span> ${formatDate(leave.startDate)}</div>
+                        <div><span class="text-gray-500">To:</span> ${formatDate(leave.endDate)}</div>
+                    </div>
+                    <div class="text-sm"><span class="text-gray-500">Reason:</span> ${leave.reason}</div>
+                    ${leave.handover ? `<div class="text-sm"><span class="text-gray-500">Handover:</span> ${leave.handover}</div>` : ''}
+                    ${leave.coverPerson ? `<div class="text-sm"><span class="text-gray-500">Cover:</span> ${EMPLOYEES.find(e => e.employeeId === leave.coverPerson)?.name || leave.coverPerson}</div>` : ''}
+                </div>`;
+            document.getElementById('actionComments').value = '';
+            document.getElementById('actionModal').classList.add('show');
+        }
+
+        function processAction(status) {
+            const leave = leaveRequests.find(r => r.id === currentActionLeaveId);
+            if (!leave) return;
+
+            leave.status = status;
+            leave.approvedBy = currentEmployee.name;
+            leave.comments = document.getElementById('actionComments').value;
+
+            if (status === 'Approved') {
+                const key = leave.type.toLowerCase();
+                if (leaveBalances[leave.employeeId][key]) {
+                    leaveBalances[leave.employeeId][key].used += leave.days;
+                }
+            }
+
+            saveData();
+            closeModal('actionModal');
+            renderAll();
+            showToast(`Leave ${status.toLowerCase()} for ${leave.employeeName}.`, status === 'Approved' ? 'success' : 'error');
+        }
+
+        function quickApprove(id) {
+            currentActionLeaveId = id;
+            processAction('Approved');
+        }
+
+        function changeMonth(delta) {
+            currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1);
+            renderCalendar();
+        }
+
+        function goToday() {
+            currentMonth = new Date();
+            renderCalendar();
+        }
+
+        // =================== HELPERS ===================
+        function getLeaveIcon(type) {
+            const icons = { 'Annual': 'fa-umbrella-beach', 'Sick': 'fa-hospital', 'Emergency': 'fa-exclamation-triangle', 'Unpaid': 'fa-clock', 'Maternity': 'fa-baby', 'Paternity': 'fa-baby', 'Marriage': 'fa-ring', 'Pilgrimage': 'fa-kaaba', 'Study': 'fa-graduation-cap' };
+            return icons[type] || 'fa-calendar';
+        }
+
+        function getLeaveColor(type) {
+            const colors = { 'Annual': 'blue', 'Sick': 'red', 'Emergency': 'orange', 'Unpaid': 'gray', 'Maternity': 'purple', 'Paternity': 'purple', 'Marriage': 'pink', 'Pilgrimage': 'teal', 'Study': 'indigo' };
+            return colors[type] || 'gray';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function showToast(message, type) {
+            const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' };
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 ${colors[type] || 'bg-gray-700'} text-white px-6 py-3 rounded-lg shadow-lg z-[100] text-sm fade-in`;
+            toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : 'fa-info-circle'} mr-2"></i>${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+    <script src="/shared-auth.js"></script>
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

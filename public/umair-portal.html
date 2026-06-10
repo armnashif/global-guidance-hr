@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Umair - Staff Portal | Global Guidance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .pulse-dot { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* Tab styles */
+        .tab-active { @apply border-b-2 border-blue-600 text-blue-600 font-semibold; }
+        .tab-inactive { @apply text-gray-600 hover:text-gray-800; }
+        
+        /* Hide scrollbar but keep functionality */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- ========== LOGIN SCREEN ========== -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-user-tie text-white text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">Staff Portal</h1>
+                <p class="text-gray-600 mt-2">Global Guidance - Admissions</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address
+                    </label>
+                    <input 
+                        type="email" 
+                        id="loginEmail"
+                        required
+                        autocomplete="email"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="your.email@globalguidance.com"
+                    />
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Password
+                    </label>
+                    <input 
+                        type="password" 
+                        id="loginPassword"
+                        required
+                        autocomplete="current-password"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter your password"
+                    />
+                </div>
+                
+                <div id="loginError" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"></div>
+                
+                <button 
+                    type="submit"
+                    id="loginButton"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition duration-200 flex items-center justify-center"
+                >
+                    <i class="fas fa-sign-in-alt mr-2"></i>
+                    <span id="loginButtonText">Login</span>
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center text-sm text-gray-500">
+                <p>
+                    <i class="fas fa-shield-alt mr-1"></i>
+                    Secure authentication
+                </p>
+            </div>
+            
+            <!-- Demo Login Hint -->
+            <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-start">
+                    <i class="fas fa-info-circle text-blue-600 mt-0.5 mr-2"></i>
+                    <div class="text-sm text-blue-800">
+                        <p class="font-semibold mb-1">Demo Login Available</p>
+                        <p class="text-xs text-blue-700">
+                            <strong>Email:</strong> umair@globalguidance.com<br/>
+                            <strong>Password:</strong> demo (or umair123 or test123)
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Configuration Panel (hidden by default) -->
+            <div id="configPanel" class="mt-8 pt-6 border-t border-gray-200 hidden">
+                <button 
+                    onclick="toggleConfig()"
+                    class="text-sm text-gray-500 hover:text-gray-700 flex items-center mx-auto"
+                >
+                    <i class="fas fa-cog mr-2"></i>
+                    Configure Google Sheets
+                </button>
+                <div id="configForm" class="hidden mt-4 space-y-3">
+                    <input 
+                        type="text"
+                        id="appsScriptUrl"
+                        placeholder="Paste Apps Script URL here"
+                        class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    />
+                    <button 
+                        onclick="saveConfig()"
+                        class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 rounded text-sm"
+                    >
+                        Save Configuration
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MAIN PORTAL ========== -->
+    <div id="portalApp" class="hidden min-h-screen">
+        
+        <!-- Top Navigation -->
+        <nav class="bg-white shadow-sm border-b sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 py-4">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-blue-600 w-10 h-10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-graduation-cap text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-800">Global Guidance</h1>
+                            <p class="text-sm text-gray-600">Admissions Portal</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button 
+                            onclick="refreshData()"
+                            class="p-2 hover:bg-gray-100 rounded-lg transition"
+                            title="Refresh data"
+                        >
+                            <i class="fas fa-sync-alt text-gray-600" id="refreshIcon"></i>
+                        </button>
+                        <div class="text-right">
+                            <p class="text-sm font-medium text-gray-800" id="userNameDisplay"></p>
+                            <p class="text-xs text-gray-600" id="userRoleDisplay"></p>
+                        </div>
+                        <button 
+                            onclick="logout()"
+                            class="bg-red-50 hover:bg-red-100 text-red-700 px-4 py-2 rounded-lg transition duration-200 text-sm"
+                        >
+                            <i class="fas fa-sign-out-alt mr-2"></i>
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Tab Navigation -->
+        <div class="bg-white border-b sticky top-[73px] z-40">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex space-x-8 overflow-x-auto hide-scrollbar">
+                    <button onclick="showTab('dashboard')" data-tab="dashboard" class="tab py-4 px-2 border-b-2 border-transparent whitespace-nowrap tab-active">
+                        <i class="fas fa-chart-line mr-2"></i>Dashboard
+                    </button>
+                    <button onclick="showTab('attendance')" data-tab="attendance" class="tab py-4 px-2 border-b-2 border-transparent whitespace-nowrap">
+                        <i class="fas fa-calendar-check mr-2"></i>Attendance
+                    </button>
+                    <button onclick="showTab('applications')" data-tab="applications" class="tab py-4 px-2 border-b-2 border-transparent whitespace-nowrap">
+                        <i class="fas fa-file-alt mr-2"></i>Applications
+                    </button>
+                    <button onclick="showTab('dailyReport')" data-tab="dailyReport" class="tab py-4 px-2 border-b-2 border-transparent whitespace-nowrap">
+                        <i class="fas fa-clipboard-list mr-2"></i>Daily Report
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            
+            <!-- Sync Status Banner -->
+            <div id="syncStatus" class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6 flex items-center justify-between">
+                <div class="flex items-center">
+                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2 pulse-dot"></span>
+                    <span class="text-sm text-blue-800">
+                        <i class="fas fa-cloud mr-1"></i>
+                        Data synced with Google Sheets
+                    </span>
+                </div>
+                <span class="text-xs text-blue-600" id="lastRefreshed">Just now</span>
+            </div>
+
+            <!-- ========== DASHBOARD TAB ========== -->
+            <div id="dashboardTab" class="tab-content">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <!-- New Apps Received -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-inbox text-blue-600 text-xl"></i>
+                            </div>
+                            <span class="text-3xl font-bold text-gray-800" id="newAppsCount">0</span>
+                        </div>
+                        <h3 class="text-gray-600 text-sm font-medium">New Apps Received Today</h3>
+                    </div>
+                    
+                    <!-- Apps Submitted -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-paper-plane text-green-600 text-xl"></i>
+                            </div>
+                            <span class="text-3xl font-bold text-gray-800" id="submittedCount">0</span>
+                        </div>
+                        <h3 class="text-gray-600 text-sm font-medium">Apps Submitted Today</h3>
+                    </div>
+                    
+                    <!-- Conditional Offers -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-award text-purple-600 text-xl"></i>
+                            </div>
+                            <span class="text-3xl font-bold text-gray-800" id="offersCount">0</span>
+                        </div>
+                        <h3 class="text-gray-600 text-sm font-medium">Conditional Offers Today</h3>
+                    </div>
+                </div>
+
+                <!-- Offers Breakdown -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- By Country -->
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="p-6 border-b">
+                            <h3 class="text-lg font-semibold text-gray-800">
+                                <i class="fas fa-globe-americas mr-2 text-blue-600"></i>
+                                Offers by Country
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div id="offersByCountry" class="space-y-3">
+                                <p class="text-gray-500 text-sm text-center py-4">No offers today</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- By University -->
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="p-6 border-b">
+                            <h3 class="text-lg font-semibold text-gray-800">
+                                <i class="fas fa-university mr-2 text-purple-600"></i>
+                                Offers by University
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div id="offersByUniversity" class="space-y-3">
+                                <p class="text-gray-500 text-sm text-center py-4">No offers today</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== ATTENDANCE TAB ========== -->
+            <div id="attendanceTab" class="tab-content hidden">
+                <!-- Check In/Out Card -->
+                <div class="bg-white rounded-lg shadow mb-6 p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-clock mr-2 text-blue-600"></i>
+                        Today's Attendance
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="space-y-3">
+                            <label class="block text-sm font-medium text-gray-700">Work Mode</label>
+                            <select id="workModeSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="Office">Office</option>
+                                <option value="Remote">Remote</option>
+                                <option value="Field">Field Visit</option>
+                                <option value="Hybrid">Hybrid</option>
+                            </select>
+                        </div>
+                        <div class="space-y-3">
+                            <label class="block text-sm font-medium text-gray-700">Current Status</label>
+                            <div id="currentStatus" class="px-4 py-2 bg-gray-100 rounded-lg text-gray-600">
+                                Not checked in
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button 
+                            id="checkInButton"
+                            onclick="handleCheckIn()"
+                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition duration-200"
+                        >
+                            <i class="fas fa-sign-in-alt mr-2"></i>
+                            Check In
+                        </button>
+                        <button 
+                            id="checkOutButton"
+                            onclick="handleCheckOut()"
+                            class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition duration-200"
+                            disabled
+                        >
+                            <i class="fas fa-sign-out-alt mr-2"></i>
+                            Check Out
+                        </button>
+                    </div>
+                    
+                    <div id="locationInfo" class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 hidden">
+                        <i class="fas fa-map-marker-alt mr-2"></i>
+                        <span id="locationText"></span>
+                    </div>
+                </div>
+
+                <!-- Attendance History -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800">
+                            <i class="fas fa-history mr-2 text-blue-600"></i>
+                            Attendance History
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <div id="attendanceHistory" class="space-y-3">
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                <p>Loading attendance records...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== APPLICATIONS TAB ========== -->
+            <div id="applicationsTab" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-800">
+                            <i class="fas fa-file-alt mr-2 text-blue-600"></i>
+                            My Applications
+                        </h3>
+                        <div class="flex items-center space-x-3">
+                            <input 
+                                type="text" 
+                                id="searchApplications"
+                                placeholder="Search by student name..."
+                                class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                            />
+                            <select id="filterStatus" class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                                <option value="">All Statuses</option>
+                                <option value="New">New</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Submitted">Submitted</option>
+                                <option value="Offer Received">Offer Received</option>
+                                <option value="Active">Active</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Blocked">Blocked</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div id="applicationsList" class="space-y-4">
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                <p>Loading applications...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== DAILY REPORT TAB ========== -->
+            <div id="dailyReportTab" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-6">
+                        <i class="fas fa-clipboard-list mr-2 text-blue-600"></i>
+                        Daily Activity Report
+                    </h3>
+                    
+                    <!-- Student/Application Selection -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Select Student/Application
+                        </label>
+                        <select 
+                            id="dailyReportStudent"
+                            onchange="loadStudentData()"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">-- Select a student --</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Auto-filled Details -->
+                    <div id="studentDetails" class="hidden space-y-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Student Name</label>
+                                <input type="text" id="detailStudentName" readonly class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Application ID</label>
+                                <input type="text" id="detailAppId" readonly class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Course/Program</label>
+                                <input type="text" id="detailCourse" readonly class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">University</label>
+                                <input type="text" id="detailUniversity" readonly class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                                <input type="text" id="detailCountry" readonly class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Intake</label>
+                                <input type="text" id="detailIntake" readonly class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Source</label>
+                                <input type="text" id="detailSource" readonly class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Partner Name</label>
+                                <input type="text" id="detailPartner" readonly class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Case Status</label>
+                            <select id="detailCaseStatus" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="Active">Active</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Blocked">Blocked</option>
+                                <option value="Withdrawn">Withdrawn</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Action Taken / Notes</label>
+                            <textarea 
+                                id="actionTaken" 
+                                rows="4"
+                                placeholder="Enter actions taken, follow-ups, or any notes..."
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            ></textarea>
+                        </div>
+                        
+                        <button 
+                            onclick="saveDailyReport()"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition duration-200"
+                        >
+                            <i class="fas fa-save mr-2"></i>
+                            Save Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Load Integration Script -->
+    <script src="umair-portal-integration.js"></script>
+
+    <!-- Main Application Script -->
+    <script>
+        // Global state
+        let currentUser = null;
+        let currentTab = 'dashboard';
+        let applicationsData = [];
+        let offersData = [];
+        let attendanceData = [];
+        
+        // ========== NOTIFICATION HELPER ==========
+        function showNotification(title, message, type = 'info') {
+            const colors = {
+                info: 'bg-blue-500',
+                success: 'bg-green-500',
+                warning: 'bg-yellow-500',
+                error: 'bg-red-500'
+            };
+            
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg z-50 max-w-md`;
+            notification.innerHTML = `
+                <div class="flex items-start">
+                    <div class="flex-1">
+                        <h4 class="font-bold mb-1">${title}</h4>
+                        <p class="text-sm">${message}</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+        
+        // ========== INITIALIZATION ==========
+        window.addEventListener('DOMContentLoaded', () => {
+            checkSession();
+            
+            // Add event listeners for search/filter
+            const searchInput = document.getElementById('searchApplications');
+            const filterSelect = document.getElementById('filterStatus');
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', filterApplications);
+            }
+            if (filterSelect) {
+                filterSelect.addEventListener('change', filterApplications);
+            }
+        });
+        
+        function checkSession() {
+            const session = localStorage.getItem('umairPortalSession');
+            if (session) {
+                try {
+                    currentUser = JSON.parse(session);
+                    showPortal();
+                } catch (e) {
+                    localStorage.removeItem('umairPortalSession');
+                }
+            }
+        }
+        
+        // ========== LOGIN ==========
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const loginButton = document.getElementById('loginButton');
+            const loginButtonText = document.getElementById('loginButtonText');
+            const loginError = document.getElementById('loginError');
+            
+            // Disable button
+            loginButton.disabled = true;
+            loginButtonText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Logging in...';
+            loginError.classList.add('hidden');
+            
+            try {
+                // DEMO MODE: Accept email "umair@globalguidance.com" with password "demo" or "umair123"
+                if (email.toLowerCase() === 'umair@globalguidance.com' && 
+                    (password === 'demo' || password === 'umair123' || password === 'test123')) {
+                    console.log('✅ Demo login successful for Umair');
+                    
+                    // Create demo user
+                    currentUser = {
+                        id: 'UMAIR001',
+                        name: 'Umair',
+                        email: 'umair@globalguidance.com',
+                        role: 'Admissions Executive',
+                        status: 'Active',
+                        department: 'Admissions',
+                        isDemoMode: true  // Flag to indicate demo mode
+                    };
+                    
+                    // Save session
+                    localStorage.setItem('umairPortalSession', JSON.stringify(currentUser));
+                    
+                    // Show portal
+                    showPortal();
+                    
+                    // Show demo mode notification
+                    setTimeout(() => {
+                        showNotification('🎭 Demo Mode Active', 'You are viewing demo data. To use real data from Google Sheets, configure the Apps Script URL in System Settings.', 'info');
+                    }, 1000);
+                    
+                    return;
+                }
+                
+                // Check if API is configured for real login
+                if (!window.UmairPortalAPI.isConfigured()) {
+                    if (email.toLowerCase() === 'umair@globalguidance.com') {
+                        throw new Error('Google Sheets integration not configured. Please configure Apps Script URL in System Settings, or login with umair@globalguidance.com for demo mode.');
+                    }
+                }
+                
+                // Authenticate with Google Sheets
+                const user = await window.UmairPortalAPI.getStaffUserByEmail(email);
+                
+                if (!user) {
+                    throw new Error('Invalid email or staff member not found');
+                }
+                
+                // For Umair, allow any password (email-based auth)
+                // In production, validate against user.password if available
+                if (user.password && user.password !== password) {
+                    throw new Error('Invalid password');
+                }
+                
+                // Save session
+                currentUser = user;
+                localStorage.setItem('umairPortalSession', JSON.stringify(user));
+                
+                // Show portal
+                showPortal();
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                loginError.textContent = error.message;
+                loginError.classList.remove('hidden');
+                
+                // Show config panel if not configured
+                if (error.message.includes('not configured')) {
+                    document.getElementById('configPanel').classList.remove('hidden');
+                }
+            } finally {
+                loginButton.disabled = false;
+                loginButtonText.textContent = 'Login';
+            }
+        });
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('umairPortalSession');
+                currentUser = null;
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('portalApp').classList.add('hidden');
+                document.getElementById('loginForm').reset();
+            }
+        }
+        
+        // ========== PORTAL DISPLAY ==========
+        function showPortal() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('portalApp').classList.remove('hidden');
+            
+            // Update user info
+            document.getElementById('userNameDisplay').textContent = currentUser.name;
+            document.getElementById('userRoleDisplay').textContent = currentUser.role;
+            
+            // Update sync status banner
+            updateSyncStatusBanner();
+            
+            // Load initial data
+            loadAllData();
+        }
+        
+        function updateSyncStatusBanner() {
+            const syncStatus = document.getElementById('syncStatus');
+            const isDemoMode = currentUser?.isDemoMode || !window.UmairPortalAPI.isConfigured();
+            
+            if (isDemoMode) {
+                syncStatus.className = 'bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6 flex items-center justify-between';
+                syncStatus.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="w-2 h-2 bg-yellow-500 rounded-full mr-2 pulse-dot"></span>
+                        <span class="text-sm text-yellow-800">
+                            <i class="fas fa-flask mr-1"></i>
+                            Demo Mode - Using sample data
+                        </span>
+                    </div>
+                    <a href="/system-settings" class="text-xs text-yellow-700 hover:text-yellow-900 underline">Configure Google Sheets</a>
+                `;
+            } else {
+                syncStatus.className = 'bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6 flex items-center justify-between';
+                syncStatus.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2 pulse-dot"></span>
+                        <span class="text-sm text-blue-800">
+                            <i class="fas fa-cloud mr-1"></i>
+                            Data synced with Google Sheets
+                        </span>
+                    </div>
+                    <span class="text-xs text-blue-600" id="lastRefreshed">Just now</span>
+                `;
+            }
+        }
+        
+        // ========== TAB NAVIGATION ==========
+        function showTab(tabName) {
+            currentTab = tabName;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => {
+                const tabButton = tab.getAttribute('data-tab');
+                if (tabButton === tabName) {
+                    tab.classList.add('tab-active');
+                    tab.classList.remove('tab-inactive');
+                } else {
+                    tab.classList.remove('tab-active');
+                    tab.classList.add('tab-inactive');
+                }
+            });
+            
+            // Show/hide content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            const contentId = tabName + 'Tab';
+            document.getElementById(contentId).classList.remove('hidden');
+            
+            // Load data if needed
+            if (tabName === 'attendance' && attendanceData.length === 0) {
+                loadAttendanceData();
+            } else if (tabName === 'applications' && applicationsData.length === 0) {
+                loadApplicationsData();
+            } else if (tabName === 'dailyReport') {
+                populateDailyReportDropdown();
+            }
+        }
+        
+        // ========== DATA LOADING ==========
+        async function loadAllData() {
+            try {
+                await Promise.all([
+                    loadDashboardData(),
+                    loadAttendanceData(),
+                    loadApplicationsData()
+                ]);
+                updateLastRefreshed();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError('Failed to load data. Please try refreshing.');
+            }
+        }
+        
+        async function loadDashboardData() {
+            try {
+                // Check if in demo mode
+                const isDemoMode = !window.UmairPortalAPI.isConfigured();
+                
+                let summary;
+                if (isDemoMode) {
+                    // Use demo data
+                    summary = {
+                        newAppsReceived: 5,
+                        appsSubmitted: 8,
+                        conditionalOffers: 3,
+                        offersByCountry: {
+                            'UK': 2,
+                            'USA': 1,
+                            'Canada': 1,
+                            'Australia': 2
+                        },
+                        offersByUniversity: {
+                            'University of Manchester': 1,
+                            'University of Toronto': 1,
+                            'Harvard University': 1,
+                            'University of Melbourne': 1
+                        }
+                    };
+                } else {
+                    // Use real data from Google Sheets
+                    summary = await window.UmairPortalAPI.calculateTodaySummary(
+                        currentUser.id,
+                        currentUser.name
+                    );
+                }
+                
+                // Update metrics
+                document.getElementById('newAppsCount').textContent = summary.newAppsReceived;
+                document.getElementById('submittedCount').textContent = summary.appsSubmitted;
+                document.getElementById('offersCount').textContent = summary.conditionalOffers;
+                
+                // Update by country
+                const countryContainer = document.getElementById('offersByCountry');
+                if (Object.keys(summary.offersByCountry).length === 0) {
+                    countryContainer.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No offers today</p>';
+                } else {
+                    countryContainer.innerHTML = Object.entries(summary.offersByCountry)
+                        .map(([country, count]) => `
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">${country}</span>
+                                <span class="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">${count}</span>
+                            </div>
+                        `).join('');
+                }
+                
+                // Update by university
+                const universityContainer = document.getElementById('offersByUniversity');
+                if (Object.keys(summary.offersByUniversity).length === 0) {
+                    universityContainer.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No offers today</p>';
+                } else {
+                    universityContainer.innerHTML = Object.entries(summary.offersByUniversity)
+                        .map(([university, count]) => `
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">${university}</span>
+                                <span class="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold">${count}</span>
+                            </div>
+                        `).join('');
+                }
+                
+            } catch (error) {
+                console.error('Dashboard load error:', error);
+                // Fallback to demo data on error
+                document.getElementById('newAppsCount').textContent = '5';
+                document.getElementById('submittedCount').textContent = '8';
+                document.getElementById('offersCount').textContent = '3';
+            }
+        }
+        
+        async function loadAttendanceData() {
+            try {
+                // Check if in demo mode
+                const isDemoMode = !window.UmairPortalAPI.isConfigured();
+                
+                if (isDemoMode) {
+                    // Generate demo attendance data
+                    const today = new Date();
+                    attendanceData = [];
+                    
+                    for (let i = 0; i < 7; i++) {
+                        const date = new Date(today);
+                        date.setDate(date.getDate() - i);
+                        
+                        attendanceData.push({
+                            date: date.toISOString().split('T')[0],
+                            timeIn: '09:' + String(Math.floor(Math.random() * 30)).padStart(2, '0'),
+                            timeOut: '18:' + String(Math.floor(Math.random() * 30)).padStart(2, '0'),
+                            workMode: i % 3 === 0 ? 'Remote' : 'Office',
+                            location: i % 3 === 0 ? 'Home Office' : 'Colombo Office',
+                            notes: i === 0 ? 'Current day' : ''
+                        });
+                    }
+                } else {
+                    // Use real data from Google Sheets
+                    attendanceData = await window.UmairPortalAPI.fetchUmairAttendance(
+                        currentUser.id,
+                        currentUser.name
+                    );
+                }
+                
+                const historyContainer = document.getElementById('attendanceHistory');
+                
+                if (attendanceData.length === 0) {
+                    historyContainer.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No attendance records found</p>';
+                    return;
+                }
+                
+                // Sort by date descending
+                attendanceData.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                historyContainer.innerHTML = attendanceData.slice(0, 10).map(record => `
+                    <div class="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium text-gray-800">${formatDate(record.date)}</span>
+                            <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">${record.workMode}</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                            <div><i class="fas fa-sign-in-alt mr-1 text-green-600"></i> ${record.timeIn || 'N/A'}</div>
+                            <div><i class="fas fa-sign-out-alt mr-1 text-red-600"></i> ${record.timeOut || 'Not checked out'}</div>
+                        </div>
+                        ${record.location ? `
+                            <div class="mt-2 text-xs text-gray-500">
+                                <i class="fas fa-map-marker-alt mr-1"></i>
+                                ${record.location}
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+                
+                // Check if already checked in today
+                const today = new Date().toISOString().split('T')[0];
+                const todayRecord = attendanceData.find(r => r.date === today && !r.timeOut);
+                
+                if (todayRecord) {
+                    document.getElementById('currentStatus').textContent = `Checked in at ${todayRecord.timeIn}`;
+                    document.getElementById('currentStatus').classList.add('text-green-700', 'bg-green-100');
+                    document.getElementById('checkInButton').disabled = true;
+                    document.getElementById('checkOutButton').disabled = false;
+                    
+                    if (todayRecord.location) {
+                        document.getElementById('locationInfo').classList.remove('hidden');
+                        document.getElementById('locationText').textContent = todayRecord.location;
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Attendance load error:', error);
+                document.getElementById('attendanceHistory').innerHTML = 
+                    '<p class="text-red-500 text-sm text-center py-4">Failed to load attendance data</p>';
+            }
+        }
+        
+        async function loadApplicationsData() {
+            try {
+                // Check if in demo mode
+                const isDemoMode = !window.UmairPortalAPI.isConfigured();
+                
+                if (isDemoMode) {
+                    // Generate demo applications data
+                    applicationsData = [
+                        {
+                            applicationId: 'APP001',
+                            studentName: 'Ahmed Hassan',
+                            course: 'MSc Computer Science',
+                            university: 'University of Manchester',
+                            country: 'UK',
+                            intake: 'September 2026',
+                            source: 'Portal',
+                            status: 'Submitted',
+                            caseStatus: 'Active',
+                            receivedDate: '2026-02-10',
+                            submittedDate: '2026-02-10'
+                        },
+                        {
+                            applicationId: 'APP002',
+                            studentName: 'Sarah Johnson',
+                            course: 'MBA',
+                            university: 'Harvard University',
+                            country: 'USA',
+                            intake: 'Fall 2026',
+                            source: 'Direct',
+                            status: 'Under Review',
+                            caseStatus: 'Active',
+                            receivedDate: '2026-02-09'
+                        },
+                        {
+                            applicationId: 'APP003',
+                            studentName: 'Mohammed Ali',
+                            course: 'BEng Civil Engineering',
+                            university: 'University of Toronto',
+                            country: 'Canada',
+                            intake: 'September 2026',
+                            source: 'Partner',
+                            status: 'Documents Pending',
+                            caseStatus: 'Pending',
+                            receivedDate: '2026-02-08'
+                        },
+                        {
+                            applicationId: 'APP004',
+                            studentName: 'Emily Chen',
+                            course: 'LLM International Law',
+                            university: 'University of Melbourne',
+                            country: 'Australia',
+                            intake: 'March 2026',
+                            source: 'Portal',
+                            status: 'Offer Received',
+                            caseStatus: 'Active',
+                            receivedDate: '2026-02-05',
+                            submittedDate: '2026-02-06'
+                        },
+                        {
+                            applicationId: 'APP005',
+                            studentName: 'David Kim',
+                            course: 'MSc Data Science',
+                            university: 'Imperial College London',
+                            country: 'UK',
+                            intake: 'October 2026',
+                            source: 'Portal',
+                            status: 'Processing',
+                            caseStatus: 'Active',
+                            receivedDate: '2026-02-10'
+                        }
+                    ];
+                    
+                    // Generate demo offers data
+                    offersData = [
+                        {
+                            offerId: 'OFF001',
+                            applicationId: 'APP004',
+                            studentName: 'Emily Chen',
+                            university: 'University of Melbourne',
+                            country: 'Australia',
+                            intake: 'March 2026',
+                            offerStatus: 'Conditional',
+                            offerDate: '2026-02-10',
+                            conditions: 'IELTS 6.5 overall'
+                        },
+                        {
+                            offerId: 'OFF002',
+                            applicationId: 'APP001',
+                            studentName: 'Ahmed Hassan',
+                            university: 'University of Manchester',
+                            country: 'UK',
+                            intake: 'September 2026',
+                            offerStatus: 'Conditional',
+                            offerDate: '2026-02-10',
+                            conditions: 'Degree completion, IELTS 7.0'
+                        }
+                    ];
+                } else {
+                    // Use real data from Google Sheets
+                    applicationsData = await window.UmairPortalAPI.fetchUmairApplications(
+                        currentUser.id,
+                        currentUser.name
+                    );
+                    
+                    offersData = await window.UmairPortalAPI.fetchUmairOffers(
+                        currentUser.id,
+                        currentUser.name
+                    );
+                }
+                
+                renderApplications();
+                
+            } catch (error) {
+                console.error('Applications load error:', error);
+                // Fallback to demo data on error
+                applicationsData = [
+                    {
+                        applicationId: 'APP001',
+                        studentName: 'Demo Student',
+                        course: 'MSc Computer Science',
+                        university: 'Demo University',
+                        country: 'UK',
+                        intake: 'September 2026',
+                        source: 'Portal',
+                        status: 'Submitted',
+                        caseStatus: 'Active',
+                        receivedDate: '2026-02-10'
+                    }
+                ];
+                renderApplications();
+            }
+        }
+        
+        function renderApplications(filteredData = null) {
+            const data = filteredData || applicationsData;
+            const container = document.getElementById('applicationsList');
+            
+            if (data.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No applications found</p>';
+                return;
+            }
+            
+            container.innerHTML = data.map(app => `
+                <div class="p-4 border border-gray-200 rounded-lg hover:shadow-md transition">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h4 class="font-semibold text-gray-800">${app.studentName}</h4>
+                            <p class="text-sm text-gray-600">${app.course || 'N/A'}</p>
+                        </div>
+                        <span class="text-xs px-3 py-1 rounded-full ${getStatusColor(app.status)}">
+                            ${app.status}
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                        <div class="text-gray-600">
+                            <i class="fas fa-university mr-1"></i>
+                            ${app.university || 'N/A'}
+                        </div>
+                        <div class="text-gray-600">
+                            <i class="fas fa-globe mr-1"></i>
+                            ${app.country || 'N/A'}
+                        </div>
+                        <div class="text-gray-600">
+                            <i class="fas fa-calendar mr-1"></i>
+                            ${app.intake || 'N/A'}
+                        </div>
+                        <div class="text-gray-600">
+                            <i class="fas fa-tag mr-1"></i>
+                            ${app.source || 'N/A'}
+                        </div>
+                    </div>
+                    ${app.receivedDate ? `
+                        <div class="mt-2 text-xs text-gray-500">
+                            Received: ${formatDate(app.receivedDate)}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+        
+        function filterApplications() {
+            const searchTerm = document.getElementById('searchApplications').value.toLowerCase();
+            const statusFilter = document.getElementById('filterStatus').value;
+            
+            const filtered = applicationsData.filter(app => {
+                const matchesSearch = !searchTerm || app.studentName.toLowerCase().includes(searchTerm);
+                const matchesStatus = !statusFilter || app.status === statusFilter || app.caseStatus === statusFilter;
+                return matchesSearch && matchesStatus;
+            });
+            
+            renderApplications(filtered);
+        }
+        
+        function populateDailyReportDropdown() {
+            const select = document.getElementById('dailyReportStudent');
+            
+            if (applicationsData.length === 0) {
+                select.innerHTML = '<option value="">-- No applications found --</option>';
+                return;
+            }
+            
+            select.innerHTML = '<option value="">-- Select a student --</option>' +
+                applicationsData.map(app => `
+                    <option value="${app.id}" data-app='${JSON.stringify(app)}'>
+                        ${app.studentName} – ${app.id} / ${app.university || 'N/A'}
+                    </option>
+                `).join('');
+        }
+        
+        function loadStudentData() {
+            const select = document.getElementById('dailyReportStudent');
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (!selectedOption || !selectedOption.value) {
+                document.getElementById('studentDetails').classList.add('hidden');
+                return;
+            }
+            
+            try {
+                const app = JSON.parse(selectedOption.getAttribute('data-app'));
+                
+                // Populate form
+                document.getElementById('detailStudentName').value = app.studentName;
+                document.getElementById('detailAppId').value = app.id;
+                document.getElementById('detailCourse').value = app.course || '';
+                document.getElementById('detailUniversity').value = app.university || '';
+                document.getElementById('detailCountry').value = app.country || '';
+                document.getElementById('detailIntake').value = app.intake || '';
+                document.getElementById('detailSource').value = app.source || '';
+                document.getElementById('detailPartner').value = app.partnerName || '';
+                document.getElementById('detailCaseStatus').value = app.caseStatus || 'Active';
+                
+                // Show form
+                document.getElementById('studentDetails').classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Error loading student data:', error);
+            }
+        }
+        
+        async function saveDailyReport() {
+            const actionTaken = document.getElementById('actionTaken').value;
+            const caseStatus = document.getElementById('detailCaseStatus').value;
+            const appId = document.getElementById('detailAppId').value;
+            
+            if (!actionTaken.trim()) {
+                alert('Please enter action taken or notes');
+                return;
+            }
+            
+            try {
+                // Find the application
+                const app = applicationsData.find(a => a.id === appId);
+                if (!app) return;
+                
+                // Update the application record
+                const updatedData = {
+                    ...app,
+                    CaseStatus: caseStatus,
+                    ActionTaken: actionTaken,
+                    LastUpdated: new Date().toISOString()
+                };
+                
+                await window.UmairPortalAPI.updateSheetRecord('Applications', app._rowIndex, updatedData);
+                
+                alert('Daily report saved successfully!');
+                
+                // Clear form
+                document.getElementById('actionTaken').value = '';
+                document.getElementById('dailyReportStudent').selectedIndex = 0;
+                document.getElementById('studentDetails').classList.add('hidden');
+                
+                // Reload data
+                await loadApplicationsData();
+                
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('Failed to save report: ' + error.message);
+            }
+        }
+        
+        // ========== ATTENDANCE ACTIONS ==========
+        async function handleCheckIn() {
+            const workMode = document.getElementById('workModeSelect').value;
+            const button = document.getElementById('checkInButton');
+            
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Checking in...';
+            
+            try {
+                const result = await window.UmairPortalAPI.checkIn(
+                    currentUser.id,
+                    currentUser.name,
+                    workMode
+                );
+                
+                alert('✅ Checked in successfully!');
+                
+                // Update UI
+                document.getElementById('currentStatus').textContent = `Checked in at ${result.data.TimeIn}`;
+                document.getElementById('currentStatus').classList.add('text-green-700', 'bg-green-100');
+                document.getElementById('checkOutButton').disabled = false;
+                
+                if (result.data.Location) {
+                    document.getElementById('locationInfo').classList.remove('hidden');
+                    document.getElementById('locationText').textContent = result.data.Location;
+                }
+                
+                // Reload attendance
+                await loadAttendanceData();
+                
+            } catch (error) {
+                console.error('Check-in error:', error);
+                alert('Failed to check in: ' + error.message);
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Check In';
+            }
+        }
+        
+        async function handleCheckOut() {
+            const button = document.getElementById('checkOutButton');
+            
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Checking out...';
+            
+            try {
+                await window.UmairPortalAPI.checkOut(
+                    currentUser.id,
+                    currentUser.name
+                );
+                
+                alert('✅ Checked out successfully!');
+                
+                // Update UI
+                document.getElementById('currentStatus').textContent = 'Not checked in';
+                document.getElementById('currentStatus').classList.remove('text-green-700', 'bg-green-100');
+                document.getElementById('checkInButton').disabled = false;
+                document.getElementById('locationInfo').classList.add('hidden');
+                
+                // Reload attendance
+                await loadAttendanceData();
+                
+            } catch (error) {
+                console.error('Check-out error:', error);
+                alert('Failed to check out: ' + error.message);
+                button.innerHTML = '<i class="fas fa-sign-out-alt mr-2"></i>Check Out';
+            }
+        }
+        
+        // ========== UTILITY FUNCTIONS ==========
+        async function refreshData() {
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('spin');
+            
+            window.UmairPortalAPI.clearCache();
+            await loadAllData();
+            
+            setTimeout(() => icon.classList.remove('spin'), 1000);
+        }
+        
+        function updateLastRefreshed() {
+            const now = new Date();
+            document.getElementById('lastRefreshed').textContent = now.toLocaleTimeString();
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        
+        function getStatusColor(status) {
+            const statusLower = (status || '').toLowerCase();
+            if (statusLower.includes('new')) return 'bg-blue-100 text-blue-800';
+            if (statusLower.includes('progress') || statusLower.includes('active')) return 'bg-yellow-100 text-yellow-800';
+            if (statusLower.includes('submitted')) return 'bg-purple-100 text-purple-800';
+            if (statusLower.includes('offer') || statusLower.includes('approved')) return 'bg-green-100 text-green-800';
+            if (statusLower.includes('blocked') || statusLower.includes('rejected')) return 'bg-red-100 text-red-800';
+            if (statusLower.includes('pending')) return 'bg-orange-100 text-orange-800';
+            return 'bg-gray-100 text-gray-800';
+        }
+        
+        function showError(message) {
+            alert('⚠️ ' + message);
+        }
+        
+        // Configuration panel
+        function toggleConfig() {
+            const form = document.getElementById('configForm');
+            form.classList.toggle('hidden');
+            
+            if (!form.classList.contains('hidden')) {
+                document.getElementById('appsScriptUrl').value = window.UmairPortalAPI.APPS_SCRIPT_URL;
+            }
+        }
+        
+        function saveConfig() {
+            const url = document.getElementById('appsScriptUrl').value.trim();
+            if (!url || url.includes('YOUR_DEPLOYMENT_ID')) {
+                alert('Please enter a valid Apps Script deployment URL');
+                return;
+            }
+            
+            window.UmairPortalAPI.setAppsScriptUrl(url);
+        }
+        
+        // Auto-refresh every 5 minutes
+        setInterval(() => {
+            if (currentUser && currentTab === 'dashboard') {
+                loadDashboardData();
+                updateLastRefreshed();
+            }
+        }, 5 * 60 * 1000);
+    </script>
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

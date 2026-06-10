@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Apps Script - Google Sheets Sync</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl shadow-xl p-8 mb-8">
+            <h1 class="text-4xl font-bold mb-2">
+                <i class="fab fa-google text-white mr-3"></i>
+                Complete Apps Script for Google Sheets Sync
+            </h1>
+            <p class="text-xl text-green-100">Sync Umair's Dashboard, Attendance & Daily Tasks</p>
+        </div>
+
+        <!-- Important Notice -->
+        <div class="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-6 mb-8">
+            <div class="flex items-start space-x-3">
+                <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl mt-1"></i>
+                <div>
+                    <h3 class="font-bold text-yellow-900 text-lg mb-2">⚠️ IMPORTANT: Deploy This Script</h3>
+                    <p class="text-yellow-800 mb-3">
+                        This is the COMPLETE Apps Script that syncs your Google Sheet with Umair's portal.
+                        Follow the deployment steps below carefully.
+                    </p>
+                    <div class="bg-yellow-100 rounded-lg p-3">
+                        <p class="font-semibold text-yellow-900 mb-1">Google Sheet URL:</p>
+                        <a href="https://docs.google.com/spreadsheets/d/1bTBIXZAlK0Z-EgIxAOWviY_-oETih07KtMOWgFmL9ew/edit" 
+                           target="_blank"
+                           class="text-blue-600 hover:underline text-sm break-all">
+                            https://docs.google.com/spreadsheets/d/1bTBIXZAlK0Z-EgIxAOWviY_-oETih07KtMOWgFmL9ew/edit
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deployment Steps -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-rocket mr-3 text-blue-600"></i>
+                Deployment Steps
+            </h2>
+            
+            <ol class="space-y-4">
+                <li class="flex items-start space-x-3">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">1</div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800 mb-1">Open Your Google Sheet</p>
+                        <a href="https://docs.google.com/spreadsheets/d/1bTBIXZAlK0Z-EgIxAOWviY_-oETih07KtMOWgFmL9ew/edit" 
+                           target="_blank"
+                           class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
+                            <i class="fab fa-google mr-2"></i>Open Google Sheet
+                        </a>
+                    </div>
+                </li>
+
+                <li class="flex items-start space-x-3">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">2</div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800 mb-1">Go to Extensions → Apps Script</p>
+                        <p class="text-sm text-gray-600">This will open the Apps Script editor in a new tab</p>
+                    </div>
+                </li>
+
+                <li class="flex items-start space-x-3">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">3</div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800 mb-1">Delete Existing Code</p>
+                        <p class="text-sm text-gray-600">Select all (Ctrl+A) and delete any existing code</p>
+                    </div>
+                </li>
+
+                <li class="flex items-start space-x-3">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">4</div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800 mb-2">Copy the Complete Script</p>
+                        <button onclick="copyScript()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                            <i class="fas fa-copy mr-2"></i>Copy Script to Clipboard
+                        </button>
+                        <p class="text-xs text-gray-500 mt-2">Or scroll down and manually copy the code</p>
+                    </div>
+                </li>
+
+                <li class="flex items-start space-x-3">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">5</div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800 mb-1">Paste in Apps Script Editor</p>
+                        <p class="text-sm text-gray-600">Paste the entire script (Ctrl+V)</p>
+                    </div>
+                </li>
+
+                <li class="flex items-start space-x-3">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">6</div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800 mb-1">Save the Project</p>
+                        <p class="text-sm text-gray-600">Click File → Save or press Ctrl+S</p>
+                    </div>
+                </li>
+
+                <li class="flex items-start space-x-3">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">7</div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800 mb-2">Deploy as Web App</p>
+                        <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                            <li>Click "Deploy" → "New deployment"</li>
+                            <li>Click the gear icon ⚙️ next to "Select type"</li>
+                            <li>Choose "Web app"</li>
+                            <li>Description: "Umair Portal Integration"</li>
+                            <li>Execute as: <strong>"Me"</strong></li>
+                            <li>Who has access: <strong>"Anyone"</strong></li>
+                            <li>Click "Deploy"</li>
+                        </ul>
+                    </div>
+                </li>
+
+                <li class="flex items-start space-x-3">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">8</div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800 mb-1">Authorize the Script</p>
+                        <p class="text-sm text-gray-600">Click "Authorize access" and follow the prompts</p>
+                    </div>
+                </li>
+
+                <li class="flex items-start space-x-3">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">9</div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800 mb-1">Copy the Web App URL</p>
+                        <p class="text-sm text-gray-600 mb-2">After deployment, copy the URL (it ends with <code>/exec</code>)</p>
+                        <div class="bg-gray-100 p-3 rounded-lg text-sm font-mono break-all">
+                            https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
+                        </div>
+                    </div>
+                </li>
+
+                <li class="flex items-start space-x-3">
+                    <div class="bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">10</div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800 mb-2">Configure in Portal</p>
+                        <a href="/system-settings" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                            <i class="fas fa-cog mr-2"></i>Go to System Settings
+                        </a>
+                        <p class="text-sm text-gray-600 mt-2">System Config → Google Sheets Integration → Configure</p>
+                    </div>
+                </li>
+            </ol>
+        </div>
+
+        <!-- Features -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-star mr-3 text-yellow-600"></i>
+                Features Included
+            </h2>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="border-l-4 border-green-500 pl-4">
+                    <h3 class="font-bold text-gray-800 mb-2">✅ Staff Management</h3>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Login with email authentication</li>
+                        <li>• Staff profile from Google Sheet</li>
+                        <li>• Role-based access control</li>
+                    </ul>
+                </div>
+
+                <div class="border-l-4 border-blue-500 pl-4">
+                    <h3 class="font-bold text-gray-800 mb-2">✅ Attendance Tracking</h3>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Check-in with geolocation</li>
+                        <li>• Check-out tracking</li>
+                        <li>• Attendance history</li>
+                    </ul>
+                </div>
+
+                <div class="border-l-4 border-purple-500 pl-4">
+                    <h3 class="font-bold text-gray-800 mb-2">✅ Applications Management</h3>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• View all applications</li>
+                        <li>• Filter by handler (Umair)</li>
+                        <li>• Update application status</li>
+                    </ul>
+                </div>
+
+                <div class="border-l-4 border-yellow-500 pl-4">
+                    <h3 class="font-bold text-gray-800 mb-2">✅ Dashboard Metrics</h3>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Today's new applications</li>
+                        <li>• Applications submitted today</li>
+                        <li>• Conditional offers by country</li>
+                    </ul>
+                </div>
+
+                <div class="border-l-4 border-red-500 pl-4">
+                    <h3 class="font-bold text-gray-800 mb-2">✅ Offers Management</h3>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• View all offers</li>
+                        <li>• Track offer status</li>
+                        <li>• Update offer details</li>
+                    </ul>
+                </div>
+
+                <div class="border-l-4 border-indigo-500 pl-4">
+                    <h3 class="font-bold text-gray-800 mb-2">✅ Daily Tasks</h3>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Morning to-do lists</li>
+                        <li>• Task status tracking</li>
+                        <li>• Priority management</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Required Sheet Structure -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-table mr-3 text-green-600"></i>
+                Required Sheet Structure
+            </h2>
+            
+            <div class="space-y-6">
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-3">📋 Staff Tab</h3>
+                    <div class="bg-gray-50 rounded-lg p-4 overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead>
+                                <tr class="bg-gray-200">
+                                    <th class="px-3 py-2 text-left">StaffID</th>
+                                    <th class="px-3 py-2 text-left">Name</th>
+                                    <th class="px-3 py-2 text-left">Email</th>
+                                    <th class="px-3 py-2 text-left">Password</th>
+                                    <th class="px-3 py-2 text-left">Role</th>
+                                    <th class="px-3 py-2 text-left">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b">
+                                    <td class="px-3 py-2">UMAIR001</td>
+                                    <td class="px-3 py-2">Umair</td>
+                                    <td class="px-3 py-2">umair@globalguidance.com</td>
+                                    <td class="px-3 py-2">umair123</td>
+                                    <td class="px-3 py-2">Admissions Executive</td>
+                                    <td class="px-3 py-2">Active</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-3">📋 Attendance Tab</h3>
+                    <div class="bg-gray-50 rounded-lg p-4 overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead>
+                                <tr class="bg-gray-200">
+                                    <th class="px-3 py-2 text-left">StaffID</th>
+                                    <th class="px-3 py-2 text-left">StaffName</th>
+                                    <th class="px-3 py-2 text-left">Date</th>
+                                    <th class="px-3 py-2 text-left">TimeIn</th>
+                                    <th class="px-3 py-2 text-left">TimeOut</th>
+                                    <th class="px-3 py-2 text-left">WorkMode</th>
+                                    <th class="px-3 py-2 text-left">Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b">
+                                    <td class="px-3 py-2 text-gray-500 italic" colspan="7">Will be auto-populated by portal</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-3">📋 Applications Tab</h3>
+                    <div class="bg-gray-50 rounded-lg p-4 overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead>
+                                <tr class="bg-gray-200">
+                                    <th class="px-3 py-2 text-left">ApplicationID</th>
+                                    <th class="px-3 py-2 text-left">StudentName</th>
+                                    <th class="px-3 py-2 text-left">University</th>
+                                    <th class="px-3 py-2 text-left">Country</th>
+                                    <th class="px-3 py-2 text-left">ReceivedDate</th>
+                                    <th class="px-3 py-2 text-left">Handler</th>
+                                    <th class="px-3 py-2 text-left">Status</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-3">📋 Offers Tab</h3>
+                    <div class="bg-gray-50 rounded-lg p-4 overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead>
+                                <tr class="bg-gray-200">
+                                    <th class="px-3 py-2 text-left">OfferID</th>
+                                    <th class="px-3 py-2 text-left">StudentName</th>
+                                    <th class="px-3 py-2 text-left">University</th>
+                                    <th class="px-3 py-2 text-left">Country</th>
+                                    <th class="px-3 py-2 text-left">OfferDate</th>
+                                    <th class="px-3 py-2 text-left">OfferStatus</th>
+                                    <th class="px-3 py-2 text-left">Handler</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-3">📋 DailyTasks Tab (Optional)</h3>
+                    <div class="bg-gray-50 rounded-lg p-4 overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead>
+                                <tr class="bg-gray-200">
+                                    <th class="px-3 py-2 text-left">StaffID</th>
+                                    <th class="px-3 py-2 text-left">Date</th>
+                                    <th class="px-3 py-2 text-left">Task</th>
+                                    <th class="px-3 py-2 text-left">Priority</th>
+                                    <th class="px-3 py-2 text-left">Status</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Apps Script Code -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold flex items-center">
+                    <i class="fas fa-code mr-3 text-blue-600"></i>
+                    Complete Apps Script Code
+                </h2>
+                <button onclick="copyScript()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                    <i class="fas fa-copy mr-2"></i>Copy Code
+                </button>
+            </div>
+            
+            <div class="bg-gray-900 rounded-lg p-6 overflow-x-auto">
+                <pre id="scriptCode" class="text-green-400 text-xs font-mono whitespace-pre-wrap">// Loading script...</pre>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-800 text-white rounded-xl p-6 text-center">
+            <p class="text-lg mb-2">
+                <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                Complete Apps Script Ready for Deployment
+            </p>
+            <p class="text-sm text-gray-400">
+                After deployment, configure the URL in System Settings
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Load the script code
+        fetch('/COMPLETE_APPS_SCRIPT.js')
+            .then(response => response.text())
+            .then(code => {
+                document.getElementById('scriptCode').textContent = code;
+            })
+            .catch(error => {
+                document.getElementById('scriptCode').textContent = '// Error loading script. Please check the file path.';
+            });
+
+        function copyScript() {
+            const codeElement = document.getElementById('scriptCode');
+            const textArea = document.createElement('textarea');
+            textArea.value = codeElement.textContent;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            // Show success message
+            alert('✅ Apps Script code copied to clipboard!\n\nNow:\n1. Go to your Google Sheet\n2. Extensions → Apps Script\n3. Delete existing code\n4. Paste (Ctrl+V)\n5. Deploy as Web App');
+        }
+    </script>
+</body>
+</html>

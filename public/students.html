@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students - Global Guidance Admissions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .top-nav { display: block; }
+        body.in-iframe .top-nav { display: none; }
+        .badge-co { background: #D1FAE5; color: #065F46; }
+        .badge-uco { background: #DBEAFE; color: #1E40AF; }
+        .badge-processing { background: #FEF3C7; color: #92400E; }
+        .badge-rejected { background: #FEE2E2; color: #991B1B; }
+        .badge-pending { background: #FFF7ED; color: #9A3412; }
+        .badge-payment { background: #F3E8FF; color: #6B21A8; }
+        .badge-cas { background: #ECFDF5; color: #047857; }
+        .badge-red { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+        .badge-yellow { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+        .badge-green { background: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
+        .student-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .student-card { transition: all 0.2s ease; cursor: pointer; }
+        .profile-tab { border-bottom: 2px solid transparent; padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; transition: all 0.2s; }
+        .profile-tab.active { border-bottom-color: #0d9488; color: #0d9488; background: #f0fdfa; }
+        .profile-tab:hover:not(.active) { background: #f3f4f6; }
+        .timeline-item { position: relative; padding-left: 32px; padding-bottom: 20px; }
+        .timeline-item::before { content: ''; position: absolute; left: 9px; top: 24px; bottom: 0; width: 2px; background: #e5e7eb; }
+        .timeline-item:last-child::before { display: none; }
+        .timeline-dot { position: absolute; left: 0; top: 4px; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; }
+        .fade-in { animation: fadeIn 0.25s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .doc-row:hover { background: #f9fafb; }
+        .payment-card { border-left: 4px solid #7c3aed; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="top-nav bg-white border-b px-6 py-3 flex items-center justify-between">
+        <h1 class="text-xl font-bold text-gray-800"><i class="fas fa-user-graduate text-teal-600 mr-2"></i>Students & Admissions Database</h1>
+        <div class="flex items-center space-x-4">
+            <span class="text-xs text-gray-500">Synced from Google Sheets</span>
+            <span class="font-medium text-gray-700" id="userName">Admin</span>
+        </div>
+    </div>
+
+    <!-- Main List View -->
+    <div id="listView" class="p-6 min-h-screen">
+        <!-- Stats Row -->
+        <div class="grid grid-cols-2 md:grid-cols-8 gap-3 mb-6">
+            <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500 text-center"><div class="text-2xl font-bold text-gray-800" id="stat-total">0</div><div class="text-xs text-gray-500 mt-1">Total Students</div></div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-green-500 text-center"><div class="text-2xl font-bold text-green-600" id="stat-offers">0</div><div class="text-xs text-gray-500 mt-1">With Offers</div></div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-teal-500 text-center"><div class="text-2xl font-bold text-teal-600" id="stat-co">0</div><div class="text-xs text-gray-500 mt-1">CO</div></div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-indigo-500 text-center"><div class="text-2xl font-bold text-indigo-600" id="stat-uco">0</div><div class="text-xs text-gray-500 mt-1">UCO</div></div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-yellow-500 text-center"><div class="text-2xl font-bold text-yellow-600" id="stat-processing">0</div><div class="text-xs text-gray-500 mt-1">Processing</div></div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-purple-500 text-center"><div class="text-2xl font-bold text-purple-600" id="stat-payment">0</div><div class="text-xs text-gray-500 mt-1">Payment</div></div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-500 text-center"><div class="text-2xl font-bold text-red-600" id="stat-redflags">0</div><div class="text-xs text-gray-500 mt-1">Red Flags</div></div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-orange-500 text-center"><div class="text-2xl font-bold text-orange-600" id="stat-docs">0</div><div class="text-xs text-gray-500 mt-1">Docs Pending</div></div>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="bg-white rounded-xl shadow-sm p-4 mb-6 flex gap-3 items-center flex-wrap">
+            <div class="flex-1 relative min-w-[200px]">
+                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                <input type="text" id="searchInput" placeholder="Search students by name, counselor, university..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm" oninput="filterStudents()">
+            </div>
+            <select id="statusFilter" onchange="filterStudents()" class="border rounded-lg px-3 py-2 text-sm">
+                <option value="">All Status</option><option value="offers">Has Offers</option><option value="processing">Processing</option><option value="payment">Payment Due</option><option value="cas">CAS/Ready</option><option value="rejected">Rejected</option><option value="todo">Has To-Do</option><option value="pending-docs">Pending Docs</option><option value="red">Red Flag</option><option value="yellow">Yellow Flag</option>
+            </select>
+            <select id="counselorFilter" onchange="filterStudents()" class="border rounded-lg px-3 py-2 text-sm"><option value="">All Counselors</option></select>
+            <div class="flex gap-1">
+                <button onclick="setView('grid')" id="btn-grid" class="px-3 py-2 rounded-lg border text-sm bg-teal-50 text-teal-700"><i class="fas fa-th"></i></button>
+                <button onclick="setView('table')" id="btn-table" class="px-3 py-2 rounded-lg border text-sm text-gray-600 hover:bg-gray-50"><i class="fas fa-list"></i></button>
+            </div>
+        </div>
+
+        <!-- Student Grid View -->
+        <div id="gridView" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"></div>
+
+        <!-- Student Table View -->
+        <div id="tableView" class="bg-white rounded-xl shadow-sm overflow-hidden hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Student</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Type / Counselor</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Universities</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Status</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Zone</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">To-Do</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTable" class="divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======== FULL STUDENT PROFILE VIEW ======== -->
+    <div id="profileView" class="min-h-screen bg-gray-50 hidden">
+        <div class="max-w-7xl mx-auto p-4 md:p-6">
+            <!-- Back Button & Header -->
+            <button onclick="closeProfile()" class="mb-4 flex items-center gap-2 text-gray-600 hover:text-teal-700 transition text-sm font-medium">
+                <i class="fas fa-arrow-left"></i> Back to Students List
+            </button>
+
+            <!-- Profile Header Card -->
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+                <div class="bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-5">
+                    <div class="flex items-center gap-4">
+                        <div id="prof-avatar" class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-white text-2xl font-bold"></div>
+                        <div class="flex-1">
+                            <h2 class="text-xl font-bold text-white" id="prof-name"></h2>
+                            <div class="text-teal-100 text-sm mt-1" id="prof-meta"></div>
+                        </div>
+                        <div class="flex gap-2" id="prof-badges"></div>
+                    </div>
+                </div>
+                <!-- Quick Stats Bar -->
+                <div class="grid grid-cols-2 md:grid-cols-6 divide-x divide-y md:divide-y-0 bg-white border-b">
+                    <div class="p-3 text-center"><div class="text-lg font-bold text-teal-700" id="prof-uni-count">0</div><div class="text-xs text-gray-500">Universities</div></div>
+                    <div class="p-3 text-center"><div class="text-lg font-bold text-green-600" id="prof-offer-count">0</div><div class="text-xs text-gray-500">Offers</div></div>
+                    <div class="p-3 text-center"><div class="text-lg font-bold text-blue-600" id="prof-co-count">0</div><div class="text-xs text-gray-500">CO</div></div>
+                    <div class="p-3 text-center"><div class="text-lg font-bold text-indigo-600" id="prof-uco-count">0</div><div class="text-xs text-gray-500">UCO</div></div>
+                    <div class="p-3 text-center"><div class="text-lg font-bold text-yellow-600" id="prof-processing-count">0</div><div class="text-xs text-gray-500">Processing</div></div>
+                    <div class="p-3 text-center"><div class="text-lg font-bold text-red-600" id="prof-rejected-count">0</div><div class="text-xs text-gray-500">Rejected</div></div>
+                </div>
+            </div>
+
+            <!-- Profile Tabs -->
+            <div class="bg-white rounded-t-xl shadow-sm overflow-hidden">
+                <div class="flex border-b overflow-x-auto" id="profileTabs">
+                    <button class="profile-tab active" data-ptab="overview" onclick="switchProfileTab('overview')"><i class="fas fa-user mr-1"></i>Overview</button>
+                    <button class="profile-tab" data-ptab="applications" onclick="switchProfileTab('applications')"><i class="fas fa-university mr-1"></i>Applications</button>
+                    <button class="profile-tab" data-ptab="timeline" onclick="switchProfileTab('timeline')"><i class="fas fa-stream mr-1"></i>Timeline</button>
+                    <button class="profile-tab" data-ptab="documents" onclick="switchProfileTab('documents')"><i class="fas fa-folder-open mr-1"></i>Documents</button>
+                    <button class="profile-tab" data-ptab="communications" onclick="switchProfileTab('communications')"><i class="fas fa-comments mr-1"></i>Communications</button>
+                    <button class="profile-tab" data-ptab="payments" onclick="switchProfileTab('payments')"><i class="fas fa-credit-card mr-1"></i>Payments</button>
+                </div>
+            </div>
+
+            <!-- Tab Content Area -->
+            <div class="bg-white rounded-b-xl shadow-sm p-6" id="profileTabContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const isInIframe = window.self !== window.top;
+        if (isInIframe) document.body.classList.add('in-iframe');
+
+        let allStudents = [];
+        let currentView = 'grid';
+        let currentProfileStudent = null;
+
+        const userData = localStorage.getItem('gg_hr_session');
+        if (userData) { try { document.getElementById('userName').textContent = JSON.parse(userData).name; } catch(e) {} }
+
+        const ADMISSIONS_DB = %%ADMISSIONS_DB_PLACEHOLDER%%;
+
+        // ========== PARSE & ENRICH STUDENTS ==========
+        function parseStudents() {
+            const counselors = new Set();
+            allStudents = ADMISSIONS_DB.map(entry => {
+                const name = (entry.name || '').split('\n')[0].trim();
+                const counselor = entry.counselor || '';
+                if (counselor) counselor.split(',').forEach(c => counselors.add(c.trim()));
+
+                const unis = (entry.uni || '').split('\n').filter(Boolean).map(u => {
+                    const m = u.match(/^\d+\.\s*(.+?)(?:\s*\(([^)]+)\))?$/);
+                    return m ? { name: m[1].trim(), portal: m[2] || '' } : { name: u.replace(/^\d+\.\s*/, '').trim(), portal: '' };
+                });
+
+                const statuses = (entry.status || '').split('\n').filter(Boolean).map(s => s.replace(/^\d+\.\s*/, '').trim());
+                const courses = (entry.courseIntake || '').split('\n').filter(Boolean).map(c => c.replace(/^\d+\.\s*/, '').trim());
+                const offersList = (entry.offers || '').split('\n').filter(Boolean).map(o => o.replace(/^\d+\.\s*/, '').trim());
+
+                const hasCO = statuses.some(s => s === 'CO' || s.startsWith('CO'));
+                const hasUCO = statuses.some(s => s.includes('UCO'));
+                const hasPayment = statuses.some(s => s.toLowerCase().includes('payment'));
+                const hasCAS = statuses.some(s => s.toLowerCase().includes('cas'));
+                const isProcessing = statuses.some(s => s.toLowerCase().includes('processing'));
+                const isRejected = statuses.some(s => s.toLowerCase().includes('rejected') || s.toLowerCase().includes('unsuccessful'));
+                const isWithdrawn = statuses.some(s => s.toLowerCase().includes('withdrawn'));
+                const pendingDocs = (entry.docsStatus || '').toLowerCase().includes('pending') || (entry.docsStatus || '').toLowerCase().includes('incomplete');
+                const zone = (entry.zones || '').toLowerCase().trim();
+
+                // Extract payments from summary
+                const payments = extractPayments(entry.summary || '', name);
+
+                // Build timeline events
+                const timeline = buildTimeline(entry, unis, statuses, payments);
+
+                // Build documents list
+                const documents = buildDocuments(entry, statuses);
+
+                // Build communications
+                const communications = buildCommunications(entry);
+
+                return {
+                    id: entry.id, name, counselor, directAgent: entry.directAgent || '',
+                    registration: entry.registration || '', mobile: entry.mobile || '',
+                    emailCreated: entry.emailCreated || '', emailId: entry.emailId || '',
+                    unis, statuses, courses, offersList,
+                    hasCO, hasUCO, hasPayment, hasCAS, isProcessing, isRejected, isWithdrawn, pendingDocs,
+                    zone, docsStatus: entry.docsStatus || '', todo: entry.todo || '',
+                    summary: entry.summary || '', offers: entry.offers || '',
+                    ceoInfo: entry.ceoInfo || '', appSubmitDate: entry.appSubmitDate || '',
+                    daysSinceApp: entry.daysSinceApp || '', leadSource: entry.leadSource || '',
+                    portalUsed: entry.portalUsed || '', portalReplyDate: entry.portalReplyDate || '',
+                    portalReplyStatus: entry.portalReplyStatus || '',
+                    englishWaiver: entry.englishWaiver || '', languageTests: entry.languageTests || '',
+                    toApply: entry.toApply || '', commLog: entry.commLog || '',
+                    uniCount: unis.length,
+                    offerCount: statuses.filter(s => s === 'CO' || s.startsWith('CO') || s.includes('UCO')).length,
+                    coCount: statuses.filter(s => (s === 'CO' || s.startsWith('CO')) && !s.includes('UCO')).length,
+                    ucoCount: statuses.filter(s => s.includes('UCO')).length,
+                    processingCount: statuses.filter(s => s.toLowerCase().includes('processing')).length,
+                    rejectedCount: statuses.filter(s => s.toLowerCase().includes('rejected')).length,
+                    payments, timeline, documents, communications
+                };
+            });
+
+            const sel = document.getElementById('counselorFilter');
+            [...counselors].sort().forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.textContent = c; sel.appendChild(opt); });
+        }
+
+        function extractPayments(summary, studentName) {
+            const payments = [];
+            const paymentRegex = /(\d[\d,]*)\s*(GBP|LKR|gbp|lkr)\s*(paid|payment|Paid|Payment).*?(?:on\s*)?([\d.\/]+(?:\/\d{2,4})?)?/gi;
+            let match;
+            const text = summary || '';
+            while ((match = paymentRegex.exec(text)) !== null) {
+                payments.push({ amount: match[1].replace(/,/g, ''), currency: match[2].toUpperCase(), date: match[4] || 'N/A', description: match[0].substring(0, 120), status: text.toLowerCase().includes('refund') ? 'Refund Requested' : 'Paid' });
+            }
+            // Also check for "payment" keywords with amounts
+            const altRegex = /(\d[\d,]*)\s*(GBP|LKR)\s*(?:payment\s*made|paid)/gi;
+            while ((match = altRegex.exec(text)) !== null) {
+                if (!payments.some(p => p.amount === match[1].replace(/,/g, ''))) {
+                    payments.push({ amount: match[1].replace(/,/g, ''), currency: match[2].toUpperCase(), date: 'N/A', description: match[0].substring(0, 120), status: 'Paid' });
+                }
+            }
+            return payments;
+        }
+
+        function buildTimeline(entry, unis, statuses, payments) {
+            const events = [];
+            const now = new Date();
+
+            // Application submission
+            if (entry.appSubmitDate) {
+                events.push({ date: entry.appSubmitDate, type: 'application', icon: 'fa-paper-plane', color: 'bg-blue-500', title: 'Application Submitted', detail: `${unis.length} universit${unis.length > 1 ? 'ies' : 'y'} applied to` });
+            }
+
+            // Registration
+            if (entry.registration && entry.registration !== 'Not Yet') {
+                events.push({ date: entry.appSubmitDate || '', type: 'registration', icon: 'fa-user-check', color: 'bg-green-500', title: 'Student Registered', detail: `Registration: ${entry.registration}` });
+            }
+
+            // Each university application status
+            unis.forEach((u, i) => {
+                const status = statuses[i] || '';
+                if (status.includes('CO') && !status.includes('UCO')) {
+                    events.push({ date: '', type: 'offer', icon: 'fa-check-circle', color: 'bg-green-600', title: `Conditional Offer - ${u.name}`, detail: status });
+                }
+                if (status.includes('UCO')) {
+                    events.push({ date: '', type: 'offer', icon: 'fa-star', color: 'bg-indigo-600', title: `Unconditional Offer - ${u.name}`, detail: status });
+                }
+                if (status.toLowerCase().includes('rejected')) {
+                    events.push({ date: '', type: 'rejected', icon: 'fa-times-circle', color: 'bg-red-500', title: `Application Rejected - ${u.name}`, detail: status });
+                }
+                if (status.toLowerCase().includes('withdrawn')) {
+                    events.push({ date: '', type: 'withdrawn', icon: 'fa-undo', color: 'bg-gray-500', title: `Application Withdrawn - ${u.name}`, detail: status });
+                }
+                if (status.toLowerCase().includes('cas')) {
+                    events.push({ date: '', type: 'cas', icon: 'fa-passport', color: 'bg-teal-600', title: `CAS Issued - ${u.name}`, detail: status });
+                }
+                if (status.toLowerCase().includes('payment') && !status.toLowerCase().includes('rejected')) {
+                    events.push({ date: '', type: 'payment', icon: 'fa-credit-card', color: 'bg-purple-600', title: `Payment Stage - ${u.name}`, detail: status });
+                }
+            });
+
+            // Payment events
+            payments.forEach(p => {
+                events.push({ date: p.date, type: 'payment', icon: 'fa-money-bill-wave', color: 'bg-purple-500', title: `Payment: ${p.amount} ${p.currency}`, detail: p.description });
+            });
+
+            // Summary events (parse for key actions)
+            if (entry.summary) {
+                const summaryLines = entry.summary.split('\n').filter(Boolean);
+                summaryLines.forEach(line => {
+                    if (line.toLowerCase().includes('defer')) {
+                        events.push({ date: '', type: 'action', icon: 'fa-calendar-alt', color: 'bg-yellow-500', title: 'Deferral Requested', detail: line.replace(/^\d+\.\s*/, '').trim() });
+                    }
+                    if (line.toLowerCase().includes('refund')) {
+                        events.push({ date: '', type: 'action', icon: 'fa-undo-alt', color: 'bg-red-400', title: 'Refund Request', detail: line.replace(/^\d+\.\s*/, '').trim() });
+                    }
+                });
+            }
+
+            // To-do items
+            if (entry.todo) {
+                events.push({ date: '', type: 'todo', icon: 'fa-tasks', color: 'bg-amber-500', title: 'Action Required', detail: entry.todo });
+            }
+
+            return events;
+        }
+
+        function buildDocuments(entry, statuses) {
+            const docs = [];
+            const docsStatus = entry.docsStatus || '';
+            const hasIELTS = (entry.languageTests || '').toLowerCase();
+            const hasWaiver = (entry.englishWaiver || '');
+
+            // Standard documents
+            docs.push({ name: 'Student Registration Form', type: 'Form', status: (entry.registration && entry.registration !== 'Not Yet') ? 'Received' : 'Pending', icon: 'fa-file-alt', date: entry.appSubmitDate || '-' });
+            docs.push({ name: 'Passport Copy', type: 'ID', status: docsStatus.toLowerCase().includes('pending') ? 'Pending' : 'Received', icon: 'fa-passport', date: '-' });
+            docs.push({ name: 'Academic Transcripts', type: 'Academic', status: docsStatus.toLowerCase().includes('pending') ? 'Pending' : 'Received', icon: 'fa-graduation-cap', date: '-' });
+            docs.push({ name: 'Statement of Purpose (SOP)', type: 'Application', status: (entry.todo || '').toLowerCase().includes('sop') ? 'Pending' : 'Received', icon: 'fa-file-signature', date: '-' });
+            docs.push({ name: 'Letter of Recommendation (LOR)', type: 'Application', status: (entry.todo || '').toLowerCase().includes('lor') ? 'Pending' : 'Received', icon: 'fa-envelope-open-text', date: '-' });
+            docs.push({ name: 'IELTS/Language Test Results', type: 'Language', status: hasIELTS === 'no' || hasIELTS === '' ? 'Pending' : hasIELTS.includes('pending') ? 'Pending' : 'Received', icon: 'fa-language', date: '-' });
+            docs.push({ name: 'English Waiver Certificate', type: 'Language', status: hasWaiver ? 'Received' : 'N/A', icon: 'fa-certificate', date: '-' });
+
+            // CAS related
+            if (statuses.some(s => s.toLowerCase().includes('cas'))) {
+                docs.push({ name: 'CAS Letter', type: 'Visa', status: 'Issued', icon: 'fa-stamp', date: '-' });
+            }
+
+            // IHS
+            if ((entry.todo || '').toLowerCase().includes('ihs')) {
+                docs.push({ name: 'IHS (Immigration Health Surcharge)', type: 'Visa', status: 'Pending', icon: 'fa-hospital', date: '-' });
+            }
+
+            // Payment receipts
+            const payments = extractPayments(entry.summary || '', '');
+            payments.forEach((p, i) => {
+                docs.push({ name: `Payment Receipt - ${p.amount} ${p.currency}`, type: 'Financial', status: p.status, icon: 'fa-receipt', date: p.date || '-' });
+            });
+
+            // Offer letters
+            const unis = (entry.uni || '').split('\n').filter(Boolean);
+            const offers = (entry.offers || '').split('\n').filter(Boolean);
+            offers.forEach(o => {
+                const idx = parseInt(o.match(/^\d+/) || '0') - 1;
+                const uniName = unis[idx] ? unis[idx].replace(/^\d+\.\s*/, '').trim() : `University ${idx + 1}`;
+                docs.push({ name: `Offer Letter - ${uniName}`, type: 'Offer', status: 'Received', icon: 'fa-file-contract', date: '-' });
+            });
+
+            return docs;
+        }
+
+        function buildCommunications(entry) {
+            const comms = [];
+            const counselor = entry.counselor || 'Unknown';
+
+            // From summary parse communications
+            if (entry.summary) {
+                entry.summary.split('\n').filter(Boolean).forEach((line, i) => {
+                    const clean = line.replace(/^\d+\.\s*/, '').trim();
+                    if (clean.length > 5) {
+                        comms.push({ date: '', from: counselor.split(',')[0].trim(), to: (entry.name || '').split('\n')[0].trim(), type: 'Note', channel: 'Internal', message: clean, icon: 'fa-sticky-note', color: 'text-blue-600' });
+                    }
+                });
+            }
+
+            // From commLog
+            if (entry.commLog) {
+                entry.commLog.split('\n').filter(Boolean).forEach(line => {
+                    comms.push({ date: '', from: 'System', to: (entry.name || '').split('\n')[0].trim(), type: 'Communication Log', channel: 'System', message: line.trim(), icon: 'fa-comments', color: 'text-teal-600' });
+                });
+            }
+
+            // From ceoInfo
+            if (entry.ceoInfo) {
+                comms.push({ date: '', from: 'CEO/Management', to: (entry.name || '').split('\n')[0].trim(), type: 'CEO Info/Reference', channel: 'Management', message: entry.ceoInfo, icon: 'fa-id-badge', color: 'text-purple-600' });
+            }
+
+            // From todo (actionable items)
+            if (entry.todo) {
+                comms.push({ date: 'Current', from: counselor.split(',')[0].trim(), to: 'Action Required', type: 'To-Do', channel: 'Task', message: entry.todo, icon: 'fa-tasks', color: 'text-amber-600' });
+            }
+
+            // Portal reply
+            if (entry.portalReplyStatus || entry.portalReplyDate) {
+                comms.push({ date: entry.portalReplyDate || '', from: 'University Portal', to: (entry.name || '').split('\n')[0].trim(), type: 'Portal Reply', channel: 'Portal', message: `Status: ${entry.portalReplyStatus || 'N/A'}`, icon: 'fa-globe', color: 'text-green-600' });
+            }
+
+            return comms;
+        }
+
+        // ========== STATS & RENDERING ==========
+        function updateStats() {
+            document.getElementById('stat-total').textContent = allStudents.length;
+            document.getElementById('stat-offers').textContent = allStudents.filter(s => s.hasCO || s.hasUCO).length;
+            document.getElementById('stat-co').textContent = allStudents.filter(s => s.hasCO).length;
+            document.getElementById('stat-uco').textContent = allStudents.filter(s => s.hasUCO).length;
+            document.getElementById('stat-processing').textContent = allStudents.filter(s => s.isProcessing).length;
+            document.getElementById('stat-payment').textContent = allStudents.filter(s => s.hasPayment).length;
+            document.getElementById('stat-redflags').textContent = allStudents.filter(s => s.zone.includes('red')).length;
+            document.getElementById('stat-docs').textContent = allStudents.filter(s => s.pendingDocs).length;
+        }
+
+        function getZoneBadge(zone) {
+            if (zone.includes('red')) return '<span class="badge-red text-xs px-2 py-0.5 rounded-full font-bold"><i class="fas fa-flag mr-0.5"></i>Red</span>';
+            if (zone.includes('yellow')) return '<span class="badge-yellow text-xs px-2 py-0.5 rounded-full font-bold"><i class="fas fa-exclamation-triangle mr-0.5"></i>Yellow</span>';
+            if (zone.includes('green')) return '<span class="badge-green text-xs px-2 py-0.5 rounded-full font-bold"><i class="fas fa-check-circle mr-0.5"></i>Green</span>';
+            return '';
+        }
+
+        function getStatusBadges(s) {
+            let badges = '';
+            if (s.hasCO) badges += '<span class="badge-co text-xs px-1.5 py-0.5 rounded mr-1">CO</span>';
+            if (s.hasUCO) badges += '<span class="badge-uco text-xs px-1.5 py-0.5 rounded mr-1">UCO</span>';
+            if (s.hasPayment) badges += '<span class="badge-payment text-xs px-1.5 py-0.5 rounded mr-1">Payment</span>';
+            if (s.hasCAS) badges += '<span class="badge-cas text-xs px-1.5 py-0.5 rounded mr-1">CAS</span>';
+            if (s.isProcessing) badges += '<span class="badge-processing text-xs px-1.5 py-0.5 rounded mr-1">Processing</span>';
+            if (s.isRejected) badges += '<span class="badge-rejected text-xs px-1.5 py-0.5 rounded mr-1">Rejected</span>';
+            return badges || '<span class="text-xs text-gray-400">-</span>';
+        }
+
+        function renderGrid(students) {
+            const data = students || allStudents;
+            const grid = document.getElementById('gridView');
+            if (data.length === 0) { grid.innerHTML = '<div class="col-span-3 text-center py-10 text-gray-400"><i class="fas fa-search text-3xl mb-2"></i><p>No students found</p></div>'; return; }
+            grid.innerHTML = data.map(s => `
+                <div class="student-card bg-white rounded-xl shadow-sm border border-gray-100 p-5 ${s.zone.includes('red') ? 'border-l-4 border-l-red-400' : s.zone.includes('yellow') ? 'border-l-4 border-l-yellow-400' : s.zone.includes('green') ? 'border-l-4 border-l-green-400' : ''}" onclick="openProfile(${s.id})">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-sm">${s.name.charAt(0)}</div>
+                            <div>
+                                <div class="font-bold text-gray-800 text-sm">${s.name}</div>
+                                <div class="text-xs text-gray-500">${s.directAgent ? s.directAgent : ''} ${s.counselor ? '| ' + s.counselor : ''}</div>
+                            </div>
+                        </div>
+                        ${getZoneBadge(s.zone)}
+                    </div>
+                    <div class="flex items-center gap-2 mb-2 flex-wrap">${getStatusBadges(s)}</div>
+                    <div class="text-xs text-gray-500 mb-2"><i class="fas fa-university mr-1 text-teal-400"></i>${s.uniCount} universit${s.uniCount !== 1 ? 'ies' : 'y'} | ${s.offerCount} offer${s.offerCount !== 1 ? 's' : ''}</div>
+                    ${s.pendingDocs ? '<div class="text-xs text-orange-600 mb-1"><i class="fas fa-folder-open mr-1"></i>Docs: ' + s.docsStatus + '</div>' : ''}
+                    ${s.todo ? '<div class="text-xs text-amber-700 bg-amber-50 rounded px-2 py-1 mt-1 truncate"><i class="fas fa-tasks mr-1"></i>' + s.todo + '</div>' : ''}
+                </div>
+            `).join('');
+        }
+
+        function renderTable(students) {
+            const data = students || allStudents;
+            const tbody = document.getElementById('studentsTable');
+            if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">No students found</td></tr>'; return; }
+            tbody.innerHTML = data.map(s => `
+                <tr class="hover:bg-gray-50 cursor-pointer" onclick="openProfile(${s.id})">
+                    <td class="px-4 py-3"><div class="flex items-center gap-2"><div class="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center text-teal-600 font-bold text-xs">${s.name.charAt(0)}</div><div><div class="font-semibold text-gray-800 text-sm">${s.name}</div><div class="text-xs text-gray-400">#${s.id} | ${s.directAgent || '-'}</div></div></div></td>
+                    <td class="px-4 py-3 text-xs text-gray-600">${s.counselor || '-'}</td>
+                    <td class="px-4 py-3 text-xs text-gray-600">${s.uniCount} unis / ${s.offerCount} offers</td>
+                    <td class="px-4 py-3">${getStatusBadges(s)}</td>
+                    <td class="px-4 py-3">${getZoneBadge(s.zone)}</td>
+                    <td class="px-4 py-3 text-xs text-gray-500 max-w-[200px] truncate">${s.todo || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function render(students) { renderGrid(students); renderTable(students); }
+
+        function setView(view) {
+            currentView = view;
+            document.getElementById('gridView').classList.toggle('hidden', view !== 'grid');
+            document.getElementById('tableView').classList.toggle('hidden', view !== 'table');
+            document.getElementById('btn-grid').className = view === 'grid' ? 'px-3 py-2 rounded-lg border text-sm bg-teal-50 text-teal-700' : 'px-3 py-2 rounded-lg border text-sm text-gray-600 hover:bg-gray-50';
+            document.getElementById('btn-table').className = view === 'table' ? 'px-3 py-2 rounded-lg border text-sm bg-teal-50 text-teal-700' : 'px-3 py-2 rounded-lg border text-sm text-gray-600 hover:bg-gray-50';
+        }
+
+        function filterStudents() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            const counselor = document.getElementById('counselorFilter').value;
+            let filtered = allStudents;
+            if (q) filtered = filtered.filter(s => s.name.toLowerCase().includes(q) || s.counselor.toLowerCase().includes(q) || s.unis.some(u => u.name.toLowerCase().includes(q)) || s.todo.toLowerCase().includes(q));
+            if (counselor) filtered = filtered.filter(s => s.counselor.includes(counselor));
+            if (status === 'offers') filtered = filtered.filter(s => s.hasCO || s.hasUCO);
+            else if (status === 'processing') filtered = filtered.filter(s => s.isProcessing);
+            else if (status === 'payment') filtered = filtered.filter(s => s.hasPayment);
+            else if (status === 'cas') filtered = filtered.filter(s => s.hasCAS);
+            else if (status === 'rejected') filtered = filtered.filter(s => s.isRejected);
+            else if (status === 'todo') filtered = filtered.filter(s => s.todo);
+            else if (status === 'pending-docs') filtered = filtered.filter(s => s.pendingDocs);
+            else if (status === 'red') filtered = filtered.filter(s => s.zone.includes('red'));
+            else if (status === 'yellow') filtered = filtered.filter(s => s.zone.includes('yellow'));
+            render(filtered);
+        }
+
+        // ========== FULL PROFILE ==========
+        function openProfile(id) {
+            const s = allStudents.find(st => st.id === id);
+            if (!s) return;
+            currentProfileStudent = s;
+
+            // Hide list, show profile
+            document.getElementById('listView').classList.add('hidden');
+            document.getElementById('profileView').classList.remove('hidden');
+
+            // Header
+            document.getElementById('prof-avatar').textContent = s.name.charAt(0);
+            document.getElementById('prof-name').textContent = s.name;
+            document.getElementById('prof-meta').innerHTML = `
+                <span><i class="fas fa-id-badge mr-1"></i>#${s.id}</span>
+                <span class="mx-2">|</span>
+                <span><i class="fas fa-user-tie mr-1"></i>${s.directAgent || 'N/A'}</span>
+                <span class="mx-2">|</span>
+                <span><i class="fas fa-headset mr-1"></i>Counselor: ${s.counselor || 'N/A'}</span>
+                ${s.registration ? `<span class="mx-2">|</span><span><i class="fas fa-clipboard-check mr-1"></i>Reg: ${s.registration}</span>` : ''}
+            `;
+
+            let badges = getZoneBadge(s.zone);
+            if (s.hasCO) badges += ' <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">CO</span>';
+            if (s.hasUCO) badges += ' <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold">UCO</span>';
+            if (s.hasCAS) badges += ' <span class="bg-teal-100 text-teal-700 text-xs px-2 py-1 rounded-full font-bold">CAS</span>';
+            if (s.hasPayment) badges += ' <span class="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full font-bold">Payment</span>';
+            document.getElementById('prof-badges').innerHTML = badges;
+
+            // Stats
+            document.getElementById('prof-uni-count').textContent = s.uniCount;
+            document.getElementById('prof-offer-count').textContent = s.offerCount;
+            document.getElementById('prof-co-count').textContent = s.coCount;
+            document.getElementById('prof-uco-count').textContent = s.ucoCount;
+            document.getElementById('prof-processing-count').textContent = s.processingCount;
+            document.getElementById('prof-rejected-count').textContent = s.rejectedCount;
+
+            // Reset to overview tab
+            switchProfileTab('overview');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function closeProfile() {
+            document.getElementById('profileView').classList.add('hidden');
+            document.getElementById('listView').classList.remove('hidden');
+            currentProfileStudent = null;
+        }
+
+        function switchProfileTab(tab) {
+            document.querySelectorAll('.profile-tab').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.profile-tab[data-ptab="${tab}"]`).classList.add('active');
+            const s = currentProfileStudent;
+            if (!s) return;
+            const container = document.getElementById('profileTabContent');
+
+            switch(tab) {
+                case 'overview': container.innerHTML = renderProfileOverview(s); break;
+                case 'applications': container.innerHTML = renderProfileApplications(s); break;
+                case 'timeline': container.innerHTML = renderProfileTimeline(s); break;
+                case 'documents': container.innerHTML = renderProfileDocuments(s); break;
+                case 'communications': container.innerHTML = renderProfileCommunications(s); break;
+                case 'payments': container.innerHTML = renderProfilePayments(s); break;
+            }
+        }
+
+        // ---- OVERVIEW TAB ----
+        function renderProfileOverview(s) {
+            return `<div class="fade-in grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-bold text-gray-800 text-sm mb-3"><i class="fas fa-user text-teal-500 mr-2"></i>Student Information</h4>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div><span class="text-gray-500">Name:</span><div class="font-medium">${s.name}</div></div>
+                            <div><span class="text-gray-500">ID:</span><div class="font-medium">#${s.id}</div></div>
+                            <div><span class="text-gray-500">Type:</span><div class="font-medium">${s.directAgent || 'N/A'}</div></div>
+                            <div><span class="text-gray-500">Counselor:</span><div class="font-medium">${s.counselor || 'N/A'}</div></div>
+                            <div><span class="text-gray-500">Mobile:</span><div class="font-medium">${s.mobile || 'N/A'}</div></div>
+                            <div><span class="text-gray-500">Email:</span><div class="font-medium">${s.emailId || s.emailCreated || 'N/A'}</div></div>
+                            <div><span class="text-gray-500">Registration:</span><div class="font-medium">${s.registration || 'N/A'}</div></div>
+                            <div><span class="text-gray-500">Lead Source:</span><div class="font-medium">${s.leadSource || 'N/A'}</div></div>
+                            <div><span class="text-gray-500">App Date:</span><div class="font-medium">${s.appSubmitDate || 'N/A'}</div></div>
+                            <div><span class="text-gray-500">Days Since:</span><div class="font-medium">${s.daysSinceApp || 'N/A'}</div></div>
+                            <div><span class="text-gray-500">Language Tests:</span><div class="font-medium">${s.languageTests || 'N/A'}</div></div>
+                            <div><span class="text-gray-500">English Waiver:</span><div class="font-medium">${s.englishWaiver || 'N/A'}</div></div>
+                        </div>
+                    </div>
+
+                    ${s.docsStatus ? `<div class="bg-orange-50 border border-orange-200 rounded-lg p-3"><div class="font-semibold text-orange-800 text-sm mb-1"><i class="fas fa-folder-open mr-1"></i>Documents Status</div><div class="text-sm text-orange-700">${s.docsStatus}</div></div>` : ''}
+
+                    ${s.todo ? `<div class="bg-amber-50 border border-amber-200 rounded-lg p-3"><div class="font-semibold text-amber-800 text-sm mb-1"><i class="fas fa-tasks mr-1"></i>Action Items / To-Do</div><div class="text-sm text-amber-700">${s.todo.replace(/\n/g, '<br>')}</div></div>` : ''}
+
+                    ${s.toApply ? `<div class="bg-blue-50 border border-blue-200 rounded-lg p-3"><div class="font-semibold text-blue-800 text-sm mb-1"><i class="fas fa-plus-circle mr-1"></i>Pending Applications</div><div class="text-sm text-blue-700">${s.toApply.replace(/\n/g, '<br>')}</div></div>` : ''}
+                </div>
+
+                <div class="space-y-4">
+                    ${s.summary ? `<div class="bg-blue-50 border border-blue-200 rounded-lg p-4"><h4 class="font-bold text-blue-800 text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>Summary & Notes</h4><p class="text-sm text-blue-700 leading-relaxed">${s.summary.replace(/\n/g, '<br>')}</p></div>` : ''}
+
+                    ${s.ceoInfo ? `<div class="bg-purple-50 border border-purple-200 rounded-lg p-4"><h4 class="font-bold text-purple-800 text-sm mb-2"><i class="fas fa-id-badge mr-1"></i>CEO / Reference Info</h4><p class="text-sm text-purple-700">${s.ceoInfo.replace(/\n/g, '<br>')}</p></div>` : ''}
+
+                    <!-- Quick Offer Summary -->
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h4 class="font-bold text-green-800 text-sm mb-2"><i class="fas fa-trophy mr-1"></i>Offers Summary</h4>
+                        <div class="text-sm text-green-700">${s.offers ? s.offers.replace(/\n/g, '<br>') : 'No offers yet'}</div>
+                    </div>
+
+                    <!-- Portal Info -->
+                    ${s.portalUsed || s.portalReplyDate || s.portalReplyStatus ? `<div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-bold text-gray-800 text-sm mb-2"><i class="fas fa-globe mr-1 text-teal-500"></i>Portal Information</h4>
+                        <div class="text-sm space-y-1">
+                            ${s.portalUsed ? `<div><span class="text-gray-500">Portal Used:</span> ${s.portalUsed}</div>` : ''}
+                            ${s.portalReplyDate ? `<div><span class="text-gray-500">Reply Date:</span> ${s.portalReplyDate}</div>` : ''}
+                            ${s.portalReplyStatus ? `<div><span class="text-gray-500">Reply Status:</span> ${s.portalReplyStatus}</div>` : ''}
+                        </div>
+                    </div>` : ''}
+                </div>
+            </div>`;
+        }
+
+        // ---- APPLICATIONS TAB ----
+        function renderProfileApplications(s) {
+            if (s.unis.length === 0) return '<div class="text-center py-10 text-gray-400"><i class="fas fa-university text-3xl mb-2"></i><p>No applications found</p></div>';
+            return `<div class="fade-in space-y-3">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-bold text-gray-800"><i class="fas fa-university text-teal-500 mr-2"></i>${s.unis.length} University Applications</h4>
+                    <div class="text-sm text-gray-500">${s.offerCount} offer${s.offerCount !== 1 ? 's' : ''} received</div>
+                </div>
+                ${s.unis.map((u, i) => {
+                    const status = s.statuses[i] || '-';
+                    const course = s.courses[i] || '-';
+                    const offer = s.offersList[i] || '';
+                    const isCO = status.startsWith('CO') || status === 'CO';
+                    const isUCO = status.includes('UCO');
+                    const isRej = status.toLowerCase().includes('rejected') || status.toLowerCase().includes('unsuccessful');
+                    const isProc = status.toLowerCase().includes('processing');
+                    const statusClass = isCO && !isUCO ? 'border-l-green-500 bg-green-50' : isUCO ? 'border-l-indigo-500 bg-indigo-50' : isRej ? 'border-l-red-500 bg-red-50' : isProc ? 'border-l-yellow-500 bg-yellow-50' : 'border-l-gray-300 bg-gray-50';
+                    const statusBadge = isCO && !isUCO ? 'badge-co' : isUCO ? 'badge-uco' : isRej ? 'badge-rejected' : isProc ? 'badge-processing' : 'bg-gray-100 text-gray-600';
+                    return `<div class="border-l-4 ${statusClass} rounded-lg p-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-semibold text-gray-800 text-sm">${i + 1}. ${u.name}</span>
+                                    ${u.portal ? `<span class="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">${u.portal}</span>` : ''}
+                                </div>
+                                <div class="text-xs text-gray-600 mt-1"><i class="fas fa-book-open mr-1"></i>${course}</div>
+                            </div>
+                            <span class="${statusBadge} text-xs px-2 py-1 rounded font-semibold">${status}</span>
+                        </div>
+                        ${offer ? `<div class="text-xs text-green-700 mt-1"><i class="fas fa-check mr-1"></i>Offer: ${offer}</div>` : ''}
+                    </div>`;
+                }).join('')}
+            </div>`;
+        }
+
+        // ---- TIMELINE TAB ----
+        function renderProfileTimeline(s) {
+            if (s.timeline.length === 0) return '<div class="text-center py-10 text-gray-400"><i class="fas fa-stream text-3xl mb-2"></i><p>No timeline events</p></div>';
+            return `<div class="fade-in">
+                <h4 class="font-bold text-gray-800 mb-4"><i class="fas fa-stream text-teal-500 mr-2"></i>Student Timeline</h4>
+                <div class="space-y-0">
+                    ${s.timeline.map(ev => `
+                        <div class="timeline-item">
+                            <div class="timeline-dot ${ev.color}"><i class="fas ${ev.icon}"></i></div>
+                            <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-semibold text-sm text-gray-800">${ev.title}</span>
+                                    ${ev.date ? `<span class="text-xs text-gray-400">${ev.date}</span>` : ''}
+                                </div>
+                                <div class="text-xs text-gray-600">${ev.detail}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+
+        // ---- DOCUMENTS TAB ----
+        function renderProfileDocuments(s) {
+            const received = s.documents.filter(d => d.status === 'Received' || d.status === 'Issued' || d.status === 'Paid');
+            const pending = s.documents.filter(d => d.status === 'Pending');
+            const other = s.documents.filter(d => d.status !== 'Received' && d.status !== 'Issued' && d.status !== 'Paid' && d.status !== 'Pending');
+
+            return `<div class="fade-in">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="font-bold text-gray-800"><i class="fas fa-folder-open text-teal-500 mr-2"></i>Documents & Attachments</h4>
+                    <div class="flex gap-4 text-sm">
+                        <span class="text-green-600"><i class="fas fa-check-circle mr-1"></i>${received.length} Received</span>
+                        <span class="text-orange-600"><i class="fas fa-clock mr-1"></i>${pending.length} Pending</span>
+                    </div>
+                </div>
+
+                ${pending.length > 0 ? `
+                <div class="mb-4">
+                    <div class="text-sm font-semibold text-orange-700 mb-2 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> Pending Documents (${pending.length})</div>
+                    <div class="bg-orange-50 rounded-lg border border-orange-200 divide-y divide-orange-100">
+                        ${pending.map(d => `
+                            <div class="doc-row flex items-center justify-between px-4 py-3">
+                                <div class="flex items-center gap-3"><i class="fas ${d.icon} text-orange-500"></i><div><div class="font-medium text-sm text-gray-800">${d.name}</div><div class="text-xs text-gray-500">${d.type}</div></div></div>
+                                <div class="flex items-center gap-3"><span class="text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full font-semibold">Pending</span></div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>` : ''}
+
+                ${received.length > 0 ? `
+                <div class="mb-4">
+                    <div class="text-sm font-semibold text-green-700 mb-2 flex items-center gap-1"><i class="fas fa-check-circle"></i> Received Documents (${received.length})</div>
+                    <div class="bg-white rounded-lg border divide-y">
+                        ${received.map(d => `
+                            <div class="doc-row flex items-center justify-between px-4 py-3">
+                                <div class="flex items-center gap-3"><i class="fas ${d.icon} text-green-500"></i><div><div class="font-medium text-sm text-gray-800">${d.name}</div><div class="text-xs text-gray-500">${d.type} | ${d.date}</div></div></div>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full font-semibold">${d.status}</span>
+                                    <button class="text-gray-400 hover:text-teal-600 text-xs"><i class="fas fa-download"></i></button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>` : ''}
+
+                ${other.length > 0 ? `
+                <div>
+                    <div class="text-sm font-semibold text-gray-600 mb-2">Other (${other.length})</div>
+                    <div class="bg-white rounded-lg border divide-y">
+                        ${other.map(d => `
+                            <div class="doc-row flex items-center justify-between px-4 py-3">
+                                <div class="flex items-center gap-3"><i class="fas ${d.icon} text-gray-400"></i><div><div class="font-medium text-sm text-gray-800">${d.name}</div><div class="text-xs text-gray-500">${d.type}</div></div></div>
+                                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">${d.status}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>` : ''}
+            </div>`;
+        }
+
+        // ---- COMMUNICATIONS TAB ----
+        function renderProfileCommunications(s) {
+            if (s.communications.length === 0) return '<div class="text-center py-10 text-gray-400"><i class="fas fa-comments text-3xl mb-2"></i><p>No communications recorded</p></div>';
+            return `<div class="fade-in">
+                <h4 class="font-bold text-gray-800 mb-4"><i class="fas fa-comments text-teal-500 mr-2"></i>Communications & Activity Log</h4>
+                <div class="space-y-3">
+                    ${s.communications.map(c => `
+                        <div class="bg-gray-50 rounded-lg border border-gray-100 p-4">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas ${c.icon} ${c.color}"></i>
+                                    <div>
+                                        <span class="font-semibold text-sm text-gray-800">${c.type}</span>
+                                        <span class="text-xs text-gray-400 ml-2">${c.channel}</span>
+                                    </div>
+                                </div>
+                                ${c.date ? `<span class="text-xs text-gray-400">${c.date}</span>` : ''}
+                            </div>
+                            <div class="text-xs text-gray-500 mb-1">
+                                <span class="font-medium">From:</span> ${c.from} <span class="mx-1">→</span> <span class="font-medium">To:</span> ${c.to}
+                            </div>
+                            <div class="text-sm text-gray-700 bg-white rounded p-2 border border-gray-100">${c.message.replace(/\n/g, '<br>')}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+
+        // ---- PAYMENTS TAB ----
+        function renderProfilePayments(s) {
+            const totalPaid = s.payments.reduce((sum, p) => sum + (p.currency === 'GBP' ? parseFloat(p.amount) : 0), 0);
+            const totalLKR = s.payments.reduce((sum, p) => sum + (p.currency === 'LKR' ? parseFloat(p.amount) : 0), 0);
+            const hasRefund = s.payments.some(p => p.status === 'Refund Requested');
+
+            return `<div class="fade-in">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="font-bold text-gray-800"><i class="fas fa-credit-card text-teal-500 mr-2"></i>Payment Records</h4>
+                </div>
+
+                <!-- Payment Summary -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-purple-50 rounded-lg border border-purple-200 p-4 text-center">
+                        <div class="text-2xl font-bold text-purple-700">${s.payments.length}</div>
+                        <div class="text-xs text-purple-600">Total Transactions</div>
+                    </div>
+                    <div class="bg-green-50 rounded-lg border border-green-200 p-4 text-center">
+                        <div class="text-2xl font-bold text-green-700">${totalPaid > 0 ? totalPaid.toLocaleString() + ' GBP' : '0 GBP'}</div>
+                        <div class="text-xs text-green-600">Total Paid (GBP)</div>
+                    </div>
+                    <div class="${hasRefund ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'} rounded-lg border p-4 text-center">
+                        <div class="text-2xl font-bold ${hasRefund ? 'text-red-700' : 'text-gray-700'}">${hasRefund ? 'Yes' : 'None'}</div>
+                        <div class="text-xs ${hasRefund ? 'text-red-600' : 'text-gray-500'}">Refund Requests</div>
+                    </div>
+                </div>
+
+                ${s.payments.length === 0 ? '<div class="text-center py-10 text-gray-400"><i class="fas fa-receipt text-3xl mb-2"></i><p>No payment records found</p></div>' : `
+                <div class="space-y-3">
+                    ${s.payments.map((p, i) => `
+                        <div class="payment-card bg-white rounded-lg border p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600"><i class="fas fa-money-bill-wave"></i></div>
+                                    <div>
+                                        <div class="font-bold text-gray-800">${parseFloat(p.amount).toLocaleString()} ${p.currency}</div>
+                                        <div class="text-xs text-gray-500">Transaction #${i + 1}</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="px-2 py-1 rounded-full text-xs font-semibold ${p.status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${p.status}</span>
+                                    ${p.date !== 'N/A' ? `<div class="text-xs text-gray-400 mt-1">${p.date}</div>` : ''}
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-600 bg-gray-50 rounded p-2 mt-2">${p.description}</div>
+                        </div>
+                    `).join('')}
+                </div>`}
+
+                <!-- Payment-related status from applications -->
+                ${s.statuses.some(st => st.toLowerCase().includes('payment')) ? `
+                <div class="mt-6">
+                    <h5 class="font-semibold text-gray-700 text-sm mb-3"><i class="fas fa-exclamation-circle text-yellow-500 mr-1"></i>Payment-Related Application Status</h5>
+                    <div class="space-y-2">
+                        ${s.unis.map((u, i) => {
+                            const st = s.statuses[i] || '';
+                            if (!st.toLowerCase().includes('payment')) return '';
+                            return `<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-center justify-between">
+                                <div><div class="font-medium text-sm">${u.name}</div><div class="text-xs text-gray-500">${s.courses[i] || ''}</div></div>
+                                <span class="badge-payment text-xs px-2 py-1 rounded">${st}</span>
+                            </div>`;
+                        }).filter(Boolean).join('')}
+                    </div>
+                </div>` : ''}
+            </div>`;
+        }
+
+        // ========== INIT ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            parseStudents();
+            updateStats();
+            render();
+        });
+    </script>
+    <script src="/shared-auth.js"></script>
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

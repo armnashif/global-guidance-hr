@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apps Script Code - Google Sheets Integration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 p-6">
+    <div class="max-w-5xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h1 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-code text-blue-600 mr-2"></i>
+                    Apps Script Code
+                </h1>
+                <button onclick="copyCode()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center">
+                    <i class="fas fa-copy mr-2"></i>Copy All Code
+                </button>
+            </div>
+            <p class="text-gray-600 mb-4">Copy this code and paste it into your Google Apps Script editor</p>
+            
+            <div class="bg-gray-900 rounded-lg overflow-hidden">
+                <div class="bg-gray-800 px-4 py-2 flex items-center justify-between">
+                    <span class="text-gray-300 text-sm font-mono">Code.gs</span>
+                    <span class="text-gray-400 text-xs">Google Apps Script</span>
+                </div>
+                <pre id="codeBlock" class="p-4 text-green-400 font-mono text-sm overflow-x-auto"><code>/**
+ * Umair Staff Portal - Google Apps Script Backend
+ * This script provides a Web App API for reading/writing to the spreadsheet
+ * Sheet ID: 1bTBIXZAlK0Z-EgIxAOWviY_-oETih07KtMOWgFmL9ew
+ */
+
+// Main entry point for GET requests (read operations)
+function doGet(e) {
+  try {
+    const params = e.parameter;
+    const action = params.action;
+    const sheetName = params.sheet;
+    
+    if (action === 'read' && sheetName) {
+      return readSheet(sheetName);
+    }
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        error: 'Invalid request. Use ?action=read&sheet=SheetName'
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        error: error.toString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Main entry point for POST requests (write operations)
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const action = data.action;
+    const sheetName = data.sheet;
+    
+    if (action === 'write' && sheetName && data.data) {
+      return writeSheet(sheetName, data.data);
+    }
+    
+    if (action === 'update' && sheetName && data.rowIndex && data.data) {
+      return updateSheet(sheetName, data.rowIndex, data.data);
+    }
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        error: 'Invalid request. Provide action, sheet, and data.'
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        error: error.toString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Read all data from a sheet
+function readSheet(sheetName) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
+    
+    if (!sheet) {
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          error: \`Sheet "\${sheetName}" not found\`
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    const range = sheet.getDataRange();
+    const values = range.getValues();
+    
+    if (values.length === 0) {
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          data: []
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // First row is headers
+    const headers = values[0];
+    const data = [];
+    
+    // Convert rows to objects
+    for (let i = 1; i < values.length; i++) {
+      const row = {};
+      for (let j = 0; j < headers.length; j++) {
+        row[headers[j]] = values[i][j];
+      }
+      row._rowIndex = i + 1; // Store 1-based row index for updates
+      data.push(row);
+    }
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        data: data
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        error: error.toString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Write new row to sheet
+function writeSheet(sheetName, rowData) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
+    
+    if (!sheet) {
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          error: \`Sheet "\${sheetName}" not found\`
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // Get headers
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    
+    // Create row array matching header order
+    const row = headers.map(header => rowData[header] || '');
+    
+    // Append row
+    sheet.appendRow(row);
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: true,
+        message: 'Row added successfully'
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        error: error.toString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Update existing row in sheet
+function updateSheet(sheetName, rowIndex, rowData) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
+    
+    if (!sheet) {
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          error: \`Sheet "\${sheetName}" not found\`
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // Get headers
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    
+    // Create row array matching header order
+    const row = headers.map(header => rowData[header] || '');
+    
+    // Update row (rowIndex is 1-based)
+    const range = sheet.getRange(rowIndex, 1, 1, headers.length);
+    range.setValues([row]);
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: true,
+        message: 'Row updated successfully'
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        error: error.toString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+            <h2 class="font-bold text-blue-900 mb-3 flex items-center">
+                <i class="fas fa-info-circle mr-2"></i>Deployment Instructions
+            </h2>
+            <ol class="space-y-2 text-sm text-blue-800">
+                <li class="flex items-start">
+                    <span class="font-bold mr-2">1.</span>
+                    <span>Copy the code above (click "Copy All Code")</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="font-bold mr-2">2.</span>
+                    <span>Open your Google Sheet → Extensions → Apps Script</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="font-bold mr-2">3.</span>
+                    <span>Delete any existing code and paste this code</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="font-bold mr-2">4.</span>
+                    <span>Click <strong>Deploy</strong> → <strong>New deployment</strong></span>
+                </li>
+                <li class="flex items-start">
+                    <span class="font-bold mr-2">5.</span>
+                    <span>Select type: <strong>Web app</strong></span>
+                </li>
+                <li class="flex items-start">
+                    <span class="font-bold mr-2">6.</span>
+                    <span>Execute as: <strong>Me</strong>, Who has access: <strong>Anyone</strong></span>
+                </li>
+                <li class="flex items-start">
+                    <span class="font-bold mr-2">7.</span>
+                    <span>Click <strong>Deploy</strong> and copy the Web app URL</span>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function copyCode() {
+            const codeBlock = document.getElementById('codeBlock');
+            const textArea = document.createElement('textarea');
+            textArea.value = codeBlock.textContent;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            // Show feedback
+            const button = event.target.closest('button');
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+            button.classList.add('bg-green-600');
+            button.classList.remove('bg-blue-600');
+            
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+                button.classList.remove('bg-green-600');
+                button.classList.add('bg-blue-600');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

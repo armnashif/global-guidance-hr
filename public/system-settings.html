@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Settings & Administration - Global Guidance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body.in-iframe .top-nav { display: none; }
+        .settings-card { transition: all 0.3s ease; }
+        .settings-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .status-indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .status-active { background-color: #10b981; }
+        .status-inactive { background-color: #ef4444; }
+        .status-warning { background-color: #f59e0b; }
+        .progress-bar { height: 8px; background-color: #e5e7eb; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background-color: #3b82f6; transition: width 0.3s ease; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Top Navigation -->
+    <nav class="top-nav bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-cog text-blue-600 mr-2"></i>
+                System Settings & Administration
+            </h1>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-600" id="lastUpdate">Last updated: Just now</span>
+                <button onclick="saveAllSettings()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-save mr-2"></i>Save All Changes
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-6 max-w-7xl">
+        <!-- Module Navigation Tabs -->
+        <div class="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
+            <div class="flex flex-wrap border-b border-gray-200">
+                <button onclick="switchModule('overview')" id="tab-overview" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab">
+                    <i class="fas fa-tachometer-alt mr-2"></i>Overview
+                </button>
+                <button onclick="switchModule('data')" id="tab-data" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab">
+                    <i class="fas fa-database mr-2"></i>Data Management
+                </button>
+                <button onclick="switchModule('reports')" id="tab-reports" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab">
+                    <i class="fas fa-file-export mr-2"></i>Reporting & Export
+                </button>
+                <button onclick="switchModule('company')" id="tab-company" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab">
+                    <i class="fas fa-building mr-2"></i>Company Settings
+                </button>
+                <button onclick="switchModule('system')" id="tab-system" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab">
+                    <i class="fas fa-server mr-2"></i>System Config
+                </button>
+                <button onclick="switchModule('security')" id="tab-security" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab">
+                    <i class="fas fa-shield-alt mr-2"></i>Security
+                </button>
+                <button onclick="switchModule('roles')" id="tab-roles" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab" style="background:linear-gradient(90deg,#ede9fe,#fff);">
+                    <i class="fas fa-user-shield mr-2 text-purple-600"></i>Roles &amp; Permissions
+                </button>
+                <button onclick="switchModule('performance')" id="tab-performance" class="px-6 py-4 font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 border-b-2 border-transparent focus:outline-none module-tab">
+                    <i class="fas fa-rocket mr-2"></i>Performance
+                </button>
+            </div>
+        </div>
+
+        <!-- Module Container -->
+        <div id="moduleContainer"></div>
+    </div>
+
+    <script>
+        // Check if in iframe
+        const isInIframe = window.self !== window.top;
+        if (isInIframe) document.body.classList.add('in-iframe');
+
+        // System Settings Data
+        const SYSTEM_SETTINGS = {
+            company: {
+                name: 'Global Guidance Education Consultancy',
+                email: 'info@globalguidance.lk',
+                phone: '+94 11 234 5678',
+                address: 'Colombo, Sri Lanka',
+                website: 'www.globalguidance.lk',
+                logo: '/static/logo.png',
+                timezone: 'Asia/Colombo',
+                currency: 'LKR',
+                language: 'English'
+            },
+            system: {
+                version: '1.0.0',
+                environment: 'Production',
+                database: 'D1 (SQLite)',
+                storage: 'Cloudflare R2',
+                cdn: 'Cloudflare CDN',
+                uptime: '99.9%',
+                lastBackup: '2026-02-08 01:00 AM',
+                nextBackup: '2026-02-09 01:00 AM'
+            },
+            security: {
+                sslEnabled: true,
+                encryptionEnabled: true,
+                twoFactorAuth: false,
+                sessionTimeout: 30,
+                passwordPolicy: 'Strong',
+                auditLogging: true,
+                gdprCompliant: true,
+                lastSecurityAudit: '2026-02-01'
+            },
+            performance: {
+                caching: true,
+                compression: true,
+                minification: true,
+                lazyLoading: true,
+                cdnEnabled: true,
+                avgPageLoad: '450ms',
+                avgApiResponse: '85ms',
+                cacheHitRate: '92%'
+            },
+            notifications: {
+                emailEnabled: true,
+                smsEnabled: false,
+                pushEnabled: true,
+                whatsappEnabled: false,
+                slackEnabled: false
+            },
+            backups: [
+                { id: 1, date: '2026-02-08 01:00 AM', size: '245 MB', status: 'Success', type: 'Automatic' },
+                { id: 2, date: '2026-02-07 01:00 AM', size: '242 MB', status: 'Success', type: 'Automatic' },
+                { id: 3, date: '2026-02-06 01:00 AM', size: '238 MB', status: 'Success', type: 'Automatic' },
+                { id: 4, date: '2026-02-05 12:30 PM', size: '236 MB', status: 'Success', type: 'Manual' },
+                { id: 5, date: '2026-02-05 01:00 AM', size: '235 MB', status: 'Success', type: 'Automatic' }
+            ],
+            exports: [
+                { id: 1, name: 'Applications Report', format: 'Excel', date: '2026-02-08', size: '1.2 MB', status: 'Completed' },
+                { id: 2, name: 'Finance Summary', format: 'PDF', date: '2026-02-07', size: '345 KB', status: 'Completed' },
+                { id: 3, name: 'Student Data', format: 'CSV', date: '2026-02-06', size: '2.1 MB', status: 'Completed' },
+                { id: 4, name: 'Commission Report', format: 'Excel', date: '2026-02-05', size: '890 KB', status: 'Completed' }
+            ]
+        };
+
+        // Current module state
+        let currentModule = 'overview';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            switchModule('overview');
+        });
+
+        // Switch Module Function
+        function switchModule(module) {
+            currentModule = module;
+            
+            // Update tab styling
+            document.querySelectorAll('.module-tab').forEach(tab => {
+                tab.classList.remove('border-blue-600', 'text-blue-600');
+                tab.classList.add('border-transparent');
+            });
+            document.getElementById(`tab-${module}`).classList.add('border-blue-600', 'text-blue-600');
+            document.getElementById(`tab-${module}`).classList.remove('border-transparent');
+
+            // Render module content
+            const container = document.getElementById('moduleContainer');
+            switch(module) {
+                case 'overview':
+                    container.innerHTML = renderOverview();
+                    break;
+                case 'data':
+                    container.innerHTML = renderDataManagement();
+                    break;
+                case 'reports':
+                    container.innerHTML = renderReporting();
+                    break;
+                case 'company':
+                    container.innerHTML = renderCompanySettings();
+                    break;
+                case 'system':
+                    container.innerHTML = renderSystemConfig();
+                    break;
+                case 'security':
+                    container.innerHTML = renderSecurity();
+                    break;
+                case 'roles':
+                    container.innerHTML = renderRolesPermissions();
+                    setTimeout(initRolesPanel, 50);
+                    break;
+                case 'performance':
+                    container.innerHTML = renderPerformance();
+                    break;
+            }
+        }
+
+        // ===== Roles & Permissions Module =====
+        function renderRolesPermissions() {
+            return `
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800">
+                                <i class="fas fa-user-shield text-purple-600 mr-2"></i>Roles &amp; Permissions
+                            </h3>
+                            <p class="text-sm text-gray-500 mt-1">
+                                Manage who can view, edit, or administer each feature of the system.
+                                Add custom roles (BDM, HR Manager, etc.) and assign them to staff.
+                            </p>
+                        </div>
+                        <span id="rbacStatus" class="text-xs text-gray-500"></span>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2 border-b border-gray-200 mb-4" id="rbacSubTabs">
+                        <button class="rbac-subtab px-4 py-2 font-medium text-purple-700 border-b-2 border-purple-700" data-sub="roles">
+                            <i class="fas fa-user-tag mr-1"></i> Roles &amp; Permissions
+                        </button>
+                        <button class="rbac-subtab px-4 py-2 font-medium text-gray-600 border-b-2 border-transparent hover:text-purple-700" data-sub="users">
+                            <i class="fas fa-users mr-1"></i> Users
+                        </button>
+                        <button class="rbac-subtab px-4 py-2 font-medium text-gray-600 border-b-2 border-transparent hover:text-purple-700" data-sub="features">
+                            <i class="fas fa-th-large mr-1"></i> Features
+                        </button>
+                        <button class="rbac-subtab px-4 py-2 font-medium text-gray-600 border-b-2 border-transparent hover:text-purple-700" data-sub="audit">
+                            <i class="fas fa-history mr-1"></i> Audit Log
+                        </button>
+                    </div>
+                    <div id="rbacPanel" class="min-h-[400px]">
+                        <p class="text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading…</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // RBAC inline panel (uses the same /api/rbac/* endpoints)
+        const PERM_LEVELS = ['none', 'view', 'edit', 'admin'];
+        const FALLBACK_FEATURES = [
+            { id: 'leads', label: 'Leads / Lead Management', group: 'Sales' },
+            { id: 'admissions', label: 'Admissions / Applications', group: 'Operations' },
+            { id: 'finance', label: 'Finance & Commission', group: 'Finance' },
+            { id: 'students', label: 'Students', group: 'Operations' },
+            { id: 'comms', label: 'Communication Suite', group: 'Operations' },
+            { id: 'daily-ops', label: 'Daily Operations', group: 'Operations' },
+            { id: 'reports', label: 'Reports & Analytics', group: 'Management' },
+            { id: 'visa', label: 'Visa Processing', group: 'Operations' },
+            { id: 'leave', label: 'Leave Management', group: 'HR' },
+            { id: 'red-flags', label: 'Red Flags', group: 'Management' },
+            { id: 'system-settings', label: 'System Settings', group: 'Admin' },
+            { id: 'document-upload', label: 'Document Upload Widget', group: 'Operations' },
+            { id: 'whatsapp', label: 'WhatsApp Hub', group: 'Operations' },
+            { id: 'location-tracker', label: 'Staff Location Tracker', group: 'HR' },
+            { id: 'employees', label: 'Employee Management', group: 'HR' }
+        ];
+        let RBAC_STATE = { roles: [], features: [], users: [] };
+
+        async function loadRbacState() {
+            try {
+                const r = await fetch('/api/rbac/state');
+                const j = await r.json();
+                if (j.success) {
+                    RBAC_STATE = { roles: j.roles || [], features: j.features || [], users: j.users || [] };
+                    document.getElementById('rbacStatus').innerHTML = `<span class="text-green-600"><i class="fas fa-check-circle"></i> Connected — ${RBAC_STATE.roles.length} roles, ${RBAC_STATE.users.length} users</span>`;
+                }
+            } catch (e) {
+                document.getElementById('rbacStatus').innerHTML = '<span class="text-red-600"><i class="fas fa-times-circle"></i> Connection error</span>';
+            }
+        }
+
+        function initRolesPanel() {
+            document.querySelectorAll('.rbac-subtab').forEach(b => {
+                b.onclick = () => {
+                    document.querySelectorAll('.rbac-subtab').forEach(x => {
+                        x.classList.remove('text-purple-700', 'border-purple-700');
+                        x.classList.add('text-gray-600', 'border-transparent');
+                    });
+                    b.classList.add('text-purple-700', 'border-purple-700');
+                    b.classList.remove('text-gray-600', 'border-transparent');
+                    renderRbacSub(b.dataset.sub);
+                };
+            });
+            loadRbacState().then(() => renderRbacSub('roles'));
+        }
+
+        async function renderRbacSub(sub) {
+            const panel = document.getElementById('rbacPanel');
+            if (!panel) return;
+            panel.innerHTML = '<p class="text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading…</p>';
+            await loadRbacState();
+            if (sub === 'roles')    return rbacRenderRoles(panel);
+            if (sub === 'users')    return rbacRenderUsers(panel);
+            if (sub === 'features') return rbacRenderFeatures(panel);
+            if (sub === 'audit')    return rbacRenderAudit(panel);
+        }
+
+        function permSelectHTML(roleId, featId, current) {
+            const css = current || 'none';
+            const colors = { none:'bg-red-50 text-red-700', view:'bg-blue-50 text-blue-700', edit:'bg-green-50 text-green-700', admin:'bg-yellow-50 text-yellow-700' };
+            return `<select class="rbac-perm border border-gray-300 rounded px-2 py-1 text-xs ${colors[css]}" data-role="${roleId}" data-feat="${featId}">
+                ${PERM_LEVELS.map(p => `<option value="${p}" ${p===css?'selected':''}>${p}</option>`).join('')}
+            </select>`;
+        }
+
+        function rbacRenderRoles(panel) {
+            const features = RBAC_STATE.features.length ? RBAC_STATE.features : FALLBACK_FEATURES;
+            const groups = {};
+            features.forEach(f => (groups[f.group||'Other'] = groups[f.group||'Other'] || []).push(f));
+
+            let html = `
+                <div class="flex flex-wrap gap-2 mb-4 items-center">
+                    <input id="newRoleName" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="New role name (e.g. BDM, HR Manager)" style="min-width:280px;"/>
+                    <button id="addRoleBtn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
+                        <i class="fas fa-plus mr-1"></i> Add Role
+                    </button>
+                    <span class="text-xs text-gray-500 ml-auto">Permission levels: <strong class="text-red-600">none</strong> → <strong class="text-blue-600">view</strong> → <strong class="text-green-600">edit</strong> → <strong class="text-yellow-600">admin</strong></span>
+                </div>
+            `;
+
+            for (const role of RBAC_STATE.roles) {
+                html += `
+                    <div class="border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <span class="text-base font-semibold text-gray-800"><i class="fas fa-user-tag text-purple-600 mr-2"></i>${role.name}</span>
+                                <span class="ml-2 text-xs px-2 py-0.5 rounded-full ${role.builtin?'bg-blue-100 text-blue-700':'bg-gray-200 text-gray-700'}">${role.builtin?'Built-in':'Custom'}</span>
+                                ${role.description?`<span class="text-xs text-gray-500 ml-2">${role.description}</span>`:''}
+                            </div>
+                            <div>
+                                <button class="rbac-bulk text-xs px-3 py-1 bg-gray-600 text-white rounded mr-2" data-role="${role.id}">Bulk Set</button>
+                                ${!role.builtin ? `<button class="rbac-del-role text-xs px-3 py-1 bg-red-600 text-white rounded" data-role="${role.id}"><i class="fas fa-trash"></i></button>`:''}
+                            </div>
+                        </div>
+                        <table class="w-full text-sm">
+                            <thead><tr class="bg-white"><th class="text-left p-2 w-32">Group</th><th class="text-left p-2">Feature</th><th class="text-left p-2 w-32">Permission</th></tr></thead>
+                            <tbody>
+                                ${Object.keys(groups).sort().map(g => groups[g].map((f,i) => `
+                                    <tr class="border-t border-gray-200">
+                                        <td class="p-2">${i===0?`<strong>${g}</strong>`:''}</td>
+                                        <td class="p-2">${f.label} <code class="text-xs text-gray-400">(${f.id})</code></td>
+                                        <td class="p-2">${permSelectHTML(role.id, f.id, (role.permissions||{})[f.id]||'none')}</td>
+                                    </tr>
+                                `).join('')).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            panel.innerHTML = html;
+
+            panel.querySelector('#addRoleBtn').onclick = async () => {
+                const name = panel.querySelector('#newRoleName').value.trim();
+                if (!name) return alert('Enter a role name');
+                const res = await fetch('/api/rbac/roles', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, by:(window.parent?.currentUser||{}).name || 'Admin' }) });
+                const j = await res.json();
+                if (j.success) renderRbacSub('roles');
+                else alert(j.error || 'Failed');
+            };
+
+            panel.querySelectorAll('.rbac-perm').forEach(sel => {
+                sel.onchange = async () => {
+                    const res = await fetch('/api/rbac/roles/' + sel.dataset.role + '/permission', {
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ feature: sel.dataset.feat, permission: sel.value, by:(window.parent?.currentUser||{}).name || 'Admin' })
+                    });
+                    const j = await res.json();
+                    if (!j.success) alert(j.error||'Failed');
+                    else {
+                        const colors = { none:'bg-red-50 text-red-700', view:'bg-blue-50 text-blue-700', edit:'bg-green-50 text-green-700', admin:'bg-yellow-50 text-yellow-700' };
+                        sel.className = 'rbac-perm border border-gray-300 rounded px-2 py-1 text-xs ' + colors[sel.value];
+                    }
+                };
+            });
+
+            panel.querySelectorAll('.rbac-bulk').forEach(b => {
+                b.onclick = async () => {
+                    const lvl = prompt('Set ALL features for this role to:\\n(none / view / edit / admin)', 'view');
+                    if (!lvl || !PERM_LEVELS.includes(lvl)) return;
+                    const res = await fetch('/api/rbac/roles/' + b.dataset.role + '/bulk', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ permission:lvl, by:(window.parent?.currentUser||{}).name || 'Admin' }) });
+                    const j = await res.json();
+                    if (j.success) renderRbacSub('roles');
+                    else alert(j.error||'Failed');
+                };
+            });
+
+            panel.querySelectorAll('.rbac-del-role').forEach(b => {
+                b.onclick = async () => {
+                    if (!confirm('Delete this role? Users assigned will lose access until reassigned.')) return;
+                    const res = await fetch('/api/rbac/roles/' + b.dataset.role, { method:'DELETE' });
+                    const j = await res.json();
+                    if (j.success) renderRbacSub('roles');
+                    else alert(j.error||'Failed');
+                };
+            });
+        }
+
+        function rbacRenderUsers(panel) {
+            const roleOpts = RBAC_STATE.roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+            panel.innerHTML = `
+                <div class="mb-3 flex items-center gap-2">
+                    <input id="userSearch" class="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1 max-w-md" placeholder="Search users by name, employee ID, role…"/>
+                    <span class="text-xs text-gray-500">${RBAC_STATE.users.length} users</span>
+                </div>
+                <table class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="text-left p-2">Employee ID</th>
+                            <th class="text-left p-2">Name</th>
+                            <th class="text-left p-2">Job Title</th>
+                            <th class="text-left p-2">Department</th>
+                            <th class="text-left p-2">Assigned Role</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersBody">
+                        ${RBAC_STATE.users.map(u => `
+                            <tr class="border-t border-gray-200">
+                                <td class="p-2 font-mono text-xs">${u.employeeId||'-'}</td>
+                                <td class="p-2 font-medium">${u.name}</td>
+                                <td class="p-2 text-gray-600">${u.role||'-'}</td>
+                                <td class="p-2 text-gray-600">${u.department||'-'}</td>
+                                <td class="p-2">
+                                    <select class="user-role border border-gray-300 rounded px-2 py-1 text-xs" data-uid="${u.id||u.employeeId}">
+                                        <option value="">(no role assigned)</option>
+                                        ${RBAC_STATE.roles.map(r => `<option value="${r.id}" ${u.roleId===r.id?'selected':''}>${r.name}</option>`).join('')}
+                                    </select>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            panel.querySelector('#userSearch').oninput = e => {
+                const q = e.target.value.toLowerCase();
+                panel.querySelectorAll('#usersBody tr').forEach(tr => {
+                    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+                });
+            };
+            panel.querySelectorAll('.user-role').forEach(sel => {
+                sel.onchange = async () => {
+                    const res = await fetch('/api/rbac/users/' + sel.dataset.uid + '/role', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ roleId: sel.value, by:(window.parent?.currentUser||{}).name || 'Admin' }) });
+                    const j = await res.json();
+                    if (!j.success) alert(j.error||'Failed');
+                };
+            });
+        }
+
+        function rbacRenderFeatures(panel) {
+            const features = RBAC_STATE.features.length ? RBAC_STATE.features : FALLBACK_FEATURES;
+            panel.innerHTML = `
+                <div class="mb-4 flex flex-wrap gap-2 items-center">
+                    <input id="featId" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="feature-id (e.g. mock-interviews)" style="width:200px;"/>
+                    <input id="featLabel" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Display label" style="width:240px;"/>
+                    <input id="featGroup" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Group (e.g. Operations)" style="width:160px;"/>
+                    <button id="addFeatBtn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
+                        <i class="fas fa-plus mr-1"></i> Add Feature
+                    </button>
+                </div>
+                <table class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+                    <thead class="bg-gray-100">
+                        <tr><th class="text-left p-2">ID</th><th class="text-left p-2">Label</th><th class="text-left p-2">Group</th><th class="p-2"></th></tr>
+                    </thead>
+                    <tbody>
+                        ${features.map(f => `
+                            <tr class="border-t border-gray-200">
+                                <td class="p-2"><code class="text-xs">${f.id}</code></td>
+                                <td class="p-2">${f.label}</td>
+                                <td class="p-2">${f.group||'-'}</td>
+                                <td class="p-2 text-right">
+                                    ${f.builtin ? '<span class="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">built-in</span>' : `<button class="del-feat px-2 py-1 bg-red-600 text-white rounded text-xs" data-id="${f.id}"><i class="fas fa-trash"></i></button>`}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            panel.querySelector('#addFeatBtn').onclick = async () => {
+                const id = panel.querySelector('#featId').value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-');
+                const label = panel.querySelector('#featLabel').value.trim();
+                const group = panel.querySelector('#featGroup').value.trim() || 'Other';
+                if (!id || !label) return alert('ID and label required');
+                const res = await fetch('/api/rbac/features', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, label, group, by:(window.parent?.currentUser||{}).name || 'Admin' }) });
+                const j = await res.json();
+                if (j.success) renderRbacSub('features');
+                else alert(j.error||'Failed');
+            };
+            panel.querySelectorAll('.del-feat').forEach(b => {
+                b.onclick = async () => {
+                    if (!confirm('Delete this feature?')) return;
+                    const res = await fetch('/api/rbac/features/' + b.dataset.id, { method:'DELETE' });
+                    const j = await res.json();
+                    if (j.success) renderRbacSub('features');
+                    else alert(j.error||'Failed');
+                };
+            });
+        }
+
+        async function rbacRenderAudit(panel) {
+            try {
+                const r = await fetch('/api/rbac/audit');
+                const j = await r.json();
+                if (!j.items || !j.items.length) {
+                    panel.innerHTML = '<div class="text-center py-12 text-gray-500"><i class="fas fa-history text-4xl mb-2"></i><p>No changes logged yet.</p></div>';
+                    return;
+                }
+                panel.innerHTML = `
+                    <table class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+                        <thead class="bg-gray-100">
+                            <tr><th class="text-left p-2">When</th><th class="text-left p-2">Who</th><th class="text-left p-2">Action</th><th class="text-left p-2">Details</th></tr>
+                        </thead>
+                        <tbody>
+                            ${j.items.map(it => `
+                                <tr class="border-t border-gray-200">
+                                    <td class="p-2 text-xs">${new Date(it.at).toLocaleString()}</td>
+                                    <td class="p-2 font-medium">${it.by||'-'}</td>
+                                    <td class="p-2"><span class="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded">${it.action}</span></td>
+                                    <td class="p-2"><code class="text-xs text-gray-600">${JSON.stringify(it.details||{})}</code></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                panel.innerHTML = '<p class="text-red-600">Failed to load audit log.</p>';
+            }
+        }
+        // ===== End Roles & Permissions Module =====
+
+        // Overview Module
+        function renderOverview() {
+            return `
+                <div class="space-y-6">
+                    <!-- System Health Status -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">System Health Status</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-green-800">System Status</span>
+                                    <span class="status-indicator status-active"></span>
+                                </div>
+                                <p class="text-2xl font-bold text-green-700">Online</p>
+                                <p class="text-xs text-green-600 mt-1">Uptime: 99.9%</p>
+                            </div>
+                            <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-blue-800">Performance</span>
+                                    <span class="status-indicator status-active"></span>
+                                </div>
+                                <p class="text-2xl font-bold text-blue-700">Excellent</p>
+                                <p class="text-xs text-blue-600 mt-1">Load: 450ms avg</p>
+                            </div>
+                            <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-purple-800">Security</span>
+                                    <span class="status-indicator status-active"></span>
+                                </div>
+                                <p class="text-2xl font-bold text-purple-700">Protected</p>
+                                <p class="text-xs text-purple-600 mt-1">SSL + Encryption</p>
+                            </div>
+                            <div class="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-orange-800">Backups</span>
+                                    <span class="status-indicator status-active"></span>
+                                </div>
+                                <p class="text-2xl font-bold text-orange-700">Active</p>
+                                <p class="text-xs text-orange-600 mt-1">Last: 1 hour ago</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <button onclick="performAction('backup')" class="settings-card bg-white border-2 border-gray-200 rounded-lg p-6 text-center hover:border-blue-500 cursor-pointer">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-blue-600 mb-3"></i>
+                                <h4 class="text-sm font-semibold text-gray-800">Create Backup</h4>
+                                <p class="text-xs text-gray-600 mt-1">Manual backup now</p>
+                            </button>
+                            <button onclick="performAction('export')" class="settings-card bg-white border-2 border-gray-200 rounded-lg p-6 text-center hover:border-blue-500 cursor-pointer">
+                                <i class="fas fa-file-export text-4xl text-green-600 mb-3"></i>
+                                <h4 class="text-sm font-semibold text-gray-800">Export Data</h4>
+                                <p class="text-xs text-gray-600 mt-1">Export to Excel/CSV</p>
+                            </button>
+                            <button onclick="performAction('cleanup')" class="settings-card bg-white border-2 border-gray-200 rounded-lg p-6 text-center hover:border-blue-500 cursor-pointer">
+                                <i class="fas fa-broom text-4xl text-orange-600 mb-3"></i>
+                                <h4 class="text-sm font-semibold text-gray-800">System Cleanup</h4>
+                                <p class="text-xs text-gray-600 mt-1">Clear cache & logs</p>
+                            </button>
+                            <button onclick="performAction('audit')" class="settings-card bg-white border-2 border-gray-200 rounded-lg p-6 text-center hover:border-blue-500 cursor-pointer">
+                                <i class="fas fa-clipboard-check text-4xl text-purple-600 mb-3"></i>
+                                <h4 class="text-sm font-semibold text-gray-800">Security Audit</h4>
+                                <p class="text-xs text-gray-600 mt-1">Run security scan</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- System Information -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-lg shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">System Information</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-sm text-gray-600">Version</span>
+                                    <span class="text-sm font-medium text-gray-800">${SYSTEM_SETTINGS.system.version}</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-sm text-gray-600">Environment</span>
+                                    <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded">${SYSTEM_SETTINGS.system.environment}</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-sm text-gray-600">Database</span>
+                                    <span class="text-sm font-medium text-gray-800">${SYSTEM_SETTINGS.system.database}</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-sm text-gray-600">Storage</span>
+                                    <span class="text-sm font-medium text-gray-800">${SYSTEM_SETTINGS.system.storage}</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2">
+                                    <span class="text-sm text-gray-600">Uptime</span>
+                                    <span class="text-sm font-medium text-green-600">${SYSTEM_SETTINGS.system.uptime}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-start space-x-3 pb-3 border-b border-gray-100">
+                                    <i class="fas fa-cloud-upload-alt text-blue-600 mt-1"></i>
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-800 font-medium">Automatic Backup Completed</p>
+                                        <p class="text-xs text-gray-600">1 hour ago • 245 MB</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3 pb-3 border-b border-gray-100">
+                                    <i class="fas fa-file-export text-green-600 mt-1"></i>
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-800 font-medium">Applications Report Exported</p>
+                                        <p class="text-xs text-gray-600">3 hours ago • Excel format</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3 pb-3 border-b border-gray-100">
+                                    <i class="fas fa-shield-alt text-purple-600 mt-1"></i>
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-800 font-medium">Security Scan Completed</p>
+                                        <p class="text-xs text-gray-600">5 hours ago • No issues found</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-broom text-orange-600 mt-1"></i>
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-800 font-medium">System Cleanup Completed</p>
+                                        <p class="text-xs text-gray-600">1 day ago • 125 MB freed</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Data Management Module
+        function renderDataManagement() {
+            return `
+                <div class="space-y-6">
+                    <!-- Data Operations -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="settings-card bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Data Export</h3>
+                                <i class="fas fa-file-export text-2xl text-blue-600"></i>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">Export data to CSV, Excel, PDF formats</p>
+                            <button onclick="openExportModal()" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-download mr-2"></i>Export Data
+                            </button>
+                        </div>
+
+                        <div class="settings-card bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Data Import</h3>
+                                <i class="fas fa-file-import text-2xl text-green-600"></i>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">Import data from external sources</p>
+                            <button onclick="openImportModal()" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                <i class="fas fa-upload mr-2"></i>Import Data
+                            </button>
+                        </div>
+
+                        <div class="settings-card bg-white rounded-lg shadow-sm p-6 border-l-4 border-purple-500">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Data Backup</h3>
+                                <i class="fas fa-cloud-upload-alt text-2xl text-purple-600"></i>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">Create manual backup now</p>
+                            <button onclick="createBackup()" class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                                <i class="fas fa-save mr-2"></i>Create Backup
+                            </button>
+                        </div>
+
+                        <div class="settings-card bg-white rounded-lg shadow-sm p-6 border-l-4 border-orange-500">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Data Restore</h3>
+                                <i class="fas fa-cloud-download-alt text-2xl text-orange-600"></i>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">Restore from previous backups</p>
+                            <button onclick="openRestoreModal()" class="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                                <i class="fas fa-history mr-2"></i>Restore Data
+                            </button>
+                        </div>
+
+                        <div class="settings-card bg-white rounded-lg shadow-sm p-6 border-l-4 border-red-500">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Data Cleanup</h3>
+                                <i class="fas fa-broom text-2xl text-red-600"></i>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">Clean up cache, logs, temp files</p>
+                            <button onclick="performCleanup()" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                                <i class="fas fa-trash mr-2"></i>Clean Up
+                            </button>
+                        </div>
+
+                        <div class="settings-card bg-white rounded-lg shadow-sm p-6 border-l-4 border-teal-500">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Data Archive</h3>
+                                <i class="fas fa-archive text-2xl text-teal-600"></i>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">Archive old data for storage</p>
+                            <button onclick="archiveData()" class="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                                <i class="fas fa-box mr-2"></i>Archive Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Backup History -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">Backup History</h3>
+                            <button onclick="createBackup()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-plus mr-2"></i>New Backup
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date & Time</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Size</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    ${SYSTEM_SETTINGS.backups.map(b => `
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 text-sm text-gray-900">${b.date}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-600">${b.size}</td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded ${b.type === 'Automatic' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}">
+                                                    ${b.type}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800">
+                                                    <i class="fas fa-check-circle mr-1"></i>${b.status}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm">
+                                                <button onclick="restoreBackup(${b.id})" class="text-blue-600 hover:text-blue-800 mr-3" title="Restore">
+                                                    <i class="fas fa-undo"></i>
+                                                </button>
+                                                <button onclick="downloadBackup(${b.id})" class="text-green-600 hover:text-green-800 mr-3" title="Download">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                                <button onclick="deleteBackup(${b.id})" class="text-red-600 hover:text-red-800" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Automatic Backup Settings -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Automatic Backup Settings</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Backup Frequency</label>
+                                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="daily" selected>Daily at 1:00 AM</option>
+                                    <option value="hourly">Every Hour</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Retention Period</label>
+                                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="7">Keep 7 days</option>
+                                    <option value="30" selected>Keep 30 days</option>
+                                    <option value="90">Keep 90 days</option>
+                                    <option value="365">Keep 1 year</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Reporting & Export Module
+        function renderReporting() {
+            return `
+                <div class="space-y-6">
+                    <!-- Export Formats -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Export Reports</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <button onclick="exportReport('pdf')" class="settings-card bg-white border-2 border-gray-200 rounded-lg p-6 text-center hover:border-red-500 cursor-pointer">
+                                <i class="fas fa-file-pdf text-4xl text-red-600 mb-3"></i>
+                                <h4 class="text-sm font-semibold text-gray-800">Export to PDF</h4>
+                                <p class="text-xs text-gray-600 mt-1">Formatted reports</p>
+                            </button>
+                            <button onclick="exportReport('excel')" class="settings-card bg-white border-2 border-gray-200 rounded-lg p-6 text-center hover:border-green-500 cursor-pointer">
+                                <i class="fas fa-file-excel text-4xl text-green-600 mb-3"></i>
+                                <h4 class="text-sm font-semibold text-gray-800">Export to Excel</h4>
+                                <p class="text-xs text-gray-600 mt-1">Spreadsheet format</p>
+                            </button>
+                            <button onclick="exportReport('csv')" class="settings-card bg-white border-2 border-gray-200 rounded-lg p-6 text-center hover:border-blue-500 cursor-pointer">
+                                <i class="fas fa-file-csv text-4xl text-blue-600 mb-3"></i>
+                                <h4 class="text-sm font-semibold text-gray-800">Export to CSV</h4>
+                                <p class="text-xs text-gray-600 mt-1">Comma separated</p>
+                            </button>
+                            <button onclick="exportReport('json')" class="settings-card bg-white border-2 border-gray-200 rounded-lg p-6 text-center hover:border-purple-500 cursor-pointer">
+                                <i class="fas fa-file-code text-4xl text-purple-600 mb-3"></i>
+                                <h4 class="text-sm font-semibold text-gray-800">Export to JSON</h4>
+                                <p class="text-xs text-gray-600 mt-1">Raw data format</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Report Selection -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Select Report to Export</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 cursor-pointer">
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" id="report-applications" class="w-4 h-4 text-blue-600">
+                                    <label for="report-applications" class="flex-1 cursor-pointer">
+                                        <p class="text-sm font-medium text-gray-800">Applications & Visa Report</p>
+                                        <p class="text-xs text-gray-600">48 applications • All fields</p>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 cursor-pointer">
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" id="report-finance" class="w-4 h-4 text-blue-600">
+                                    <label for="report-finance" class="flex-1 cursor-pointer">
+                                        <p class="text-sm font-medium text-gray-800">Finance & Commission Report</p>
+                                        <p class="text-xs text-gray-600">All financial data</p>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 cursor-pointer">
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" id="report-students" class="w-4 h-4 text-blue-600">
+                                    <label for="report-students" class="flex-1 cursor-pointer">
+                                        <p class="text-sm font-medium text-gray-800">Student Database</p>
+                                        <p class="text-xs text-gray-600">All student records</p>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 cursor-pointer">
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" id="report-analytics" class="w-4 h-4 text-blue-600">
+                                    <label for="report-analytics" class="flex-1 cursor-pointer">
+                                        <p class="text-sm font-medium text-gray-800">Analytics & Metrics</p>
+                                        <p class="text-xs text-gray-600">Dashboard metrics</p>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex space-x-3">
+                            <button onclick="exportSelected()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-download mr-2"></i>Export Selected
+                            </button>
+                            <button onclick="scheduleExport()" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                                <i class="fas fa-clock mr-2"></i>Schedule Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Export History -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Exports</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Report Name</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Format</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Size</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    ${SYSTEM_SETTINGS.exports.map(e => `
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 text-sm font-medium text-gray-900">${e.name}</td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded ${
+                                                    e.format === 'PDF' ? 'bg-red-100 text-red-800' :
+                                                    e.format === 'Excel' ? 'bg-green-100 text-green-800' :
+                                                    e.format === 'CSV' ? 'bg-blue-100 text-blue-800' :
+                                                    'bg-purple-100 text-purple-800'
+                                                }">
+                                                    ${e.format}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-600">${e.date}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-600">${e.size}</td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800">
+                                                    <i class="fas fa-check-circle mr-1"></i>${e.status}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm">
+                                                <button onclick="downloadExport(${e.id})" class="text-blue-600 hover:text-blue-800 mr-3" title="Download">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                                <button onclick="emailExport(${e.id})" class="text-green-600 hover:text-green-800" title="Email">
+                                                    <i class="fas fa-envelope"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Scheduled Exports -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Scheduled Exports</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-calendar-alt text-blue-600"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">Weekly Applications Report</p>
+                                        <p class="text-xs text-gray-600">Every Monday at 9:00 AM • Excel format</p>
+                                    </div>
+                                </div>
+                                <button class="text-red-600 hover:text-red-800">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-calendar-alt text-green-600"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">Monthly Finance Report</p>
+                                        <p class="text-xs text-gray-600">1st of every month • PDF format</p>
+                                    </div>
+                                </div>
+                                <button class="text-red-600 hover:text-red-800">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Company Settings Module
+        function renderCompanySettings() {
+            return `
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">Company Information</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+                                <input type="text" value="${SYSTEM_SETTINGS.company.name}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                                <input type="email" value="${SYSTEM_SETTINGS.company.email}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                                <input type="tel" value="${SYSTEM_SETTINGS.company.phone}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Website</label>
+                                <input type="url" value="${SYSTEM_SETTINGS.company.website}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                                <textarea rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">${SYSTEM_SETTINGS.company.address}</textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+                                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="Asia/Colombo" selected>Asia/Colombo (UTC+5:30)</option>
+                                    <option value="Asia/Dubai">Asia/Dubai (UTC+4)</option>
+                                    <option value="Europe/London">Europe/London (UTC+0)</option>
+                                    <option value="America/New_York">America/New_York (UTC-5)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="LKR" selected>Sri Lankan Rupee (LKR)</option>
+                                    <option value="USD">US Dollar (USD)</option>
+                                    <option value="GBP">British Pound (GBP)</option>
+                                    <option value="EUR">Euro (EUR)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logo & Branding -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">Logo & Branding</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Company Logo</label>
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                                    <img src="/static/logo.png" alt="Logo" class="h-16 mx-auto mb-3">
+                                    <button class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                                        <i class="fas fa-upload mr-2"></i>Upload New Logo
+                                    </button>
+                                    <p class="text-xs text-gray-500 mt-2">Recommended: 200x200px, PNG or SVG</p>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Brand Colors</label>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="text-xs text-gray-600">Primary Color</label>
+                                        <input type="color" value="#3b82f6" class="w-full h-10 rounded-lg cursor-pointer">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-600">Secondary Color</label>
+                                        <input type="color" value="#10b981" class="w-full h-10 rounded-lg cursor-pointer">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-600">Accent Color</label>
+                                        <input type="color" value="#f59e0b" class="w-full h-10 rounded-lg cursor-pointer">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email & Notifications -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">Email & Notification Settings</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Email Notifications</p>
+                                    <p class="text-xs text-gray-600">Send system notifications via email</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">SMS Notifications</p>
+                                    <p class="text-xs text-gray-600">Send notifications via SMS</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Push Notifications</p>
+                                    <p class="text-xs text-gray-600">Browser push notifications</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">WhatsApp Integration</p>
+                                    <p class="text-xs text-gray-600">Send notifications via WhatsApp</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // System Config Module
+        function renderSystemConfig() {
+            return `
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">System Configuration</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">System Version</label>
+                                <input type="text" value="${SYSTEM_SETTINGS.system.version}" readonly class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50" disabled>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Environment</label>
+                                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="production" selected>Production</option>
+                                    <option value="staging">Staging</option>
+                                    <option value="development">Development</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Database Type</label>
+                                <input type="text" value="${SYSTEM_SETTINGS.system.database}" readonly class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50" disabled>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Storage Provider</label>
+                                <input type="text" value="${SYSTEM_SETTINGS.system.storage}" readonly class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50" disabled>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Integration Settings -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">External Integrations</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fab fa-google text-2xl text-red-600"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">Google Sheets Integration</p>
+                                        <p class="text-xs text-gray-600">Sync data with Google Sheets</p>
+                                    </div>
+                                </div>
+                                <button class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                                    Configure
+                                </button>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fab fa-slack text-2xl text-purple-600"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">Slack Integration</p>
+                                        <p class="text-xs text-gray-600">Send notifications to Slack</p>
+                                    </div>
+                                </div>
+                                <button class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                                    Configure
+                                </button>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fab fa-whatsapp text-2xl text-green-600"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">WhatsApp Business API</p>
+                                        <p class="text-xs text-gray-600">Send WhatsApp messages</p>
+                                    </div>
+                                </div>
+                                <button class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                                    Configure
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Settings -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">API Settings</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">API Rate Limit</label>
+                                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="100">100 requests/minute</option>
+                                    <option value="500" selected>500 requests/minute</option>
+                                    <option value="1000">1000 requests/minute</option>
+                                    <option value="unlimited">Unlimited</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                                <div class="flex space-x-2">
+                                    <input type="password" value="sk_live_1234567890abcdef" readonly class="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50" disabled>
+                                    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Security Module
+        function renderSecurity() {
+            return `
+                <div class="space-y-6">
+                    <!-- Security Status -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Security Status</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-green-800">SSL/TLS</span>
+                                    <i class="fas fa-shield-alt text-green-600"></i>
+                                </div>
+                                <p class="text-lg font-bold text-green-700">Active</p>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-green-800">Encryption</span>
+                                    <i class="fas fa-lock text-green-600"></i>
+                                </div>
+                                <p class="text-lg font-bold text-green-700">Enabled</p>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-green-800">Audit Logs</span>
+                                    <i class="fas fa-clipboard-list text-green-600"></i>
+                                </div>
+                                <p class="text-lg font-bold text-green-700">Active</p>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-green-800">GDPR</span>
+                                    <i class="fas fa-check-circle text-green-600"></i>
+                                </div>
+                                <p class="text-lg font-bold text-green-700">Compliant</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Settings -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">Security Settings</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Two-Factor Authentication (2FA)</p>
+                                    <p class="text-xs text-gray-600">Require 2FA for all users</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Data Encryption at Rest</p>
+                                    <p class="text-xs text-gray-600">Encrypt all stored data</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Audit Logging</p>
+                                    <p class="text-xs text-gray-600">Log all system activities</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">IP Whitelisting</p>
+                                    <p class="text-xs text-gray-600">Restrict access by IP address</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Password Policy -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">Password Policy</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Minimum Password Length</label>
+                                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="6">6 characters</option>
+                                    <option value="8" selected>8 characters</option>
+                                    <option value="10">10 characters</option>
+                                    <option value="12">12 characters</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Session Timeout</label>
+                                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="15">15 minutes</option>
+                                    <option value="30" selected>30 minutes</option>
+                                    <option value="60">60 minutes</option>
+                                    <option value="never">Never</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-4 space-y-3">
+                            <label class="flex items-center space-x-3">
+                                <input type="checkbox" checked class="w-4 h-4 text-blue-600">
+                                <span class="text-sm text-gray-700">Require uppercase letters</span>
+                            </label>
+                            <label class="flex items-center space-x-3">
+                                <input type="checkbox" checked class="w-4 h-4 text-blue-600">
+                                <span class="text-sm text-gray-700">Require numbers</span>
+                            </label>
+                            <label class="flex items-center space-x-3">
+                                <input type="checkbox" checked class="w-4 h-4 text-blue-600">
+                                <span class="text-sm text-gray-700">Require special characters</span>
+                            </label>
+                            <label class="flex items-center space-x-3">
+                                <input type="checkbox" checked class="w-4 h-4 text-blue-600">
+                                <span class="text-sm text-gray-700">Prevent password reuse (last 5 passwords)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Security Audit Log -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Security Events</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-start space-x-3 pb-3 border-b border-gray-100">
+                                <i class="fas fa-shield-alt text-green-600 mt-1"></i>
+                                <div class="flex-1">
+                                    <p class="text-sm text-gray-800 font-medium">Security Scan Completed</p>
+                                    <p class="text-xs text-gray-600">1 hour ago • No vulnerabilities found</p>
+                                </div>
+                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded">Success</span>
+                            </div>
+                            <div class="flex items-start space-x-3 pb-3 border-b border-gray-100">
+                                <i class="fas fa-key text-blue-600 mt-1"></i>
+                                <div class="flex-1">
+                                    <p class="text-sm text-gray-800 font-medium">Admin Login</p>
+                                    <p class="text-xs text-gray-600">3 hours ago • Nashif Razzak • IP: 192.168.1.1</p>
+                                </div>
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">Login</span>
+                            </div>
+                            <div class="flex items-start space-x-3 pb-3 border-b border-gray-100">
+                                <i class="fas fa-lock text-purple-600 mt-1"></i>
+                                <div class="flex-1">
+                                    <p class="text-sm text-gray-800 font-medium">Password Changed</p>
+                                    <p class="text-xs text-gray-600">1 day ago • Thasbiha</p>
+                                </div>
+                                <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded">Update</span>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-exclamation-triangle text-orange-600 mt-1"></i>
+                                <div class="flex-1">
+                                    <p class="text-sm text-gray-800 font-medium">Failed Login Attempt</p>
+                                    <p class="text-xs text-gray-600">2 days ago • Unknown user • IP: 203.94.251.12</p>
+                                </div>
+                                <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded">Warning</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Performance Module
+        function renderPerformance() {
+            return `
+                <div class="space-y-6">
+                    <!-- Performance Metrics -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Performance Metrics</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                                <p class="text-sm text-gray-600 mb-1">Avg Page Load</p>
+                                <p class="text-2xl font-bold text-green-700">450ms</p>
+                                <div class="progress-bar mt-2">
+                                    <div class="progress-fill" style="width: 90%; background-color: #10b981;"></div>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                <p class="text-sm text-gray-600 mb-1">API Response</p>
+                                <p class="text-2xl font-bold text-blue-700">85ms</p>
+                                <div class="progress-bar mt-2">
+                                    <div class="progress-fill" style="width: 95%; background-color: #3b82f6;"></div>
+                                </div>
+                            </div>
+                            <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                                <p class="text-sm text-gray-600 mb-1">Cache Hit Rate</p>
+                                <p class="text-2xl font-bold text-purple-700">92%</p>
+                                <div class="progress-bar mt-2">
+                                    <div class="progress-fill" style="width: 92%; background-color: #8b5cf6;"></div>
+                                </div>
+                            </div>
+                            <div class="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                                <p class="text-sm text-gray-600 mb-1">Uptime</p>
+                                <p class="text-2xl font-bold text-orange-700">99.9%</p>
+                                <div class="progress-bar mt-2">
+                                    <div class="progress-fill" style="width: 99.9%; background-color: #f59e0b;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Optimization Settings -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">Optimization Settings</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Data Caching</p>
+                                    <p class="text-xs text-gray-600">Cache database queries and API responses</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Compression</p>
+                                    <p class="text-xs text-gray-600">Compress responses with gzip/brotli</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Minification</p>
+                                    <p class="text-xs text-gray-600">Minify JavaScript and CSS files</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Lazy Loading</p>
+                                    <p class="text-xs text-gray-600">Load images and content on demand</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">CDN Acceleration</p>
+                                    <p class="text-xs text-gray-600">Serve static assets via Cloudflare CDN</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cache Management -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Cache Management</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <button onclick="clearCache('all')" class="p-4 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 text-left">
+                                <i class="fas fa-broom text-2xl text-red-600 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-800">Clear All Cache</p>
+                                <p class="text-xs text-gray-600">Remove all cached data</p>
+                            </button>
+                            <button onclick="clearCache('database')" class="p-4 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 text-left">
+                                <i class="fas fa-database text-2xl text-orange-600 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-800">Clear Database Cache</p>
+                                <p class="text-xs text-gray-600">Remove query cache</p>
+                            </button>
+                            <button onclick="clearCache('static')" class="p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 text-left">
+                                <i class="fas fa-file text-2xl text-blue-600 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-800">Clear Static Cache</p>
+                                <p class="text-xs text-gray-600">Remove asset cache</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Optimization -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Mobile Optimization</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-700 mb-3">Mobile Performance Score</h4>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Performance</span>
+                                        <span class="font-medium text-green-600">95/100</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 95%; background-color: #10b981;"></div>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Accessibility</span>
+                                        <span class="font-medium text-green-600">98/100</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 98%; background-color: #10b981;"></div>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Best Practices</span>
+                                        <span class="font-medium text-green-600">92/100</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 92%; background-color: #10b981;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-700 mb-3">Responsive Breakpoints</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                        <span class="text-gray-600">Mobile</span>
+                                        <span class="font-medium text-gray-800">< 768px</span>
+                                    </div>
+                                    <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                        <span class="text-gray-600">Tablet</span>
+                                        <span class="font-medium text-gray-800">768px - 1024px</span>
+                                    </div>
+                                    <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                        <span class="text-gray-600">Desktop</span>
+                                        <span class="font-medium text-gray-800">> 1024px</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Action Functions
+        function performAction(action) {
+            alert(`Action: ${action}\n\nThis will trigger the ${action} operation.\nIn production, this would execute the actual operation.`);
+        }
+
+        function openExportModal() {
+            alert('Export Data Modal\n\nSelect data to export:\n- Applications & Visa\n- Finance & Commission\n- Student Database\n- Analytics\n\nChoose format: CSV, Excel, PDF, JSON');
+        }
+
+        function openImportModal() {
+            alert('Import Data Modal\n\nUpload file to import:\n- CSV files\n- Excel files\n- JSON files\n\nMap fields and import data.');
+        }
+
+        function createBackup() {
+            const confirmed = confirm('Create Manual Backup?\n\nThis will create a full backup of all system data.\nEstimated size: ~250 MB\nTime: ~2 minutes\n\nProceed?');
+            if (confirmed) {
+                // Show loading indicator
+                const originalText = event.target.innerHTML;
+                event.target.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creating Backup...';
+                event.target.disabled = true;
+                
+                // Simulate backup creation
+                setTimeout(() => {
+                    // Create backup data
+                    const backupData = {
+                        timestamp: new Date().toISOString(),
+                        settings: localStorage.getItem('gghr_fresh_documents') || '[]',
+                        employees: localStorage.getItem('gghr_fresh_employees') || '[]',
+                        attendance: localStorage.getItem('gghr_fresh_attendanceData') || '[]',
+                        leaves: localStorage.getItem('gghr_fresh_leaveRequests') || '[]',
+                        messages: localStorage.getItem('gghr_fresh_messages') || '[]',
+                        emails: localStorage.getItem('gghr_fresh_emails') || '[]'
+                    };
+                    
+                    // Convert to JSON and create download
+                    const dataStr = JSON.stringify(backupData, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `global-guidance-backup-${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    
+                    event.target.innerHTML = originalText;
+                    event.target.disabled = false;
+                    alert('✅ Backup Created Successfully!\n\nThe backup file has been downloaded to your computer.\n\nFilename: global-guidance-backup-' + new Date().toISOString().split('T')[0] + '.json');
+                }, 1500);
+            }
+        }
+
+        function openRestoreModal() {
+            alert('Restore Data Modal\n\nSelect a backup to restore:\n\n1. 2026-02-08 01:00 AM (245 MB)\n2. 2026-02-07 01:00 AM (242 MB)\n3. 2026-02-06 01:00 AM (238 MB)\n\nWarning: This will overwrite current data!');
+        }
+
+        function performCleanup() {
+            const confirmed = confirm('System Cleanup?\n\nThis will:\n- Clear cache and temporary files\n- Remove old log files\n- Optimize database\n\nEstimated space to be freed: ~150 MB\n\nProceed?');
+            if (confirmed) {
+                alert('Cleanup Started!\n\nCleaning up system...\nThis may take a few minutes.');
+            }
+        }
+
+        function archiveData() {
+            alert('Archive Data\n\nArchive old data:\n- Applications older than 1 year\n- Completed visa applications\n- Closed files\n\nArchived data will be moved to long-term storage.');
+        }
+
+        function restoreBackup(id) {
+            const confirmed = confirm(`Restore Backup #${id}?\n\nWarning: This will overwrite all current data with the selected backup.\n\nThis action cannot be undone!\n\nProceed?`);
+            if (confirmed) {
+                alert(`Restoring backup #${id}...\n\nThis may take 5-10 minutes.\nSystem will be unavailable during restore.`);
+            }
+        }
+
+        function downloadBackup(id) {
+            alert(`Downloading backup #${id}...\n\nFile will be downloaded to your computer.\nFormat: .tar.gz\nSize: ~245 MB`);
+        }
+
+        function deleteBackup(id) {
+            const confirmed = confirm(`Delete Backup #${id}?\n\nThis action cannot be undone!\n\nProceed?`);
+            if (confirmed) {
+                alert(`Backup #${id} deleted successfully.`);
+            }
+        }
+
+        function exportReport(format) {
+            // Get all data from localStorage
+            const allData = {
+                employees: JSON.parse(localStorage.getItem('gghr_fresh_employees') || '[]'),
+                attendance: JSON.parse(localStorage.getItem('gghr_fresh_attendanceData') || '[]'),
+                leaves: JSON.parse(localStorage.getItem('gghr_fresh_leaveRequests') || '[]'),
+                dailyReports: JSON.parse(localStorage.getItem('gghr_fresh_dailyReports') || '[]'),
+                messages: JSON.parse(localStorage.getItem('gghr_fresh_messages') || '[]'),
+                emails: JSON.parse(localStorage.getItem('gghr_fresh_emails') || '[]'),
+                documents: JSON.parse(localStorage.getItem('gghr_fresh_documents') || '[]')
+            };
+            
+            const exportDate = new Date().toISOString().split('T')[0];
+            
+            if (format === 'csv') {
+                // Export as CSV
+                let csvContent = 'Data Type,Count,Last Updated\n';
+                csvContent += `Employees,${allData.employees.length},${exportDate}\n`;
+                csvContent += `Attendance Records,${allData.attendance.length},${exportDate}\n`;
+                csvContent += `Leave Requests,${allData.leaves.length},${exportDate}\n`;
+                csvContent += `Daily Reports,${allData.dailyReports.length},${exportDate}\n`;
+                csvContent += `Messages,${allData.messages.length},${exportDate}\n`;
+                csvContent += `Emails,${allData.emails.length},${exportDate}\n`;
+                csvContent += `Documents,${allData.documents.length},${exportDate}\n`;
+                
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `global-guidance-export-${exportDate}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                alert('✅ Data Exported Successfully!\n\nFormat: CSV\nFilename: global-guidance-export-' + exportDate + '.csv\n\nThe file has been downloaded.');
+            } else if (format === 'json') {
+                // Export as JSON
+                const jsonStr = JSON.stringify(allData, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `global-guidance-export-${exportDate}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                alert('✅ Data Exported Successfully!\n\nFormat: JSON\nFilename: global-guidance-export-' + exportDate + '.json\n\nThe file has been downloaded.');
+            } else if (format === 'excel') {
+                alert('Excel export requires additional libraries.\n\nPlease use CSV format for now, which can be opened in Excel.\n\nClick "Export to CSV" to proceed.');
+            } else {
+                alert(`Export to ${format.toUpperCase()}\n\nSelect reports to export:\n- Applications & Visa\n- Finance & Commission\n- All Data\n\nClick OK to proceed with export.`);
+            }
+        }
+
+        function exportSelected() {
+            alert('Exporting Selected Reports...\n\nGenerating export files...\nThis may take a few minutes.\n\nYou will be notified when complete.');
+        }
+
+        function scheduleExport() {
+            alert('Schedule Export\n\nConfigure automatic export:\n- Frequency: Daily, Weekly, Monthly\n- Format: CSV, Excel, PDF\n- Recipients: Email addresses\n- Time: Select time of day');
+        }
+
+        function downloadExport(id) {
+            alert(`Downloading export #${id}...\n\nFile will be downloaded to your computer.`);
+        }
+
+        function emailExport(id) {
+            alert(`Email export #${id}\n\nEnter recipient email address:\n\nThe exported file will be sent via email.`);
+        }
+
+        function clearCache(type) {
+            const confirmed = confirm(`Clear ${type} cache?\n\nThis will remove cached data and may temporarily slow down the system.\n\nCache will be rebuilt automatically.\n\nProceed?`);
+            if (confirmed) {
+                alert(`Clearing ${type} cache...\n\nCache cleared successfully!\n\nSystem performance may improve.`);
+            }
+        }
+
+        function saveAllSettings() {
+            // Save company settings to localStorage
+            const companySettings = {
+                name: document.querySelector('input[type="text"]')?.value || SYSTEM_SETTINGS.company.name,
+                email: document.querySelector('input[type="email"]')?.value || SYSTEM_SETTINGS.company.email,
+                phone: document.querySelector('input[type="tel"]')?.value || SYSTEM_SETTINGS.company.phone,
+                website: document.querySelector('input[type="url"]')?.value || SYSTEM_SETTINGS.company.website,
+                address: document.querySelector('textarea')?.value || SYSTEM_SETTINGS.company.address
+            };
+            
+            // Save to localStorage
+            localStorage.setItem('gghr_company_settings', JSON.stringify(companySettings));
+            
+            // Update the global settings object
+            Object.assign(SYSTEM_SETTINGS.company, companySettings);
+            
+            // Show success message
+            const saveBtn = event.target;
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Saved!';
+            saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            saveBtn.classList.add('bg-green-600');
+            
+            setTimeout(() => {
+                saveBtn.innerHTML = originalText;
+                saveBtn.classList.remove('bg-green-600');
+                saveBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            }, 2000);
+            
+            alert('✅ Settings Saved Successfully!\n\nAll configuration changes have been saved.\n\n' + 
+                  'Company Name: ' + companySettings.name + '\n' +
+                  'Email: ' + companySettings.email + '\n' +
+                  'Phone: ' + companySettings.phone);
+        }
+
+        function refreshData() {
+            const currentTime = new Date().toLocaleTimeString();
+            document.getElementById('lastUpdate').textContent = `Last updated: ${currentTime}`;
+            switchModule(currentModule);
+        }
+    </script>
+    <script src="/shared-auth.js"></script>
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

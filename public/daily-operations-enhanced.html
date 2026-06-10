@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Operations - Global Guidance HR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .tab-btn { border-bottom: 3px solid transparent; transition: all 0.3s; }
+        .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; background: #eff6ff; }
+        .meeting-card { transition: transform 0.2s; }
+        .meeting-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .time-slot { min-height: 60px; border-left: 2px solid #e5e7eb; position: relative; }
+        .time-slot.occupied { background: #fef3c7; border-left-color: #f59e0b; }
+        .time-slot.busy { background: #fee2e2; border-left-color: #ef4444; }
+        .modal { display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal.show { display: flex; align-items: center; justify-content: center; }
+        .visitor-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .visitor-waiting { background: #fef3c7; color: #92400e; }
+        .visitor-meeting { background: #d1fae5; color: #065f46; }
+        .visitor-completed { background: #e5e7eb; color: #374151; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="min-h-screen">
+        <nav id="topNav" class="bg-blue-600 text-white p-4 shadow-lg" style="display: none;">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold"><i class="fas fa-calendar-day mr-2"></i>Daily Operations Dashboard</h1>
+                <div class="flex items-center gap-4">
+                    <span id="currentDate" class="text-sm font-semibold"></span>
+                    <span id="currentTime" class="text-sm"></span>
+                    <span id="userName" class="text-sm"></span>
+                    <a href="/" class="bg-white text-blue-600 px-4 py-2 rounded hover:bg-gray-100 transition">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto p-6">
+            <!-- Tab Navigation -->
+            <div class="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
+                <div class="flex border-b">
+                    <button onclick="switchTab('overview')" class="tab-btn active px-6 py-4 font-semibold">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Today's Overview
+                    </button>
+                    <button onclick="switchTab('meetings')" class="tab-btn px-6 py-4 font-semibold">
+                        <i class="fas fa-calendar-check mr-2"></i>Meetings Schedule
+                    </button>
+                    <button onclick="switchTab('visitors')" class="tab-btn px-6 py-4 font-semibold">
+                        <i class="fas fa-user-friends mr-2"></i>Office Visitors
+                    </button>
+                    <button onclick="switchTab('reports')" class="tab-btn px-6 py-4 font-semibold">
+                        <i class="fas fa-file-alt mr-2"></i>Daily Report
+                    </button>
+                    <button onclick="switchTab('calendar-sync')" class="tab-btn px-6 py-4 font-semibold">
+                        <i class="fab fa-google mr-2"></i>Calendar Sync
+                    </button>
+                </div>
+            </div>
+
+            <!-- Today's Overview Tab -->
+            <div id="tab-overview" class="tab-content">
+                <div class="grid grid-cols-4 gap-6 mb-6">
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <i class="fas fa-calendar-check text-3xl opacity-80"></i>
+                            <div class="text-right">
+                                <div class="text-3xl font-bold" id="todayMeetings">0</div>
+                                <div class="text-sm opacity-80">Today's Meetings</div>
+                            </div>
+                        </div>
+                        <div class="text-xs opacity-80" id="nextMeetingTime">Next: --:--</div>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <i class="fas fa-user-friends text-3xl opacity-80"></i>
+                            <div class="text-right">
+                                <div class="text-3xl font-bold" id="todayVisitors">0</div>
+                                <div class="text-sm opacity-80">Office Visitors</div>
+                            </div>
+                        </div>
+                        <div class="text-xs opacity-80" id="waitingVisitors">Waiting: 0</div>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <i class="fas fa-tasks text-3xl opacity-80"></i>
+                            <div class="text-right">
+                                <div class="text-3xl font-bold" id="todayTasks">0</div>
+                                <div class="text-sm opacity-80">Tasks Due</div>
+                            </div>
+                        </div>
+                        <div class="text-xs opacity-80" id="completedTasks">Completed: 0</div>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <i class="fas fa-clock text-3xl opacity-80"></i>
+                            <div class="text-right">
+                                <div class="text-3xl font-bold" id="workHours">0h</div>
+                                <div class="text-sm opacity-80">Work Hours</div>
+                            </div>
+                        </div>
+                        <div class="text-xs opacity-80" id="checkInStatus">Not checked in</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold mb-4">Upcoming Today</h3>
+                        <div id="upcomingToday" class="space-y-3"></div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
+                        <div class="space-y-3">
+                            <button onclick="switchTab('meetings'); showAddMeetingModal()" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition">
+                                <i class="fas fa-plus mr-2"></i>Schedule Meeting
+                            </button>
+                            <button onclick="switchTab('visitors'); showAddVisitorModal()" class="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition">
+                                <i class="fas fa-user-plus mr-2"></i>Register Visitor
+                            </button>
+                            <button onclick="switchTab('reports')" class="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition">
+                                <i class="fas fa-file-alt mr-2"></i>Submit Daily Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meetings Schedule Tab -->
+            <div id="tab-meetings" class="tab-content" style="display: none;">
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                    <button onclick="showAddMeetingModal()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-plus mr-2"></i>New Meeting
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-6">
+                    <!-- Timeline View -->
+                    <div class="col-span-2 bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold mb-4">Today's Schedule</h3>
+                        <div id="timelineView" class="space-y-1"></div>
+                    </div>
+
+                    <!-- Meeting List -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-bold mb-4">All Meetings</h3>
+                        <div id="meetingsList" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Office Visitors Tab -->
+            <div id="tab-visitors" class="tab-content" style="display: none;">
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                    <button onclick="showAddVisitorModal()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                        <i class="fas fa-user-plus mr-2"></i>Register Visitor
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visitor Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Purpose</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Meeting With</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visitorsTable" class="divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Daily Report Tab -->
+            <div id="tab-reports" class="tab-content" style="display: none;">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-bold mb-6">Daily Report Submission</h3>
+                    <form id="reportForm" onsubmit="submitReport(event)">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Check-in Time</label>
+                                <input type="time" id="checkInTime" class="w-full border rounded px-3 py-2" readonly>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Today's Objectives (Min 3) *</label>
+                                <textarea id="objectives" rows="3" required class="w-full border rounded px-3 py-2" placeholder="1. Complete lead follow-ups
+2. Review university applications
+3. Prepare admission reports"></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Tasks Completed *</label>
+                                    <textarea id="tasksCompleted" rows="3" required class="w-full border rounded px-3 py-2"></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Tasks NOT Completed</label>
+                                    <textarea id="tasksNotCompleted" rows="3" class="w-full border rounded px-3 py-2"></textarea>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Meetings Attended *</label>
+                                <div id="meetingsAttended" class="border rounded p-3 bg-gray-50 min-h-[60px]"></div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Issues Faced</label>
+                                <textarea id="issues" rows="2" class="w-full border rounded px-3 py-2"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Tomorrow's Priorities *</label>
+                                <textarea id="tomorrow" rows="3" required class="w-full border rounded px-3 py-2"></textarea>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="selfDeclare" required class="w-4 h-4">
+                                <label for="selfDeclare" class="text-sm">I declare that all information provided is accurate</label>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end gap-3 mt-6">
+                            <button type="button" onclick="saveDraft()" class="px-6 py-2 border rounded hover:bg-gray-50 transition">
+                                Save Draft
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                                Submit Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Calendar Sync Tab -->
+            <div id="tab-calendar-sync" class="tab-content" style="display: none;">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-bold mb-6"><i class="fab fa-google mr-2"></i>Google Calendar Integration</h3>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                        <h4 class="font-bold text-blue-900 mb-3"><i class="fas fa-info-circle mr-2"></i>Setup Instructions</h4>
+                        <ol class="list-decimal list-inside space-y-2 text-sm text-blue-800">
+                            <li>Enable Google Calendar API in Google Cloud Console</li>
+                            <li>Create OAuth 2.0 credentials</li>
+                            <li>Add authorized redirect URI: <code class="bg-blue-100 px-2 py-1 rounded">${window.location.origin}/calendar/callback</code></li>
+                            <li>Copy Client ID and Client Secret</li>
+                            <li>Click "Connect Google Calendar" below</li>
+                        </ol>
+                    </div>
+
+                    <div id="calendarStatus" class="mb-6">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                                    <i class="fab fa-google text-2xl text-gray-500"></i>
+                                </div>
+                                <div>
+                                    <div class="font-semibold">Google Calendar</div>
+                                    <div class="text-sm text-gray-600" id="syncStatus">Not connected</div>
+                                </div>
+                            </div>
+                            <button onclick="connectGoogleCalendar()" id="connectBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                                Connect Calendar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="border rounded-lg p-6">
+                            <h4 class="font-bold mb-4">Sync Settings</h4>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm">Auto-sync meetings</label>
+                                    <input type="checkbox" id="autoSync" class="w-4 h-4">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm">Sync interval</label>
+                                    <select id="syncInterval" class="border rounded px-3 py-1 text-sm">
+                                        <option value="5">5 minutes</option>
+                                        <option value="15">15 minutes</option>
+                                        <option value="30">30 minutes</option>
+                                        <option value="60">1 hour</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm">Sync past events</label>
+                                    <input type="checkbox" id="syncPast" class="w-4 h-4">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border rounded-lg p-6">
+                            <h4 class="font-bold mb-4">Last Sync</h4>
+                            <div class="text-sm text-gray-600 space-y-2">
+                                <div class="flex justify-between">
+                                    <span>Status:</span>
+                                    <span id="lastSyncStatus" class="font-semibold">Never synced</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Time:</span>
+                                    <span id="lastSyncTime">--</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Events synced:</span>
+                                    <span id="eventsSynced">0</span>
+                                </div>
+                            </div>
+                            <button onclick="manualSync()" class="w-full mt-4 bg-gray-100 text-gray-700 px-4 py-2 rounded hover:bg-gray-200 transition">
+                                <i class="fas fa-sync mr-2"></i>Sync Now
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <p class="text-sm text-yellow-800">
+                            <i class="fas fa-lock mr-2"></i>
+                            <strong>Privacy:</strong> We only access your calendar to sync meetings. We never share your calendar data with third parties.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Meeting Modal -->
+    <div id="meetingModal" class="modal">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Schedule Meeting</h2>
+                <button onclick="closeMeetingModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <form id="meetingForm" onsubmit="saveMeeting(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Meeting Title *</label>
+                        <input type="text" id="meetingTitle" required class="w-full border rounded px-3 py-2" placeholder="Client Consultation">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Date *</label>
+                            <input type="date" id="meetingDate" required class="w-full border rounded px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Time *</label>
+                            <input type="time" id="meetingTime" required class="w-full border rounded px-3 py-2">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Duration (minutes)</label>
+                        <select id="meetingDuration" class="w-full border rounded px-3 py-2">
+                            <option value="15">15 minutes</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60">1 hour</option>
+                            <option value="90">1.5 hours</option>
+                            <option value="120">2 hours</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Participants *</label>
+                        <input type="text" id="meetingParticipants" required class="w-full border rounded px-3 py-2" placeholder="John Doe, Jane Smith">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Purpose</label>
+                        <textarea id="meetingPurpose" rows="2" class="w-full border rounded px-3 py-2" placeholder="Discuss student application process..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Meeting Type</label>
+                        <select id="meetingType" class="w-full border rounded px-3 py-2">
+                            <option value="client">Client Meeting</option>
+                            <option value="internal">Internal Meeting</option>
+                            <option value="interview">Interview</option>
+                            <option value="training">Training</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeMeetingModal()" class="px-6 py-2 border rounded hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                        Schedule Meeting
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Visitor Modal -->
+    <div id="visitorModal" class="modal">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Register Visitor</h2>
+                <button onclick="closeVisitorModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <form id="visitorForm" onsubmit="saveVisitor(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Visitor Name *</label>
+                        <input type="text" id="visitorName" required class="w-full border rounded px-3 py-2">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Phone</label>
+                            <input type="tel" id="visitorPhone" class="w-full border rounded px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Email</label>
+                            <input type="email" id="visitorEmail" class="w-full border rounded px-3 py-2">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Purpose of Visit *</label>
+                        <select id="visitorPurpose" required class="w-full border rounded px-3 py-2">
+                            <option value="">Select Purpose</option>
+                            <option value="consultation">Student Consultation</option>
+                            <option value="application">Application Submission</option>
+                            <option value="inquiry">General Inquiry</option>
+                            <option value="interview">Interview</option>
+                            <option value="document">Document Collection</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Meeting With *</label>
+                        <select id="visitorMeetingWith" required class="w-full border rounded px-3 py-2">
+                            <option value="">Select Staff</option>
+                            <option value="Nashif A. Razzak">Nashif A. Razzak (CEO)</option>
+                            <option value="Sukaina Khan">Sukaina Khan (HR Manager)</option>
+                            <option value="Aathina Shah">Aathina Shah (Staff)</option>
+                            <option value="Anyone">Anyone Available</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Notes</label>
+                        <textarea id="visitorNotes" rows="2" class="w-full border rounded px-3 py-2"></textarea>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeVisitorModal()" class="px-6 py-2 border rounded hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition">
+                        Register Visitor
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentTab = 'overview';
+        let meetings = [];
+        let visitors = [];
+
+        // Initialize
+        (function() {
+            if (window.self === window.top) {
+                document.getElementById('topNav').style.display = 'block';
+            }
+            
+            const userData = localStorage.getItem('gg_hr_session');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+                document.getElementById('userName').textContent = currentUser.name;
+                
+                initializeData();
+                updateDateTime();
+                setInterval(updateDateTime, 1000);
+                setInterval(updateOverview, 30000); // Update every 30 seconds
+            } else {
+                // Don't force logout - just show empty state
+                console.log('[Daily Operations] No session found');
+            }
+        })();
+
+        function updateDateTime() {
+            const now = new Date();
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', { 
+                weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 
+            });
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', minute: '2-digit' 
+            });
+        }
+
+        function initializeData() {
+            // Mock data - in production, fetch from API
+            const today = new Date().toISOString().split('T')[0];
+            
+            meetings = [
+                {
+                    id: 1,
+                    title: 'Client Consultation - UK Universities',
+                    date: today,
+                    time: '10:00',
+                    duration: 45,
+                    participants: 'Sarah Johnson',
+                    purpose: 'Discuss Masters programs in UK',
+                    type: 'client',
+                    status: 'scheduled'
+                },
+                {
+                    id: 2,
+                    title: 'Team Meeting - Weekly Review',
+                    date: today,
+                    time: '14:00',
+                    duration: 60,
+                    participants: 'All Staff',
+                    purpose: 'Weekly performance review',
+                    type: 'internal',
+                    status: 'scheduled'
+                },
+                {
+                    id: 3,
+                    title: 'Student Interview - MBA Program',
+                    date: today,
+                    time: '16:30',
+                    duration: 30,
+                    participants: 'Michael Chen',
+                    purpose: 'Interview for MBA admission',
+                    type: 'interview',
+                    status: 'scheduled'
+                }
+            ];
+
+            visitors = [
+                {
+                    id: 1,
+                    name: 'Ahmed Hassan',
+                    phone: '+94771234567',
+                    email: 'ahmed@email.com',
+                    purpose: 'consultation',
+                    meetingWith: 'Nashif A. Razzak',
+                    arrivalTime: '09:30',
+                    status: 'completed',
+                    notes: 'Interested in Canadian universities'
+                },
+                {
+                    id: 2,
+                    name: 'Fatima Ali',
+                    phone: '+94772345678',
+                    email: 'fatima@email.com',
+                    purpose: 'document',
+                    meetingWith: 'Sukaina Khan',
+                    arrivalTime: '11:15',
+                    status: 'waiting',
+                    notes: 'Collecting visa documents'
+                }
+            ];
+
+            updateOverview();
+            renderMeetingsTimeline();
+            renderMeetingsList();
+            renderVisitorsTable();
+            renderUpcomingToday();
+            updateMeetingsAttended();
+        }
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.tab-btn').classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+            document.getElementById('tab-' + tabName).style.display = 'block';
+        }
+
+        function updateOverview() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayMeetings = meetings.filter(m => m.date === today);
+            const todayVisitors = visitors.filter(v => v.status !== 'completed');
+            
+            document.getElementById('todayMeetings').textContent = todayMeetings.length;
+            document.getElementById('todayVisitors').textContent = visitors.length;
+            document.getElementById('waitingVisitors').textContent = `Waiting: ${visitors.filter(v => v.status === 'waiting').length}`;
+            
+            // Next meeting
+            const now = new Date();
+            const upcoming = todayMeetings.filter(m => {
+                const meetingTime = new Date(`${m.date}T${m.time}`);
+                return meetingTime > now;
+            }).sort((a, b) => a.time.localeCompare(b.time));
+            
+            if (upcoming.length > 0) {
+                document.getElementById('nextMeetingTime').textContent = `Next: ${upcoming[0].time}`;
+            }
+        }
+
+        function renderMeetingsTimeline() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayMeetings = meetings.filter(m => m.date === today);
+            
+            let html = '';
+            for (let hour = 8; hour <= 18; hour++) {
+                const timeStr = `${hour.toString().padStart(2, '0')}:00`;
+                const meeting = todayMeetings.find(m => m.time === timeStr);
+                
+                html += `
+                    <div class="time-slot ${meeting ? 'occupied' : ''} p-3">
+                        <div class="flex items-start gap-3">
+                            <span class="text-sm font-semibold text-gray-600 min-w-[60px]">${timeStr}</span>
+                            ${meeting ? `
+                                <div class="flex-1">
+                                    <div class="font-semibold">${meeting.title}</div>
+                                    <div class="text-sm text-gray-600">${meeting.participants} • ${meeting.duration}min</div>
+                                </div>
+                            ` : '<div class="text-sm text-gray-400">Available</div>'}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('timelineView').innerHTML = html;
+        }
+
+        function renderMeetingsList() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayMeetings = meetings.filter(m => m.date === today);
+            
+            document.getElementById('meetingsList').innerHTML = todayMeetings.length === 0
+                ? '<p class="text-gray-500 text-sm">No meetings scheduled</p>'
+                : todayMeetings.map(meeting => `
+                    <div class="meeting-card border rounded-lg p-4">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="font-semibold">${meeting.title}</div>
+                            <i class="fas fa-${getMeetingIcon(meeting.type)} text-blue-600"></i>
+                        </div>
+                        <div class="text-sm text-gray-600 space-y-1">
+                            <div><i class="fas fa-clock mr-2"></i>${meeting.time} (${meeting.duration}min)</div>
+                            <div><i class="fas fa-users mr-2"></i>${meeting.participants}</div>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        function renderVisitorsTable() {
+            const tbody = document.getElementById('visitorsTable');
+            
+            tbody.innerHTML = visitors.length === 0
+                ? '<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">No visitors today</td></tr>'
+                : visitors.map(visitor => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 font-semibold">${visitor.arrivalTime}</td>
+                        <td class="px-6 py-4">
+                            <div class="font-semibold">${visitor.name}</div>
+                            <div class="text-sm text-gray-500">${visitor.phone}</div>
+                        </td>
+                        <td class="px-6 py-4 text-sm">${formatPurpose(visitor.purpose)}</td>
+                        <td class="px-6 py-4 text-sm">${visitor.meetingWith}</td>
+                        <td class="px-6 py-4">
+                            <span class="visitor-badge visitor-${visitor.status}">${visitor.status.toUpperCase()}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            ${visitor.status === 'waiting' ? `
+                                <button onclick="updateVisitorStatus(${visitor.id}, 'meeting')" class="text-green-600 hover:text-green-800 mr-2">
+                                    <i class="fas fa-check"></i> Start
+                                </button>
+                            ` : visitor.status === 'meeting' ? `
+                                <button onclick="updateVisitorStatus(${visitor.id}, 'completed')" class="text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-check-double"></i> Complete
+                                </button>
+                            ` : '-'}
+                        </td>
+                    </tr>
+                `).join('');
+        }
+
+        function renderUpcomingToday() {
+            const now = new Date();
+            const today = new Date().toISOString().split('T')[0];
+            
+            const upcoming = [
+                ...meetings.filter(m => m.date === today && new Date(`${m.date}T${m.time}`) > now).map(m => ({
+                    type: 'meeting',
+                    time: m.time,
+                    title: m.title,
+                    icon: 'fa-calendar-check',
+                    color: 'blue'
+                })),
+                ...visitors.filter(v => v.status === 'waiting').map(v => ({
+                    type: 'visitor',
+                    time: v.arrivalTime,
+                    title: `Visitor: ${v.name}`,
+                    icon: 'fa-user-friends',
+                    color: 'green'
+                }))
+            ].sort((a, b) => a.time.localeCompare(b.time)).slice(0, 5);
+
+            document.getElementById('upcomingToday').innerHTML = upcoming.length === 0
+                ? '<p class="text-gray-500 text-sm">No upcoming items</p>'
+                : upcoming.map(item => `
+                    <div class="flex items-center gap-3 p-3 bg-${item.color}-50 rounded border-l-4 border-${item.color}-500">
+                        <i class="fas ${item.icon} text-${item.color}-600"></i>
+                        <div class="flex-1">
+                            <div class="font-semibold text-sm">${item.title}</div>
+                            <div class="text-xs text-gray-600">${item.time}</div>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        function updateMeetingsAttended() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayMeetings = meetings.filter(m => m.date === today);
+            
+            document.getElementById('meetingsAttended').innerHTML = todayMeetings.length === 0
+                ? '<p class="text-gray-500 text-sm">No meetings scheduled for today</p>'
+                : todayMeetings.map(m => `<div class="text-sm">• ${m.time} - ${m.title}</div>`).join('');
+        }
+
+        function showAddMeetingModal() {
+            document.getElementById('meetingModal').classList.add('show');
+            document.getElementById('meetingForm').reset();
+            document.getElementById('meetingDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function closeMeetingModal() {
+            document.getElementById('meetingModal').classList.remove('show');
+        }
+
+        function saveMeeting(event) {
+            event.preventDefault();
+            
+            const newMeeting = {
+                id: meetings.length + 1,
+                title: document.getElementById('meetingTitle').value,
+                date: document.getElementById('meetingDate').value,
+                time: document.getElementById('meetingTime').value,
+                duration: parseInt(document.getElementById('meetingDuration').value),
+                participants: document.getElementById('meetingParticipants').value,
+                purpose: document.getElementById('meetingPurpose').value,
+                type: document.getElementById('meetingType').value,
+                status: 'scheduled'
+            };
+
+            meetings.push(newMeeting);
+            closeMeetingModal();
+            renderMeetingsTimeline();
+            renderMeetingsList();
+            updateOverview();
+            renderUpcomingToday();
+            
+            alert('Meeting scheduled successfully!');
+        }
+
+        function showAddVisitorModal() {
+            document.getElementById('visitorModal').classList.add('show');
+            document.getElementById('visitorForm').reset();
+        }
+
+        function closeVisitorModal() {
+            document.getElementById('visitorModal').classList.remove('show');
+        }
+
+        function saveVisitor(event) {
+            event.preventDefault();
+            
+            const newVisitor = {
+                id: visitors.length + 1,
+                name: document.getElementById('visitorName').value,
+                phone: document.getElementById('visitorPhone').value,
+                email: document.getElementById('visitorEmail').value,
+                purpose: document.getElementById('visitorPurpose').value,
+                meetingWith: document.getElementById('visitorMeetingWith').value,
+                arrivalTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+                status: 'waiting',
+                notes: document.getElementById('visitorNotes').value
+            };
+
+            visitors.push(newVisitor);
+            closeVisitorModal();
+            renderVisitorsTable();
+            updateOverview();
+            renderUpcomingToday();
+            
+            alert('Visitor registered successfully!');
+        }
+
+        function updateVisitorStatus(id, newStatus) {
+            const visitor = visitors.find(v => v.id === id);
+            if (visitor) {
+                visitor.status = newStatus;
+                renderVisitorsTable();
+                updateOverview();
+            }
+        }
+
+        function submitReport(event) {
+            event.preventDefault();
+            // In production, send to API
+            alert('Daily report submitted successfully!');
+            document.getElementById('reportForm').reset();
+        }
+
+        function saveDraft() {
+            // Save to localStorage
+            alert('Draft saved!');
+        }
+
+        function connectGoogleCalendar() {
+            alert('Google Calendar OAuth integration requires backend setup.\n\nPlease follow the setup instructions in the Calendar Sync tab.');
+        }
+
+        function manualSync() {
+            alert('Manual sync initiated! This feature requires Google Calendar API setup.');
+        }
+
+        function getMeetingIcon(type) {
+            const icons = {
+                client: 'handshake',
+                internal: 'users',
+                interview: 'user-tie',
+                training: 'graduation-cap',
+                other: 'calendar'
+            };
+            return icons[type] || 'calendar';
+        }
+
+        function formatPurpose(purpose) {
+            const purposes = {
+                consultation: 'Student Consultation',
+                application: 'Application',
+                inquiry: 'General Inquiry',
+                interview: 'Interview',
+                document: 'Document Collection',
+                other: 'Other'
+            };
+            return purposes[purpose] || purpose;
+        }
+
+        // Initialize check-in time
+        document.addEventListener('DOMContentLoaded', () => {
+            const now = new Date();
+            document.getElementById('checkInTime').value = now.toTimeString().slice(0,5);
+        });
+    </script>
+    <script src="/shared-auth.js"></script>
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

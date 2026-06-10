@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Location Tracker - Global Guidance HR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        .top-nav { display: block; }
+        body.in-iframe .top-nav { display: none; }
+        #map { height: 450px; width: 100%; border-radius: 12px; z-index: 1; }
+        .status-online { background: #D1FAE5; color: #065F46; }
+        .status-offline { background: #F3F4F6; color: #6B7280; }
+        .status-remote { background: #DBEAFE; color: #1E40AF; }
+        .status-onsite { background: #FEF3C7; color: #92400E; }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .location-card { transition: all 0.2s; }
+        .location-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="top-nav bg-gradient-to-r from-blue-700 to-indigo-700 text-white p-4 shadow-lg">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold"><i class="fas fa-map-marked-alt mr-2"></i>Staff Location Tracker</h1>
+            <div class="flex items-center gap-4">
+                <span class="text-sm opacity-90" id="navUser"></span>
+                <a href="/" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-100 transition"><i class="fas fa-home mr-1"></i>Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- Stats Bar -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            <div class="bg-white rounded-xl shadow-sm p-4 text-center border-l-4 border-green-500">
+                <div class="text-2xl font-bold text-green-600" id="stat-online">0</div>
+                <div class="text-xs text-gray-500">Checked In Today</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 text-center border-l-4 border-blue-500">
+                <div class="text-2xl font-bold text-blue-600" id="stat-office">0</div>
+                <div class="text-xs text-gray-500">At Office</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 text-center border-l-4 border-indigo-500">
+                <div class="text-2xl font-bold text-indigo-600" id="stat-remote">0</div>
+                <div class="text-xs text-gray-500">Remote</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 text-center border-l-4 border-yellow-500">
+                <div class="text-2xl font-bold text-yellow-600" id="stat-onsite">0</div>
+                <div class="text-xs text-gray-500">On-Site Visit</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 text-center border-l-4 border-gray-400">
+                <div class="text-2xl font-bold text-gray-500" id="stat-absent">0</div>
+                <div class="text-xs text-gray-500">Not Checked In</div>
+            </div>
+        </div>
+
+        <!-- Map Section -->
+        <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-bold text-gray-800"><i class="fas fa-globe text-blue-500 mr-2"></i>Live Location Map</h3>
+                <div class="flex gap-2 items-center">
+                    <button onclick="refreshData()" class="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs hover:bg-blue-100"><i class="fas fa-sync-alt mr-1"></i>Refresh</button>
+                    <span class="text-xs text-gray-400" id="lastUpdate">Last updated: --</span>
+                </div>
+            </div>
+            <div id="map"></div>
+            <div class="mt-3 flex flex-wrap gap-3 text-xs">
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span> Office</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> Remote</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-orange-500 inline-block"></span> On-Site</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span> Office (GG HQ)</span>
+            </div>
+        </div>
+
+        <!-- Date Filter -->
+        <div class="bg-white rounded-xl shadow-sm p-4 mb-6 flex items-center gap-4 flex-wrap">
+            <div>
+                <label class="text-xs text-gray-500 mb-1 block">Date</label>
+                <input type="date" id="dateFilter" class="border rounded-lg px-3 py-2 text-sm" onchange="filterByDate()">
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 mb-1 block">Staff</label>
+                <select id="staffFilter" class="border rounded-lg px-3 py-2 text-sm" onchange="filterLocations()">
+                    <option value="">All Staff</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 mb-1 block">Location Type</label>
+                <select id="typeFilter" class="border rounded-lg px-3 py-2 text-sm" onchange="filterLocations()">
+                    <option value="">All Types</option>
+                    <option value="Office">Office</option>
+                    <option value="Remote">Remote</option>
+                    <option value="On-site">On-Site</option>
+                </select>
+            </div>
+            <div class="flex-1"></div>
+            <button onclick="exportCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700"><i class="fas fa-download mr-1"></i>Export CSV</button>
+        </div>
+
+        <!-- Staff Location Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" id="locationCards"></div>
+
+        <!-- Location History Table -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b flex items-center justify-between">
+                <h3 class="font-bold text-gray-800"><i class="fas fa-history text-teal-500 mr-2"></i>Location History Log</h3>
+                <span class="text-xs text-gray-400" id="historyCount">0 records</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date/Time</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Coordinates</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address/Note</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Accuracy</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Map</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTable" class="divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =================== CONFIG ===================
+        const EMPLOYEES = [
+            { id: 'GG001', name: 'Nashif A. Razzak', role: 'CEO', dept: 'Executive', color: '#1e40af', level: 100 },
+            { id: 'GG002', name: 'Nafees Razzak', role: 'COO', dept: 'Executive', color: '#1e3a5f', level: 100 },
+            { id: 'GG003', name: 'Thasbiha S.', role: 'Head of Admissions/HR', dept: 'Admin/HR', color: '#7c3aed', level: 80 },
+            { id: 'GG004', name: 'Umair', role: 'Sr. Admin Exec', dept: 'Admin/HR', color: '#059669', level: 60 },
+            { id: 'GG005', name: 'Mohamed Salih', role: 'Comms & Exec Coord', dept: 'Admin/HR', color: '#d97706', level: 60 },
+            { id: 'GG006', name: 'Razan Thawus', role: 'Head of BD/Visa', dept: 'BD & Visa', color: '#dc2626', level: 80 },
+            { id: 'GG007', name: 'Sukaina', role: 'Counsellor & Front Desk', dept: 'Admissions', color: '#ec4899', level: 40 },
+            { id: 'GG008', name: 'Binupa', role: 'Jr. Counsellor & TikTok', dept: 'Marketing', color: '#f59e0b', level: 40 },
+            { id: 'GG009', name: 'Shiran', role: 'Graphic Designer', dept: 'Marketing', color: '#06b6d4', level: 40 }
+        ];
+
+        const OFFICE_HQ = { lat: 6.8961, lng: 79.8571, name: 'Global Guidance HQ - Bauddhaloka Mawatha, Colombo 4' };
+        const STORAGE_KEY = 'gg_location_tracker';
+        
+        let map, markers = [], allRecords = [], currentUser = null;
+
+        // =================== INIT ===================
+        (function init() {
+            if (window.self === window.top) document.querySelector('.top-nav').style.display = 'block';
+            
+            const userData = localStorage.getItem('gg_hr_session');
+            if (userData) { try { currentUser = JSON.parse(userData); document.getElementById('navUser').textContent = currentUser.name; } catch(e) {} }
+
+            // Populate staff filter
+            const staffSel = document.getElementById('staffFilter');
+            EMPLOYEES.forEach(e => { const o = document.createElement('option'); o.value = e.id; o.textContent = e.name; staffSel.appendChild(o); });
+
+            // Set date to today
+            document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
+
+            initMap();
+            loadData();
+            renderAll();
+        })();
+
+        // =================== MAP ===================
+        function initMap() {
+            map = L.map('map').setView([OFFICE_HQ.lat, OFFICE_HQ.lng], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Office HQ Marker
+            const officeIcon = L.divIcon({ 
+                className: 'custom-marker',
+                html: '<div style="background:#dc2626;width:24px;height:24px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:10px;"><i class="fas fa-building"></i></div>',
+                iconSize: [24, 24], iconAnchor: [12, 12]
+            });
+            L.marker([OFFICE_HQ.lat, OFFICE_HQ.lng], { icon: officeIcon })
+                .addTo(map)
+                .bindPopup(`<b>🏢 Global Guidance HQ</b><br>${OFFICE_HQ.name}<br><small>6.8961°N, 79.8571°E</small>`);
+        }
+
+        function updateMapMarkers(records) {
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+
+            const latest = {};
+            records.forEach(r => {
+                if (r.lat && r.lng) {
+                    if (!latest[r.employeeId] || new Date(r.timestamp) > new Date(latest[r.employeeId].timestamp)) {
+                        latest[r.employeeId] = r;
+                    }
+                }
+            });
+
+            const bounds = [[OFFICE_HQ.lat, OFFICE_HQ.lng]];
+            Object.values(latest).forEach(r => {
+                const emp = EMPLOYEES.find(e => e.id === r.employeeId);
+                if (!emp) return;
+                const color = r.type === 'Office' ? '#22c55e' : r.type === 'Remote' ? '#3b82f6' : '#f59e0b';
+                const icon = L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="background:${color};width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:bold;">${emp.name.charAt(0)}</div>`,
+                    iconSize: [32, 32], iconAnchor: [16, 16]
+                });
+
+                const marker = L.marker([r.lat, r.lng], { icon })
+                    .addTo(map)
+                    .bindPopup(`
+                        <div style="min-width:200px">
+                            <b style="color:${emp.color}">${emp.name}</b><br>
+                            <small>${emp.role}</small><br>
+                            <hr style="margin:4px 0">
+                            <b>Type:</b> ${r.type}<br>
+                            <b>Time:</b> ${r.checkInTime || '-'}<br>
+                            <b>Coords:</b> ${r.lat.toFixed(6)}, ${r.lng.toFixed(6)}<br>
+                            ${r.accuracy ? `<b>Accuracy:</b> ±${Math.round(r.accuracy)}m<br>` : ''}
+                            ${r.note ? `<b>Note:</b> ${r.note}<br>` : ''}
+                            ${r.address ? `<b>Address:</b> ${r.address}<br>` : ''}
+                            <a href="https://www.google.com/maps?q=${r.lat},${r.lng}" target="_blank" style="color:#2563eb;font-size:11px;">Open in Google Maps →</a>
+                        </div>
+                    `);
+                markers.push(marker);
+                bounds.push([r.lat, r.lng]);
+            });
+
+            if (bounds.length > 1) {
+                try { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 }); } catch(e) {}
+            }
+        }
+
+        // =================== DATA ===================
+        function loadData() {
+            try {
+                // Load from shared location storage
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    allRecords = JSON.parse(stored);
+                } else {
+                    allRecords = [];
+                }
+
+                // Also pull from attendance data (gghr_fresh_attendanceData)
+                const attendanceStored = localStorage.getItem('gghr_fresh_attendanceData');
+                if (attendanceStored) {
+                    try {
+                        const attendanceData = JSON.parse(attendanceStored);
+                        attendanceData.forEach(a => {
+                            if (a.location && a.location.lat) {
+                                const exists = allRecords.some(r => r.employeeId === a.employeeId && r.checkInTime === a.checkInTime && r.date === (a.date || new Date().toISOString().split('T')[0]));
+                                if (!exists) {
+                                    allRecords.push({
+                                        employeeId: a.employeeId,
+                                        employeeName: a.name || a.employeeName,
+                                        lat: a.location.lat,
+                                        lng: a.location.lng,
+                                        accuracy: a.location.accuracy,
+                                        type: a.location.type || a.location.mode || 'Office',
+                                        address: a.location.address || '',
+                                        note: a.location.note || '',
+                                        checkInTime: a.checkInTime || '',
+                                        date: a.date || new Date().toISOString().split('T')[0],
+                                        timestamp: a.timestamp || new Date().toISOString(),
+                                        source: 'attendance'
+                                    });
+                                }
+                            }
+                        });
+                    } catch(e) { console.warn('Error parsing attendance data:', e); }
+                }
+
+                // Ensure dates on all records
+                allRecords.forEach(r => {
+                    if (!r.date) r.date = new Date().toISOString().split('T')[0];
+                    if (!r.timestamp) r.timestamp = new Date().toISOString();
+                });
+
+            } catch(e) { allRecords = []; }
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(allRecords));
+        }
+
+        // =================== RENDER ===================
+        function renderAll() {
+            const dateFilter = document.getElementById('dateFilter').value;
+            const staffFilter = document.getElementById('staffFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+
+            let filtered = [...allRecords];
+            if (dateFilter) filtered = filtered.filter(r => r.date === dateFilter);
+            if (staffFilter) filtered = filtered.filter(r => r.employeeId === staffFilter);
+            if (typeFilter) filtered = filtered.filter(r => r.type === typeFilter);
+
+            filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            renderStats(filtered, dateFilter);
+            renderCards(filtered, dateFilter);
+            renderHistory(filtered);
+            updateMapMarkers(filtered);
+
+            document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+        }
+
+        function renderStats(records, dateFilter) {
+            const todayRecords = records;
+            const checkedIn = new Set(todayRecords.map(r => r.employeeId));
+            const office = new Set(todayRecords.filter(r => r.type === 'Office').map(r => r.employeeId));
+            const remote = new Set(todayRecords.filter(r => r.type === 'Remote').map(r => r.employeeId));
+            const onsite = new Set(todayRecords.filter(r => r.type === 'On-site').map(r => r.employeeId));
+            
+            document.getElementById('stat-online').textContent = checkedIn.size;
+            document.getElementById('stat-office').textContent = office.size;
+            document.getElementById('stat-remote').textContent = remote.size;
+            document.getElementById('stat-onsite').textContent = onsite.size;
+            document.getElementById('stat-absent').textContent = EMPLOYEES.length - checkedIn.size;
+        }
+
+        function renderCards(records, dateFilter) {
+            const container = document.getElementById('locationCards');
+            
+            // Get latest record per employee
+            const latest = {};
+            records.forEach(r => {
+                if (!latest[r.employeeId] || new Date(r.timestamp) > new Date(latest[r.employeeId].timestamp)) {
+                    latest[r.employeeId] = r;
+                }
+            });
+
+            container.innerHTML = EMPLOYEES.map(emp => {
+                const rec = latest[emp.id];
+                const isOnline = !!rec;
+                const statusClass = !isOnline ? 'status-offline' : rec.type === 'Remote' ? 'status-remote' : rec.type === 'On-site' ? 'status-onsite' : 'status-online';
+                const statusLabel = !isOnline ? 'Not Checked In' : rec.type;
+
+                return `<div class="location-card bg-white rounded-xl shadow-sm border p-4 fade-in">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background:${emp.color}">${emp.name.charAt(0)}</div>
+                            <div>
+                                <div class="font-bold text-sm text-gray-800">${emp.name}</div>
+                                <div class="text-xs text-gray-500">${emp.role}</div>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold ${statusClass}">${isOnline ? '<i class="fas fa-circle text-[8px] mr-1 pulse"></i>' : ''}${statusLabel}</span>
+                    </div>
+                    ${isOnline ? `
+                        <div class="space-y-1.5 text-xs">
+                            <div class="flex items-center gap-2 text-gray-600"><i class="fas fa-clock text-gray-400 w-4"></i>Check-in: ${rec.checkInTime || '-'}</div>
+                            <div class="flex items-center gap-2 text-gray-600"><i class="fas fa-crosshairs text-gray-400 w-4"></i>
+                                <span>${rec.lat ? rec.lat.toFixed(6) + ', ' + rec.lng.toFixed(6) : 'N/A'}</span>
+                                ${rec.lat ? `<a href="https://www.google.com/maps?q=${rec.lat},${rec.lng}" target="_blank" class="text-blue-600 hover:underline"><i class="fas fa-external-link-alt"></i></a>` : ''}
+                            </div>
+                            ${rec.accuracy ? `<div class="flex items-center gap-2 text-gray-600"><i class="fas fa-bullseye text-gray-400 w-4"></i>Accuracy: ±${Math.round(rec.accuracy)}m</div>` : ''}
+                            <div class="flex items-center gap-2 text-gray-600"><i class="fas fa-map-marker-alt text-gray-400 w-4"></i>${rec.address || 'N/A'}</div>
+                            ${rec.note ? `<div class="flex items-center gap-2 text-gray-600"><i class="fas fa-sticky-note text-gray-400 w-4"></i>${rec.note}</div>` : ''}
+                        </div>
+                    ` : `
+                        <div class="text-center py-4 text-gray-400 text-xs"><i class="fas fa-map-marker-alt text-2xl mb-1"></i><br>No location data for this date</div>
+                    `}
+                </div>`;
+            }).join('');
+        }
+
+        function renderHistory(records) {
+            const tbody = document.getElementById('historyTable');
+            document.getElementById('historyCount').textContent = `${records.length} records`;
+
+            tbody.innerHTML = records.slice(0, 100).map(r => {
+                const emp = EMPLOYEES.find(e => e.id === r.employeeId);
+                const typeClass = r.type === 'Office' ? 'status-online' : r.type === 'Remote' ? 'status-remote' : 'status-onsite';
+                return `<tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3"><div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs" style="background:${emp?.color || '#6b7280'}">${(r.employeeName || '?').charAt(0)}</div>
+                        <div><div class="text-sm font-medium">${r.employeeName || emp?.name || '-'}</div><div class="text-xs text-gray-400">${emp?.role || ''}</div></div>
+                    </div></td>
+                    <td class="px-4 py-3"><div class="text-sm">${r.date}</div><div class="text-xs text-gray-400">${r.checkInTime || '-'}</div></td>
+                    <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-semibold ${typeClass}">${r.type}</span></td>
+                    <td class="px-4 py-3 text-xs font-mono">${r.lat ? r.lat.toFixed(6) + ', ' + r.lng.toFixed(6) : 'N/A'}</td>
+                    <td class="px-4 py-3 text-xs text-gray-600 max-w-[200px] truncate">${r.address || r.note || '-'}</td>
+                    <td class="px-4 py-3 text-xs text-gray-500">${r.accuracy ? '±' + Math.round(r.accuracy) + 'm' : '-'}</td>
+                    <td class="px-4 py-3">${r.lat ? `<a href="https://www.google.com/maps?q=${r.lat},${r.lng}" target="_blank" class="text-blue-600 hover:text-blue-800 text-xs"><i class="fas fa-map-marker-alt mr-1"></i>View</a>` : '-'}</td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="7" class="px-6 py-8 text-center text-gray-400">No location records found for the selected filters</td></tr>';
+        }
+
+        // =================== FILTERS ===================
+        function filterByDate() { renderAll(); }
+        function filterLocations() { renderAll(); }
+        function refreshData() { loadData(); renderAll(); }
+
+        // =================== EXPORT ===================
+        function exportCSV() {
+            const dateFilter = document.getElementById('dateFilter').value;
+            let records = [...allRecords];
+            if (dateFilter) records = records.filter(r => r.date === dateFilter);
+
+            const headers = ['Employee ID', 'Name', 'Role', 'Date', 'Time', 'Type', 'Latitude', 'Longitude', 'Accuracy', 'Address', 'Note', 'Google Maps Link'];
+            const rows = records.map(r => {
+                const emp = EMPLOYEES.find(e => e.id === r.employeeId);
+                return [r.employeeId, r.employeeName || emp?.name, emp?.role, r.date, r.checkInTime, r.type, r.lat, r.lng, r.accuracy ? Math.round(r.accuracy) : '', `"${r.address || ''}"`, `"${r.note || ''}"`, r.lat ? `https://www.google.com/maps?q=${r.lat},${r.lng}` : ''];
+            });
+
+            const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `staff-locations-${dateFilter || 'all'}.csv`;
+            a.click(); URL.revokeObjectURL(url);
+        }
+
+        // =================== LISTEN FOR NEW CHECK-INS ===================
+        // Watch for changes from other tabs/iframes
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'gghr_fresh_attendanceData' || e.key === STORAGE_KEY) {
+                loadData(); renderAll();
+            }
+        });
+
+        // Also check every 30s
+        setInterval(() => { loadData(); renderAll(); }, 30000);
+    </script>
+    <script src="/shared-auth.js"></script>
+<script src="/static/rbac.js"></script>
+<script src="/static/document-upload.js"></script>
+</body>
+</html>

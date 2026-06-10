@@ -1,0 +1,69 @@
+═══════════════════════════════════════════════════
+ GLOBAL GUIDANCE HR SYSTEM v4.0 — HOW TO RUN
+═══════════════════════════════════════════════════
+
+STEP 1: Install Node.js (ONE TIME ONLY)
+  → Go to https://nodejs.org
+  → Download the "LTS" version (green button)
+  → Install it (just click Next, Next, Finish)
+
+STEP 2: Run the system
+  Windows: Double-click  START_WINDOWS.bat
+  Mac/Linux: Run  ./START_MAC_LINUX.sh
+
+STEP 3: Open your browser
+  → Go to http://localhost:3000
+
+STEP 4: Login
+  CEO:   nashif.razzak   /  password123
+  HR:    thasbiha.s      /  password123
+  Visa:  razan.thawus    /  password123
+  Admin: umair           /  password123
+  Staff: sukaina         /  password123
+
+═══════════════════════════════════════════════════
+ TO SHARE WITH YOUR TEAM (same WiFi network):
+═══════════════════════════════════════════════════
+  1. Find your computer's IP address:
+     Windows: Open CMD → type  ipconfig
+     Mac:     Open Terminal → type  ifconfig
+  2. Share this URL with your team:
+     http://YOUR_IP_ADDRESS:3000
+
+═══════════════════════════════════════════════════
+ FREE ONLINE HOSTING (accessible from anywhere):
+═══════════════════════════════════════════════════
+  Option A — Render.com (100% FREE):
+    1. Go to https://github.com → create free account
+    2. Upload this folder to a new repository
+    3. Go to https://render.com → create free account
+    4. New Web Service → connect your GitHub repo
+    5. Build command: (leave blank)
+    6. Start command: node server.js
+    7. Click Deploy → you get a free URL!
+
+  Option B — Railway.app (FREE $5/month credit):
+    1. Go to https://railway.app
+    2. Login with GitHub
+    3. New Project → Deploy from GitHub
+    4. Done — free URL given instantly
+
+  Option C — Cloudflare Pages (FREE, requires build):
+    npm install && npm run deploy
+    (Needs wrangler login first)
+
+═══════════════════════════════════════════════════
+ ALL LOGINS:
+═══════════════════════════════════════════════════
+  nashif.razzak   → CEO (full access)
+  nafees.razzak   → COO (full access)
+  thasbiha.s      → Head of Admissions/HR
+  razan.thawus    → Head of BD/Visa
+  umair           → Sr. Admin Executive
+  mohamed.s       → Comms & Exec Coord
+  sukaina         → Student Counsellor
+  binupa          → Jr. Counsellor
+  shiran          → Graphic Designer
+  Password for ALL: password123
+
+═══════════════════════════════════════════════════
