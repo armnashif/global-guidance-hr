@@ -2546,7 +2546,7 @@ window._modCanToggle = _modCanToggle;
 const NAV_STRUCTURE = [
   { label:'Workspace', items:[
     { id:'dashboard',   icon:'fa-house',    label:'Dashboard' },
-    { id:'myworkspace', icon:'fa-bullseye', label:'My Workspace' },
+    { id:'workspace2',  icon:'fa-bullseye', label:'My Workspace' },
     { id:'ceocommand',     icon:'fa-crown',    label:'CEO Command', mgmtOnly:true },
     // v16e: My Attendance is everyone's personal check-in; Team Attendance is the manager-only overview.
     { id:'attendance',     icon:'fa-clock',           label:'My Attendance' },
@@ -24016,6 +24016,402 @@ else _tbBoot();
   }, 1200);
 
   console.log('[v16i] Unified Workspace + Overview + CEO Reports + Schedule loaded.');
+})();
+
+// ====================================================================
+// v16j — Side-nav rewires, Razan Amana balance, Today's Task widget
+//        fixed, Daily Team Updates widget replaces mock meetings.
+// All additive; runs after v16i and the rest of the page have booted.
+// ====================================================================
+(function v16jBoot(){
+  // ---------- 1) SIDE-NAV: Make 'My Workspace' open Workspace2 + add Staff Reports for CEO ----------
+  function v16jRewireNav(){
+    try {
+      // a) Rewire any nav button that points at 'myworkspace' → 'workspace2'
+      document.querySelectorAll('[data-page="myworkspace"], [onclick*="myworkspace"]').forEach(function(el){
+        if (el.__v16jRewired) return;
+        el.__v16jRewired = true;
+        el.setAttribute('data-page', 'workspace2');
+        // Replace inline onclick string
+        const oc = el.getAttribute('onclick') || '';
+        if (oc) el.setAttribute('onclick', oc.replace(/['"]myworkspace['"]/g, "'workspace2'"));
+      });
+      // b) For CEO/superadmin: ensure a 'Staff Reports' link exists in the side nav.
+      const u = (typeof currentUser !== 'undefined') ? currentUser : null;
+      const isCEO = u && (u.username === 'superadmin' || (u.level && u.level >= 100));
+      if (isCEO) {
+        // Find the first nav section that already has dashboard/workspace and append
+        const sideHost = document.querySelector('.sidebar-nav, #sidebarNav, .cb-side-nav, .calm-sidebar');
+        let placed = false;
+        if (sideHost && !document.getElementById('v16jNavStaffReports')) {
+          // Look for an existing nav item to clone its style
+          const sample = sideHost.querySelector('a[data-page], .nav-item, .calm-side-item');
+          if (sample) {
+            const clone = sample.cloneNode(true);
+            clone.id = 'v16jNavStaffReports';
+            clone.setAttribute('data-page', 'adminreports');
+            const oc = clone.getAttribute('onclick') || '';
+            if (oc) clone.setAttribute('onclick', oc.replace(/nav\(['"][^'"]+['"]\)/, "nav('adminreports')"));
+            else clone.setAttribute('onclick', "nav('adminreports')");
+            // Update icon + label inside the clone
+            const ic = clone.querySelector('i'); if (ic) { ic.className = 'fas fa-clipboard-list'; }
+            const lbl = clone.querySelector('span, .label, .nav-label');
+            if (lbl) lbl.textContent = 'Staff Reports';
+            else clone.appendChild(document.createTextNode(' Staff Reports'));
+            // Insert after Dashboard if found, else at the top of the host
+            const dashItem = sideHost.querySelector('[data-page="dashboard"]');
+            if (dashItem && dashItem.parentElement === sideHost) {
+              dashItem.insertAdjacentElement('afterend', clone);
+            } else {
+              sideHost.insertBefore(clone, sideHost.firstChild);
+            }
+            placed = true;
+          }
+        }
+        // Bottom-nav (mobile) — append too
+        const bottomHost = document.querySelector('.calm-bottom-nav');
+        if (bottomHost && !document.getElementById('v16jBottomNavReports')) {
+          const a = document.createElement('a');
+          a.id = 'v16jBottomNavReports';
+          a.className = 'calm-bottom-nav-item';
+          a.setAttribute('data-page', 'adminreports');
+          a.setAttribute('href', 'javascript:void(0)');
+          a.setAttribute('onclick', "nav('adminreports')");
+          a.innerHTML = '<i class="fas fa-clipboard-list"></i><span>Reports</span>';
+          bottomHost.appendChild(a);
+        }
+      }
+    } catch(e){ /* non-fatal */ }
+  }
+  setTimeout(v16jRewireNav, 800);
+  setInterval(v16jRewireNav, 4000); // re-wire if nav re-renders
+
+  // ---------- 2) RAZAN: Amana Bank balance in Workspace2 check-in + EOD ----------
+  // We piggyback on the v16i Workspace2 attendance panel by injecting an
+  // Amana sub-card after it renders, only for Razan / CEO / superadmin.
+  function v16jIsAmanaUser(){
+    const u = (typeof currentUser !== 'undefined') ? currentUser : null;
+    if (!u) return false;
+    return u.username === 'razan.thawus' || u.username === 'razan' || u.username === 'superadmin' || (u.level && u.level >= 100);
+  }
+  function v16jRenderAmanaCard(){
+    if (!v16jIsAmanaUser()) return '';
+    const att = (typeof attendanceState === 'object' && attendanceState) ? attendanceState : null;
+    if (!att) return '';
+    const opening = att.amanaOpening || '';
+    const closing = (att.eod && att.eod.amanaClosing) || '';
+    const inflow  = (att.eod && att.eod.amanaInflow) || '';
+    const outflow = (att.eod && att.eod.amanaOutflow) || '';
+    const note    = att.amanaNote || (att.eod && att.eod.amanaNote) || '';
+    const checkedIn = !!att.checkinDone;
+    const dayDone   = !!att.eodDone;
+    let diff = '';
+    if (opening && closing) {
+      const o = parseFloat(String(opening).replace(/[^0-9.\-]/g,''))||0;
+      const c = parseFloat(String(closing).replace(/[^0-9.\-]/g,''))||0;
+      const d = c - o;
+      diff = (d>=0?'+Rs ':'-Rs ') + Math.abs(d).toLocaleString('en-LK',{maximumFractionDigits:2});
+    }
+    return '<div class="card" style="border-top:3px solid #16a34a;padding:18px;margin-top:14px" id="v16jAmanaCard">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">'
+      +   '<div><div style="font-weight:700;font-size:14.5px"><i class="fas fa-landmark" style="color:#16a34a"></i> Amana Bank · Daily Balance</div>'
+      +     '<div style="font-size:12px;color:var(--muted);margin-top:3px">Update Global Guidance\'s Amana Bank balance — finance uses this to reconcile.</div></div>'
+      +   '<button onclick="v16jSubmitAmana()" style="background:#16a34a;color:#fff;border:0;padding:8px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer"><i class="fas fa-cloud-upload-alt"></i> Sync to Finance</button>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px">'
+      +   '<label style="display:block"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Opening Balance (Rs)</div>'
+      +     '<input id="v16jAmanaOpen" type="text" inputmode="decimal" placeholder="e.g. 1,250,400.00" value="'+opening+'" oninput="attendanceState.amanaOpening=this.value;saveAtt();v16jRefreshAmanaDiff()" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-family:DM Mono,monospace;font-weight:600;font-size:13.5px"></label>'
+      +   '<label style="display:block"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Closing Balance (Rs) '+(dayDone?'<span style="color:#16a34a">· locked at EOD</span>':checkedIn?'<span style="color:#f59e0b">· update during day</span>':'<span style="color:var(--muted)">· EOD</span>')+'</div>'
+      +     '<input id="v16jAmanaClose" type="text" inputmode="decimal" placeholder="e.g. 1,318,200.00" value="'+closing+'" oninput="attendanceState.eod=attendanceState.eod||{};attendanceState.eod.amanaClosing=this.value;saveAtt();v16jRefreshAmanaDiff()" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-family:DM Mono,monospace;font-weight:600;font-size:13.5px"></label>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px">'
+      +   '<label style="display:block"><div style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:4px">Inflow (Rs)</div>'
+      +     '<input id="v16jAmanaIn" type="text" inputmode="decimal" placeholder="deposits / receipts" value="'+inflow+'" oninput="attendanceState.eod=attendanceState.eod||{};attendanceState.eod.amanaInflow=this.value;saveAtt()" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);font-family:DM Mono,monospace;font-size:13px"></label>'
+      +   '<label style="display:block"><div style="font-size:11px;font-weight:600;color:#dc2626;margin-bottom:4px">Outflow (Rs)</div>'
+      +     '<input id="v16jAmanaOut" type="text" inputmode="decimal" placeholder="withdrawals / transfers" value="'+outflow+'" oninput="attendanceState.eod=attendanceState.eod||{};attendanceState.eod.amanaOutflow=this.value;saveAtt()" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);font-family:DM Mono,monospace;font-size:13px"></label>'
+      + '</div>'
+      + '<label style="display:block;margin-bottom:8px"><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">Notes</div>'
+      +   '<input id="v16jAmanaNote" placeholder="e.g. Cheque #1234 cleared overnight, expected transfer 11am" value="'+note+'" oninput="attendanceState.amanaNote=this.value;if(attendanceState.eod)attendanceState.eod.amanaNote=this.value;saveAtt()" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);font-size:12.5px"></label>'
+      + '<div id="v16jAmanaDiff" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface2);border-radius:7px;font-size:12px"><span style="color:var(--muted)">Net change today</span><strong style="font-family:DM Mono,monospace;color:'+(diff.startsWith('+')?'#16a34a':diff.startsWith('-')?'#dc2626':'var(--muted)')+'">'+(diff||'—')+'</strong></div>'
+      + '</div>';
+  }
+  window.v16jRefreshAmanaDiff = function(){
+    const el = document.getElementById('v16jAmanaDiff'); if (!el) return;
+    const o = parseFloat(String((document.getElementById('v16jAmanaOpen')||{}).value||'').replace(/[^0-9.\-]/g,''))||0;
+    const c = parseFloat(String((document.getElementById('v16jAmanaClose')||{}).value||'').replace(/[^0-9.\-]/g,''))||0;
+    const d = c - o;
+    const txt = (o && c) ? ((d>=0?'+Rs ':'-Rs ')+Math.abs(d).toLocaleString('en-LK',{maximumFractionDigits:2})) : '—';
+    const strong = el.querySelector('strong');
+    if (strong) {
+      strong.textContent = txt;
+      strong.style.color = txt.startsWith('+') ? '#16a34a' : txt.startsWith('-') ? '#dc2626' : 'var(--muted)';
+    }
+  };
+  window.v16jSubmitAmana = async function(){
+    const u = currentUser || {};
+    if (!v16jIsAmanaUser()) { alert('Only Razan / CEO can update finance.'); return; }
+    const att = attendanceState || {};
+    const opening = parseFloat(String(att.amanaOpening||'').replace(/[^0-9.\-]/g,''))||0;
+    const closing = parseFloat(String((att.eod&&att.eod.amanaClosing)||'').replace(/[^0-9.\-]/g,''))||0;
+    const inflow  = parseFloat(String((att.eod&&att.eod.amanaInflow) ||'').replace(/[^0-9.\-]/g,''))||0;
+    const outflow = parseFloat(String((att.eod&&att.eod.amanaOutflow)||'').replace(/[^0-9.\-]/g,''))||0;
+    if (!opening && !closing) { alert('Please enter at least an opening or closing balance.'); return; }
+    // Use closing if available, else opening (today's posted balance)
+    const balance = closing || opening;
+    try {
+      const r = await fetch('/api/finance', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          user: u.username || 'razan.thawus',
+          name: u.name || 'Razan Thawus',
+          level: u.level || 60,
+          amanaBalance: balance,
+          otherBalances: [],
+          payments: [],
+          note: (att.amanaNote || (att.eod&&att.eod.amanaNote) || '') + (inflow||outflow ? ' · In Rs '+inflow.toLocaleString('en-LK')+' / Out Rs '+outflow.toLocaleString('en-LK') : '')
+        })
+      });
+      const j = await r.json();
+      if (j && j.success) {
+        if (typeof showToast === 'function') showToast('✅ Amana Bank balance synced to Finance (Rs '+balance.toLocaleString('en-LK')+').','success', 4000);
+        else alert('Balance synced.');
+      } else {
+        alert('Sync failed: '+(j&&j.error||'unknown'));
+      }
+    } catch(e){ alert('Network error: '+e.message); }
+  };
+  // Hook into Workspace2 render: re-render Amana panel after main panels.
+  function v16jInjectAmana(){
+    // If we're on workspace2 view, add the Amana card just below the attendance panel
+    const ws2 = document.getElementById('v16iWS2Root'); if (!ws2) return;
+    if (!v16jIsAmanaUser()) {
+      const old = document.getElementById('v16jAmanaCard'); if (old) old.remove();
+      return;
+    }
+    const attPanel = document.getElementById('v16iWS2AttPanel');
+    if (!attPanel) return;
+    const old = document.getElementById('v16jAmanaCard'); if (old) old.remove();
+    const tmp = document.createElement('div');
+    tmp.innerHTML = v16jRenderAmanaCard();
+    if (tmp.firstElementChild) attPanel.appendChild(tmp.firstElementChild);
+  }
+  // Re-inject after every Workspace2 nav
+  const __origNavJ = window.nav;
+  window.nav = function(page){
+    const r = __origNavJ.apply(this, arguments);
+    if (page === 'workspace2') setTimeout(v16jInjectAmana, 120);
+    return r;
+  };
+  // Also re-inject when v16iWS2Render is called (e.g. after check-in)
+  if (typeof window.v16iWS2Render === 'function') {
+    const _origWS2 = window.v16iWS2Render;
+    window.v16iWS2Render = function(){
+      const out = _origWS2.apply(this, arguments);
+      setTimeout(v16jInjectAmana, 50);
+      return out;
+    };
+  }
+
+  // ---------- 3) FIX DASHBOARD "Today's Task" widget ----------
+  // The original _calmTasks() fetches /api/workspace which doesn't include
+  // the user's local attendanceState.tasks. Override it to merge both sources.
+  function _v16jLocalTasks(){
+    const att = (typeof attendanceState === 'object' && attendanceState) ? attendanceState : null;
+    if (!att || !Array.isArray(att.tasks)) return [];
+    return att.tasks.map(function(t){
+      return { title: t.text || '(untitled)', status: t.done ? 'completed' : 'open', priority: (t.p==='P1'?'high':t.p==='P3'?'low':'med'), due:'' };
+    });
+  }
+  function _v16jEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); }
+  async function _v16jCalmTasks(){
+    const el = document.getElementById('calmTasks'); if (!el) return;
+    // 1) Local tasks first
+    let tasks = _v16jLocalTasks();
+    // 2) Try workspace API and merge (if any)
+    try {
+      const r = await fetch('/api/workspace?user=' + encodeURIComponent((currentUser&&currentUser.username)||'') + '&day=' + new Date().toISOString().slice(0,10), { cache:'no-store' });
+      const j = await r.json();
+      if (j && j.success && j.workspace && Array.isArray(j.workspace.tasks)) {
+        j.workspace.tasks.forEach(function(t){ tasks.push(t); });
+      }
+    } catch(e){}
+    if (!tasks.length) {
+      el.innerHTML = '<div class="ws-calm-empty" style="padding:var(--sp-5);text-align:center;color:var(--calm-text-muted);font-size:var(--t-caption)">'
+        + '<i class="fas fa-check-double" style="font-size:24px;display:block;margin-bottom:8px;color:var(--calm-text-muted)"></i>'
+        + '<div style="font-weight:600">No tasks yet for today</div>'
+        + '<div style="margin-top:4px;font-size:11.5px">Check in via <a onclick="nav(\'workspace2\')" style="color:var(--calm-accent);cursor:pointer;text-decoration:underline">My Workspace</a> to add today\'s tasks.</div>'
+        + '</div>';
+      return;
+    }
+    el.innerHTML = tasks.slice(0, 5).map(function(t){
+      const done = t.status === 'completed';
+      const pri = (t.priority || 'med');
+      const priColor = pri === 'high' ? 'var(--status-bad)' : pri === 'low' ? 'var(--calm-text-muted)' : 'var(--calm-accent)';
+      return '<div class="calm-list-item" onclick="nav(\'workspace2\')" style="cursor:pointer">'
+        + '<div class="li-icon" style="background:' + (done ? 'rgba(52,211,153,0.10)' : 'var(--calm-accent-soft)') + ';color:' + (done ? 'var(--status-ok)' : priColor) + '">'
+        +   '<i class="fas ' + (done ? 'fa-check' : 'fa-circle') + '" style="font-size:' + (done ? '12px' : '8px') + '"></i>'
+        + '</div>'
+        + '<div class="li-body">'
+        +   '<div class="li-title" style="' + (done ? 'text-decoration:line-through;opacity:0.6' : '') + '">' + _v16jEsc(t.title) + '</div>'
+        +   '<div class="li-sub">' + pri.toUpperCase() + (t.due ? ' · due ' + _v16jEsc(t.due) : '') + '</div>'
+        + '</div>'
+        + '<span class="li-meta">' + (done ? 'Done' : 'Pending') + '</span>'
+        + '</div>';
+    }).join('') + (tasks.length > 5 ? '<div style="text-align:center;padding:6px;font-size:11px;color:var(--calm-text-muted)"><a onclick="nav(\'workspace2\')" style="color:var(--calm-accent);cursor:pointer">+ '+(tasks.length-5)+' more · Open Workspace →</a></div>' : '');
+  }
+  // Replace the global _calmTasks
+  if (typeof window._calmTasks !== 'undefined' || true) {
+    window._calmTasks = _v16jCalmTasks;
+  }
+
+  // ---------- 4) CONVERT "Meetings" widget → "Daily Team Updates" ----------
+  // The legacy _calmMeetings shows a hardcoded mock. Replace it with a live
+  // shared whiteboard fed by /api/v16j/team-updates.
+  function _v16jKindMeta(k){
+    const m = {
+      'office':  { icon:'fa-building',    color:'#16a34a', label:'In office' },
+      'remote':  { icon:'fa-house',       color:'#6378ff', label:'Remote' },
+      'leave':   { icon:'fa-umbrella-beach', color:'#f59e0b', label:'On leave' },
+      'late':    { icon:'fa-clock',       color:'#ef4444', label:'Running late' },
+      'meeting': { icon:'fa-calendar-day',color:'#ec4899', label:'Meeting' },
+      'note':    { icon:'fa-bullhorn',    color:'#0ea5e9', label:'Note' }
+    };
+    return m[k] || m.note;
+  }
+  async function _v16jLoadTeamUpdates(){
+    const el = document.getElementById('calmMeetings'); if (!el) return;
+    // Rebrand the section title to "Team updates"
+    try {
+      const card = el.closest('.calm-card');
+      if (card) {
+        const h2 = card.querySelector('.calm-section h2');
+        if (h2) h2.innerHTML = 'Team updates';
+        const link = card.querySelector('.calm-link');
+        if (link) {
+          link.textContent = '+ Post update';
+          link.onclick = function(){ v16jOpenPostUpdate(); };
+          link.style.cursor = 'pointer';
+        }
+      }
+    } catch(e){}
+    try {
+      const today = new Date().toISOString().slice(0,10);
+      const r = await fetch('/api/v16j/team-updates?limit=10&since=' + today, { cache:'no-store' });
+      const j = await r.json();
+      const items = (j && j.items) || [];
+      const u = currentUser || {};
+      const canDeleteAll = u.level >= 80 || u.username === 'superadmin';
+      if (!items.length){
+        el.innerHTML = '<div class="ws-calm-empty" style="padding:var(--sp-5);text-align:center;color:var(--calm-text-muted);font-size:var(--t-caption)">'
+          + '<i class="fas fa-bullhorn" style="font-size:22px;display:block;margin-bottom:8px"></i>'
+          + '<div style="font-weight:600">No team updates yet today</div>'
+          + '<div style="margin-top:6px"><a onclick="v16jOpenPostUpdate()" style="color:var(--calm-accent);cursor:pointer">+ Post the first update</a></div>'
+          + '</div>';
+        return;
+      }
+      el.innerHTML = items.slice(0, 5).map(function(it){
+        const m = _v16jKindMeta(it.kind);
+        const tm = it.ts ? new Date(it.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
+        const canDel = canDeleteAll || (u.username && u.username === it.author);
+        return '<div class="calm-list-item" style="position:relative">'
+          + '<div class="li-icon" style="background:'+m.color+'22;color:'+m.color+'"><i class="fas '+m.icon+'"></i></div>'
+          + '<div class="li-body">'
+          +   '<div class="li-title">' + _v16jEsc(it.authorName || it.author) + ' <span style="font-weight:400;color:var(--calm-text-muted);font-size:11.5px">· '+_v16jEsc(m.label)+'</span></div>'
+          +   '<div class="li-sub">' + _v16jEsc(it.text) + '</div>'
+          + '</div>'
+          + '<span class="li-meta">' + tm + (canDel ? ' <a onclick="v16jDeleteUpdate(\''+_v16jEsc(it.id)+'\')" style="color:var(--calm-text-muted);cursor:pointer;margin-left:6px" title="Delete">×</a>' : '') + '</span>'
+        + '</div>';
+      }).join('');
+    } catch(e){
+      el.innerHTML = '<div class="ws-calm-empty" style="padding:var(--sp-5);text-align:center;color:var(--calm-text-muted)"><i class="fas fa-triangle-exclamation"></i><div>Could not load team updates</div></div>';
+    }
+  }
+  // Override the original _calmMeetings to load team updates
+  window._calmMeetings = _v16jLoadTeamUpdates;
+
+  window.v16jOpenPostUpdate = function(){
+    let m = document.getElementById('v16jPostUpdateModal'); if (m) m.remove();
+    m = document.createElement('div');
+    m.id = 'v16jPostUpdateModal';
+    m.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,0.65);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)';
+    m.innerHTML = '<div style="background:var(--surface);border-radius:14px;max-width:480px;width:100%;box-shadow:0 28px 80px rgba(0,0,0,0.5);color:var(--text)">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--border)">'
+      +   '<div><div style="font-size:17px;font-weight:700;color:#0ea5e9">Post a team update</div><div style="font-size:11.5px;color:var(--muted)">Visible to everyone — e.g. "I\'m running late", "Coming to office at 10am".</div></div>'
+      +   '<button class="btn btn-sm btn-secondary" onclick="document.getElementById(\'v16jPostUpdateModal\').remove()"><i class="fas fa-times"></i></button>'
+      + '</div>'
+      + '<div style="padding:18px 22px;display:flex;flex-direction:column;gap:10px">'
+      +   '<label style="font-size:12px;font-weight:600;color:var(--text)">Status'
+      +     '<select id="v16jUpdateKind" style="display:block;width:100%;margin-top:4px;padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px">'
+      +       '<option value="office">🏢 Coming to office</option>'
+      +       '<option value="remote">🏠 Working remotely</option>'
+      +       '<option value="late">⏰ Running late</option>'
+      +       '<option value="leave">🌴 On leave today</option>'
+      +       '<option value="meeting">📅 In a meeting</option>'
+      +       '<option value="note" selected>📢 General note</option>'
+      +     '</select></label>'
+      +   '<label style="font-size:12px;font-weight:600;color:var(--text)">Message'
+      +     '<textarea id="v16jUpdateText" rows="3" placeholder="e.g. Will be in by 10:30am — traffic on Galle Rd" style="display:block;width:100%;margin-top:4px;padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px;resize:vertical"></textarea></label>'
+      +   '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">'
+      +     '<button class="btn btn-sm btn-secondary" onclick="document.getElementById(\'v16jPostUpdateModal\').remove()">Cancel</button>'
+      +     '<button onclick="v16jPostUpdate()" style="background:#0ea5e9;color:#fff;border:0;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer"><i class="fas fa-paper-plane"></i> Post</button></div>'
+      + '</div></div>';
+    document.body.appendChild(m);
+    setTimeout(function(){ const t = document.getElementById('v16jUpdateText'); if (t) t.focus(); }, 100);
+  };
+  window.v16jPostUpdate = async function(){
+    const kind = (document.getElementById('v16jUpdateKind')||{}).value || 'note';
+    const text = (document.getElementById('v16jUpdateText')||{}).value || '';
+    if (!text.trim()) { alert('Please enter a message.'); return; }
+    const u = currentUser || {};
+    try {
+      const r = await fetch('/api/v16j/team-updates', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ author: u.username||'guest', authorName: u.name||'Guest', text: text.trim(), kind: kind })
+      });
+      const j = await r.json();
+      if (j && j.success){
+        document.getElementById('v16jPostUpdateModal').remove();
+        if (typeof showToast === 'function') showToast('📣 Team update posted.', 'success', 3500);
+        _v16jLoadTeamUpdates();
+      } else alert('Failed: '+(j&&j.error||'unknown'));
+    } catch(e){ alert('Network error: '+e.message); }
+  };
+  window.v16jDeleteUpdate = async function(id){
+    if (!id) return;
+    if (!confirm('Delete this update?')) return;
+    const u = currentUser || {};
+    try {
+      const r = await fetch('/api/v16j/team-updates?id='+encodeURIComponent(id)+'&author='+encodeURIComponent(u.username||'')+'&level='+(u.level||0), { method:'DELETE' });
+      const j = await r.json();
+      if (j && j.success) _v16jLoadTeamUpdates();
+      else alert('Failed: '+(j&&j.error||'unknown'));
+    } catch(e){ alert('Network error: '+e.message); }
+  };
+
+  // ---------- 5) Re-trigger widgets on initial dashboard render ----------
+  // The calm dashboard runs _calmTasks/_calmMeetings via setTimeout in
+  // initCalmDashboard. Our overrides need to win — re-fire them after a small
+  // delay to make sure our versions execute even if the originals already ran.
+  function v16jRefreshDashWidgets(){
+    try { if (typeof _v16jCalmTasks === 'function') _v16jCalmTasks(); } catch(e){}
+    try { if (typeof _v16jLoadTeamUpdates === 'function') _v16jLoadTeamUpdates(); } catch(e){}
+  }
+  setTimeout(v16jRefreshDashWidgets, 2200);
+  // Hook nav to refresh on every dashboard view
+  const __origNavK = window.nav;
+  window.nav = function(page){
+    const r = __origNavK.apply(this, arguments);
+    if (page === 'dashboard') setTimeout(v16jRefreshDashWidgets, 600);
+    return r;
+  };
+  // Re-pull team updates every 60s if dashboard is open
+  setInterval(function(){
+    if (document.getElementById('calmMeetings')) {
+      try { _v16jLoadTeamUpdates(); } catch(e){}
+    }
+  }, 60000);
+
+  console.log('[v16j] Side-nav rewire + Amana balance + Today\'s Task fix + Team Updates widget loaded.');
 })();
 </script>
 <script src="/static/agent-portal.js"></script>

@@ -7001,6 +7001,7 @@ const KV_DL_REQUESTS      = 'v16g:download-requests';      // staff download req
 const KV_HIMAAUS_CLIENTS  = 'v16g:himaaus:clients';        // Thasbiha's imported clients (cap 5000)
 const KV_GG_CLIENTS       = 'v16g:gg:clients';             // v16h — Global Guidance students/clients (cap 5000)
 const KV_SCHEDULE_PREFIX  = 'v16i:schedule:';              // v16i — per-staff schedule items (KV key suffix = owner username)
+const KV_TEAM_UPDATES     = 'v16j:team-updates';           // v16j — daily team status updates (who's in office, etc.) cap 200
 
 // --- Daily Reports Feed (CEO/COO see ALL staff EOD reports) ---------
 app.get('/api/v16g/daily-reports/today', async (c) => {
@@ -7308,6 +7309,71 @@ app.post('/api/v16i/schedule', async (c) => {
         if (!owner) return c.json({ success: false, error: 'owner required' }, 400);
         await kvSaveArr(c, KV_SCHEDULE_PREFIX + owner, items, 500);
         return c.json({ success: true, count: items.length });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+
+// --- v16j Daily Team Updates (shared whiteboard) ---------------
+// Replaces the legacy mock "Meetings" widget on the dashboard.
+// Any staff can post; everyone sees the live feed.
+// Item shape: { id, author, authorName, text, kind, ts, dayKey }
+//   kind: 'office' | 'remote' | 'leave' | 'late' | 'note' | 'meeting'
+app.get('/api/v16j/team-updates', async (c) => {
+    try {
+        const limit = Math.min(parseInt(c.req.query('limit') || '50', 10) || 50, 200);
+        const since = c.req.query('since') || ''; // YYYY-MM-DD optional filter
+        let arr = await kvLoadArr(c, KV_TEAM_UPDATES);
+        if (since) arr = arr.filter((r: any) => (r.dayKey || '') >= since);
+        arr.sort((a: any, b: any) => (b.ts || 0) - (a.ts || 0));
+        return c.json({ success: true, count: arr.length, items: arr.slice(0, limit) });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e), items: [] }, 500);
+    }
+});
+
+app.post('/api/v16j/team-updates', async (c) => {
+    try {
+        const body = await c.req.json();
+        const author = String(body.author || '').slice(0, 80);
+        const text   = String(body.text   || '').slice(0, 500);
+        if (!author || !text.trim()) return c.json({ success: false, error: 'author + text required' }, 400);
+        const arr = await kvLoadArr(c, KV_TEAM_UPDATES);
+        const now = Date.now();
+        const day = new Date(now + (5.5 * 60 * 60 * 1000)).toISOString().slice(0, 10);
+        const entry = {
+            id: 'tu_' + now.toString(36) + '_' + Math.random().toString(36).slice(2, 7),
+            author,
+            authorName: String(body.authorName || author).slice(0, 120),
+            text: text.trim(),
+            kind: String(body.kind || 'note').slice(0, 30),
+            ts: now,
+            dayKey: day
+        };
+        arr.unshift(entry);
+        await kvSaveArr(c, KV_TEAM_UPDATES, arr, 200);
+        return c.json({ success: true, entry });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+
+app.delete('/api/v16j/team-updates', async (c) => {
+    try {
+        const id = c.req.query('id');
+        const author = c.req.query('author');
+        const level = parseInt(c.req.query('level') || '0', 10);
+        if (!id) return c.json({ success: false, error: 'id required' }, 400);
+        let arr = await kvLoadArr(c, KV_TEAM_UPDATES);
+        const target = arr.find((r: any) => r.id === id);
+        if (!target) return c.json({ success: false, error: 'not found' }, 404);
+        // Only the author OR a manager (level >= 80) can delete
+        if (target.author !== author && level < 80) {
+            return c.json({ success: false, error: 'forbidden — author or manager only' }, 403);
+        }
+        arr = arr.filter((r: any) => r.id !== id);
+        await kvSaveArr(c, KV_TEAM_UPDATES, arr, 200);
+        return c.json({ success: true, removed: 1 });
     } catch (e: any) {
         return c.json({ success: false, error: e?.message || String(e) }, 500);
     }
