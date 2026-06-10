@@ -534,13 +534,26 @@ function isLoggedInStaff(){
     if (document.getElementById('agentPortalModal')) return false;
     // Student portal modal open? skip
     if (document.getElementById('studentPortalModal') || document.getElementById('sp2Modal')) return false;
+    // v16h fix: Team Comms floating button is now CEO/Admin-only per user request
+    // ("Please remove this Team Comms chatbot for the staff. You can put it only
+    // for the CEO. And this is for admin."). Staff at level < 100 do NOT see it.
+    const u = _cu();
+    if (!u) return false;
+    const isAdmin = u.username === 'superadmin' || (u.level && u.level >= 100);
+    if (!isAdmin) return false;
     return true;
   } catch(e){ return false; }
 }
 
 function ensureTeamFab(){
+  // v16h fix: if the user is not authorized (staff < 100), remove any stale
+  // FAB/panel that might be lingering from a previous CEO session in the same tab.
+  if (!isLoggedInStaff()) {
+    const existing = document.getElementById('tcTeamFab'); if (existing) existing.remove();
+    const panel = document.getElementById('tcTeamPanel'); if (panel) panel.remove();
+    return;
+  }
   if (document.getElementById('tcTeamFab')) return;
-  if (!isLoggedInStaff()) return;
 
   const fab = document.createElement('button');
   fab.id = 'tcTeamFab';

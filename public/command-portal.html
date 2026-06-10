@@ -4549,6 +4549,30 @@ function attAddCustomTask() {
 }
 
 function attSubmitCheckin() {
+  // v16h FIX 5 — Validate that at least one focus area, student, or manual task
+  // was added before allowing check-in. The original flow silently checked-in
+  // with zero tasks if user didn't pick anything → users complained "it's not
+  // asking about the daily task or daily to-do".
+  const _selCats = (attendanceState.selectedCategories||[]).length;
+  const _selStu  = (attendanceState.selectedStudents||[]).length;
+  const _hasManual = (attendanceState.tasks||[]).some(t => t && t.source === 'manual');
+  if (!_selCats && !_selStu && !_hasManual) {
+    const _msg = '⚠️ Please pick at least one Focus Area (or a student / custom task) before checking in — that builds your daily to-do list.';
+    if (typeof showToast === 'function') showToast(_msg, 'warning', 5000);
+    else alert(_msg);
+    // Scroll to the categories card so the user knows where to look
+    try {
+      const firstCat = document.querySelector('[data-cat-card], .cat-card, #cat-card-' + ((CAT_DEFS||[])[0]||{}).id);
+      if (firstCat && firstCat.scrollIntoView) {
+        firstCat.scrollIntoView({behavior:'smooth', block:'center'});
+      } else {
+        // Fallback: scroll to top of attendance view
+        const mainView = document.getElementById('view-attendance') || document.querySelector('.app-main') || document.body;
+        if (mainView && mainView.scrollIntoView) mainView.scrollIntoView({behavior:'smooth', block:'start'});
+      }
+    } catch(e){}
+    return;
+  }
   if (!attendanceState.checkinTime || attendanceState.autoNow !== false) {
     const now = new Date();
     attendanceState.checkinTime = now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:false});
@@ -11348,8 +11372,7 @@ const ROLE_TABS = {
       {id:'overview',    label:'Overview',         icon:'fa-th-large'},
       {id:'attendance',  label:'My Attendance',    icon:'fa-clock'},
       {id:'staffops',    label:'Staff Ops',        icon:'fa-users-cog'},
-      {id:'hrleave',     label:'HR & Leave',       icon:'fa-user-tie'},
-      {id:'planner',     label:'Planner',          icon:'fa-clipboard-list'}
+      {id:'hrleave',     label:'HR & Leave',       icon:'fa-user-tie'}
     ]
   },
   // Thasbiha — Head of Admissions/HR
@@ -11360,8 +11383,7 @@ const ROLE_TABS = {
       {id:'overview',    label:'Overview',                  icon:'fa-th-large'},
       {id:'attendance',  label:'My Attendance',             icon:'fa-clock'},
       {id:'admissions',  label:'Admissions & Counselling',  icon:'fa-graduation-cap'},
-      {id:'hr',          label:'HR & Team',                 icon:'fa-user-tie'},
-      {id:'planner',     label:'Planner',                   icon:'fa-clipboard-list'}
+      {id:'hr',          label:'HR & Team',                 icon:'fa-user-tie'}
     ]
   },
   // Razan — Head of BD / Visa (professional navy, replaces pink)
@@ -11372,8 +11394,7 @@ const ROLE_TABS = {
       {id:'overview',    label:'Overview',                icon:'fa-th-large'},
       {id:'attendance',  label:'My Attendance',           icon:'fa-clock'},
       {id:'visa',        label:'Visa & Applications',     icon:'fa-passport'},
-      {id:'finance',     label:'Finance & BD',            icon:'fa-coins'},
-      {id:'planner',     label:'Planner',                 icon:'fa-clipboard-list'}
+      {id:'finance',     label:'Finance & BD',            icon:'fa-coins'}
     ]
   },
   // Umair — Sr. Admissions Executive
@@ -11384,8 +11405,7 @@ const ROLE_TABS = {
       {id:'overview',   label:'Overview',          icon:'fa-th-large'},
       {id:'attendance', label:'My Attendance',     icon:'fa-clock'},
       {id:'leads',      label:'My Students',       icon:'fa-user-plus'},
-      {id:'followups',  label:'Follow-Ups & Mocks',icon:'fa-phone-alt'},
-      {id:'planner',    label:'Planner',           icon:'fa-clipboard-list'}
+      {id:'followups',  label:'Follow-Ups & Mocks',icon:'fa-phone-alt'}
     ]
   },
   // Mohamed Salih — Comms Coordinator
@@ -11396,8 +11416,7 @@ const ROLE_TABS = {
       {id:'overview',   label:'Overview',          icon:'fa-th-large'},
       {id:'attendance', label:'My Attendance',     icon:'fa-clock'},
       {id:'leads',      label:'Comms & Leads',     icon:'fa-user-plus'},
-      {id:'campaigns',  label:'Campaigns',         icon:'fa-paper-plane'},
-      {id:'planner',    label:'Planner',           icon:'fa-clipboard-list'}
+      {id:'campaigns',  label:'Campaigns',         icon:'fa-paper-plane'}
     ]
   },
   // Sukaina — Counsellor / Front Desk
@@ -11408,8 +11427,7 @@ const ROLE_TABS = {
       {id:'overview',   label:'Overview',           icon:'fa-th-large'},
       {id:'attendance', label:'My Attendance',      icon:'fa-clock'},
       {id:'leads',      label:'Walk-Ins & Leads',   icon:'fa-user-plus'},
-      {id:'followups',  label:'Follow-Ups & Mocks', icon:'fa-phone-alt'},
-      {id:'planner',    label:'Planner',            icon:'fa-clipboard-list'}
+      {id:'followups',  label:'Follow-Ups & Mocks', icon:'fa-phone-alt'}
     ]
   },
   // Binupa — Jr. Counsellor / TikTok
@@ -11420,11 +11438,10 @@ const ROLE_TABS = {
       {id:'overview',   label:'Overview',           icon:'fa-th-large'},
       {id:'attendance', label:'My Attendance',      icon:'fa-clock'},
       {id:'leads',      label:'TikTok & Content',   icon:'fa-hashtag'},
-      {id:'followups',  label:'Follow-Ups',         icon:'fa-phone-alt'},
-      {id:'planner',    label:'Planner',            icon:'fa-clipboard-list'}
+      {id:'followups',  label:'Follow-Ups',         icon:'fa-phone-alt'}
     ]
   },
-  // Shiran — Graphic Designer (kept 5 tabs)
+  // Shiran — Graphic Designer (kept 4 tabs after Planner removal)
   'shiran': {
     title: 'Design Studio Portal',
     color: '#5b21b6', // professional indigo
@@ -11432,8 +11449,7 @@ const ROLE_TABS = {
       {id:'overview',   label:'Overview',        icon:'fa-th-large'},
       {id:'attendance', label:'My Attendance',   icon:'fa-clock'},
       {id:'design',     label:'Design Queue',    icon:'fa-pencil-ruler'},
-      {id:'assets',     label:'Brand Assets',    icon:'fa-images'},
-      {id:'planner',    label:'Planner',         icon:'fa-clipboard-list'}
+      {id:'assets',     label:'Brand Assets',    icon:'fa-images'}
     ]
   }
 };
@@ -11454,13 +11470,13 @@ function renderRoleTabbedDashboard() {
       {id:'overview',  label:'Overview',        icon:'fa-th-large'},
       {id:'attendance',label:'My Attendance',   icon:'fa-clock'},
       {id:'admissions',label:'Admissions',      icon:'fa-graduation-cap'},
-      {id:'clients',   label:'Client Pipeline', icon:'fa-users'},
-      {id:'planner',   label:'Planner',         icon:'fa-clipboard-list'}
+      {id:'clients',   label:'Client Pipeline', icon:'fa-users'}
     ]
   };
   const tabs = roleCfg.tabs;
-  // Legacy redirect: if the active tab is 'eod', show Planner (EOD is now a sub-section there)
-  if (roleDashTab === 'eod') roleDashTab = 'planner';
+  // v16h fix: Planner tab removed per user request. Any legacy state pointing
+  // at 'planner' or 'eod' falls back to the first tab ('overview') automatically.
+  if (roleDashTab === 'eod' || roleDashTab === 'planner') roleDashTab = 'overview';
   // Ensure current tab is valid for this role
   if (!tabs.find(t=>t.id===roleDashTab)) roleDashTab = tabs[0].id;
 
@@ -11774,9 +11790,11 @@ function _thbRenderHeader(){
     +       '<button onclick="thbSetWs(\'him\')" style="background:' + (ws==='him'?'#ec4899':'transparent') + ';color:' + (ws==='him'?'#fff':'var(--text)') + ';border:0;padding:8px 14px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer">Himaaus</button>'
     +     '</div>'
     +     '<button onclick="thbOpenCallLogger()" style="background:#10b981;color:#fff;border:0;padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-phone"></i> Log call</button>'
+    // v16h — Sync Global Guidance students (CSV paste / upload). Saves to KV per owner.
+    +     '<button onclick="v16gOpenGGSync()" style="background:#6378ff;color:#fff;border:0;padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-file-import"></i> Sync GG worksheet</button>'
     // v16g — Sync Himaaus clients (CSV paste / upload). Saves to KV per owner
     // so Thasbiha can pick from her own client list in Daily Plan / Report.
-    +     '<button onclick="v16gOpenHimaausSync()" style="background:#ec4899;color:#fff;border:0;padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-file-import"></i> Sync Himaaus clients</button>'
+    +     '<button onclick="v16gOpenHimaausSync()" style="background:#ec4899;color:#fff;border:0;padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-file-import"></i> Sync Himaaus worksheet</button>'
     +   '</div>'
     + '</div>';
 }
@@ -11795,17 +11813,38 @@ window.thbSetWs = function(ws){
 
 // ---------- STATUS ROW (Attendance · Plan · Report · Workload) ----------
 function _thbAttendanceStatus(){
+  // v16h fix: Fall back to the local `attendanceState` if the /api/workspace
+  // response hasn't arrived yet (or hasn't been synced after check-in).
+  // The bug user reported: "after attendance check-in, the Overview tab is
+  // still showing as Not checked in" — happened because THB_DASH.workspace
+  // only refreshes from the server every 60s, but local check-in updates
+  // attendanceState immediately.
   const ws = window.THB_DASH.workspace;
-  if (!ws || !ws.checkIn) return { label:'Not checked in', sub:'Click check-in to start your day', color:'#dc2626', icon:'fa-circle-xmark' };
-  const tsHr = new Date(ws.checkIn.ts).getHours();
-  const late = tsHr > 9 || (tsHr === 9 && new Date(ws.checkIn.ts).getMinutes() > 15);
-  const t = new Date(ws.checkIn.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  if (ws.checkIn.checkoutTs) {
-    const ot = new Date(ws.checkIn.checkoutTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-    return { label:'Checked out', sub:'In ' + t + ' · Out ' + ot, color:'#7c3aed', icon:'fa-circle-check' };
+  if (ws && ws.checkIn) {
+    const tsHr = new Date(ws.checkIn.ts).getHours();
+    const late = tsHr > 9 || (tsHr === 9 && new Date(ws.checkIn.ts).getMinutes() > 15);
+    const t = new Date(ws.checkIn.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    if (ws.checkIn.checkoutTs) {
+      const ot = new Date(ws.checkIn.checkoutTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      return { label:'Checked out', sub:'In ' + t + ' · Out ' + ot, color:'#7c3aed', icon:'fa-circle-check' };
+    }
+    if (ws.checkIn.onLeave) return { label:'On Leave', sub:'Marked at ' + t, color:'#94a3b8', icon:'fa-umbrella-beach' };
+    return { label:late?'Present (late)':'Present', sub:'Checked in at ' + t + ' · ' + (ws.checkIn.mode||'Office'), color: late?'#f59e0b':'#10b981', icon:late?'fa-clock':'fa-circle-check' };
   }
-  if (ws.checkIn.onLeave) return { label:'On Leave', sub:'Marked at ' + t, color:'#94a3b8', icon:'fa-umbrella-beach' };
-  return { label:late?'Present (late)':'Present', sub:'Checked in at ' + t + ' · ' + (ws.checkIn.mode||'Office'), color: late?'#f59e0b':'#10b981', icon:late?'fa-clock':'fa-circle-check' };
+  // Local-state fallback (instant after the user presses Check In on /attendance)
+  try {
+    if (typeof attendanceState === 'object' && attendanceState && attendanceState.checkinDone) {
+      const t = attendanceState.checkinSubmittedAt || '—';
+      if (attendanceState.eodDone) {
+        return { label:'EOD submitted', sub:'In ' + t + ' · Out ' + (attendanceState.eodSubmittedAt||'—'), color:'#7c3aed', icon:'fa-circle-check' };
+      }
+      const hh = parseInt(String(t).split(':')[0] || '0', 10);
+      const mm = parseInt(String(t).split(':')[1] || '0', 10);
+      const late = hh > 9 || (hh === 9 && mm > 15);
+      return { label:late?'Present (late)':'Present', sub:'Checked in at ' + t + ' · ' + (attendanceState.mode||'Office'), color: late?'#f59e0b':'#10b981', icon:late?'fa-clock':'fa-circle-check' };
+    }
+  } catch(e){}
+  return { label:'Not checked in', sub:'Click check-in to start your day', color:'#dc2626', icon:'fa-circle-xmark' };
 }
 function _thbPlanStatus(ws){
   const D = window.THB_DASH;
@@ -11855,7 +11894,9 @@ function _thbRenderStatusRow(){
   const plan = _thbPlanStatus(ws);
   const rep  = _thbReportStatus(ws);
   const wl   = _thbWorkloadIndicator();
-  const attCta = (window.THB_DASH.workspace && window.THB_DASH.workspace.checkIn) ? null : { label:'Open Attendance →', onclick:"nav('attendance')" };
+  // v16h fix: respect local attendanceState check-in flag too (server sync lag)
+  const _hasCheckedIn = (window.THB_DASH.workspace && window.THB_DASH.workspace.checkIn) || (typeof attendanceState === 'object' && attendanceState && attendanceState.checkinDone);
+  const attCta = _hasCheckedIn ? null : { label:'Open Attendance →', onclick:"nav('attendance')" };
   const planCta = plan.label === 'Submitted' ? { label:'Edit plan', onclick:"thbOpenPlanForm('" + ws + "')" } : { label:'Fill ' + _thbWsLabel(ws) + ' plan', onclick:"thbOpenPlanForm('" + ws + "')" };
   const repCta  = rep.label  === 'Submitted' ? { label:'Edit report', onclick:"thbOpenReportForm('" + ws + "')" } : { label:'Fill ' + _thbWsLabel(ws) + ' report', onclick:"thbOpenReportForm('" + ws + "')" };
   el.innerHTML = [
@@ -13043,7 +13084,7 @@ async function _thbRenderReports(body, forceReload){
       <label><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">Escalations</div><textarea id="thbRep_escalations" rows="3" style="width:100%;background:var(--surface-1);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:7px;font-size:12.5px">${cur ? (cur.escalations||'') : ''}</textarea></label>
       <label><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">Notes</div><textarea id="thbRep_notes" rows="3" style="width:100%;background:var(--surface-1);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:7px;font-size:12.5px">${cur ? (cur.notes||'') : ''}</textarea></label>
     </div>
-    <div style="margin-top:14px;text-align:right"><button class="btn btn-primary" onclick="thbSubmitReport()" style="background:${accent};border-color:${accent}"><i class="fas fa-paper-plane"></i> ${cur ? 'Update Report' : 'Submit Report'}</button></div>
+    <div style="margin-top:14px;text-align:right"><button class="btn btn-primary" onclick="thbSubmitReportOps()" style="background:${accent};border-color:${accent}"><i class="fas fa-paper-plane"></i> ${cur ? 'Update Report' : 'Submit Report'}</button></div>
   </div>` : (cur ? `<div class="card" style="${r2col(accent)};padding:14px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${['tasksCompleted','applicationsProcessed','studentsFollowedUp','offersReceived'].map(k=>`<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:${accent}">${cur[k]||0}</div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase">${k}</div></div>`).join('')}</div>${cur.pendingIssues?`<div style="margin-top:12px;padding:10px;background:rgba(245,158,11,0.06);border-radius:7px;font-size:12px"><strong style="color:#f59e0b">Pending:</strong> ${(cur.pendingIssues||'').replace(/</g,'&lt;')}</div>`:''}${cur.escalations?`<div style="margin-top:8px;padding:10px;background:rgba(220,38,38,0.06);border-radius:7px;font-size:12px"><strong style="color:#dc2626">Escalations:</strong> ${(cur.escalations||'').replace(/</g,'&lt;')}</div>`:''}</div>` : `<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">No report submitted for ${seg} today yet.</div>`);
 
   // History — last 7 days for this segment
@@ -13053,7 +13094,10 @@ async function _thbRenderReports(body, forceReload){
   body.innerHTML = switcher + editor + history;
 }
 window.thbSetReportSeg = function(seg){ THB_STATE.reportSeg = seg; _thbRenderReports(document.getElementById('thbOpsBody'), true); };
-window.thbSubmitReport = async function(){
+// v16h fix #3: Renamed from `thbSubmitReport` (which clashed with the modal-based
+// submitter at ~line 12280, breaking the Submit Daily Report button in the
+// two-workstream dashboard). This handles the Ops Report Card form.
+window.thbSubmitReportOps = async function(){
   const get = id => (document.getElementById(id)||{}).value || '';
   const seg = THB_STATE.reportSeg || 'GG';
   const body = {
@@ -15451,6 +15495,160 @@ window.v16gHimaausClear = async function(){
     if (j && j.success){
       if (typeof showToast === 'function') showToast('Cleared '+j.removed+' clients.','info',3500);
       v16gHimaausTab('existing');
+    }
+  } catch(e){ alert('Failed: '+e.message); }
+};
+
+// ==================================================================
+// v16h — Global Guidance Worksheet Sync (CSV paste / upload)
+// Mirror of v16gOpenHimaausSync. Stores under owner -> v16g:gg:clients.
+// Once imported, the GG student list is selectable in Daily Plan & shown
+// in the dashboard student picker.
+// ==================================================================
+window.v16gOpenGGSync = function(){
+  let m = document.getElementById('v16hGGSyncModal');
+  if (m) m.remove();
+  m = document.createElement('div');
+  m.id = 'v16hGGSyncModal';
+  m.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,0.65);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)';
+  m.innerHTML = '<div style="background:var(--surface);border-radius:14px;max-width:720px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 28px 80px rgba(0,0,0,0.5);color:var(--text)">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--border)">'
+    +   '<div><div style="font-size:18px;font-weight:700;color:#6378ff">Sync Global Guidance Worksheet</div><div style="font-size:12px;color:var(--muted)">Paste CSV or upload a file — your GG student list will be saved and selectable in Daily Plan / Report.</div></div>'
+    +   '<button class="btn btn-sm btn-secondary" onclick="document.getElementById(\'v16hGGSyncModal\').remove()"><i class="fas fa-times"></i></button>'
+    + '</div>'
+    + '<div style="padding:18px 22px">'
+    +   '<div style="display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--border)">'
+    +     '<button id="v16hGGTabPaste" onclick="v16hGGTab(\'paste\')" style="background:transparent;border:none;border-bottom:2px solid #6378ff;color:#6378ff;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;margin-bottom:-1px"><i class="fas fa-paste"></i> Paste CSV</button>'
+    +     '<button id="v16hGGTabUpload" onclick="v16hGGTab(\'upload\')" style="background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;margin-bottom:-1px"><i class="fas fa-upload"></i> Upload .csv / .xlsx</button>'
+    +     '<button id="v16hGGTabExisting" onclick="v16hGGTab(\'existing\')" style="background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;margin-bottom:-1px"><i class="fas fa-list"></i> Current list</button>'
+    +   '</div>'
+    +   '<div id="v16hGGPanel"></div>'
+    + '</div>'
+  + '</div>';
+  document.body.appendChild(m);
+  v16hGGTab('paste');
+};
+
+window.v16hGGTab = function(tab){
+  ['Paste','Upload','Existing'].forEach(function(t){
+    const el = document.getElementById('v16hGGTab'+t);
+    if (!el) return;
+    const active = t.toLowerCase() === tab;
+    el.style.color = active ? '#6378ff' : 'var(--muted)';
+    el.style.borderBottomColor = active ? '#6378ff' : 'transparent';
+    el.style.fontWeight = active ? '700' : '600';
+  });
+  const panel = document.getElementById('v16hGGPanel');
+  if (!panel) return;
+  if (tab === 'paste'){
+    panel.innerHTML = ''
+      + '<div style="font-size:12px;color:var(--muted);margin-bottom:8px"><strong>Expected columns</strong> (first row = header): <code>name, phone, email, country, course, stage, urgent, todo, notes</code>. Extras are kept under <code>raw</code>.</div>'
+      + '<textarea id="v16hGGPasteArea" rows="10" placeholder="name,phone,email,country,course,stage,urgent,todo,notes\nAhmed,+94 77 555 1234,ahmed@example.com,UK,MSc Data Science,CAS Pending,yes,Follow up on visa docs,Needs financial statements" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:DM Mono,monospace;font-size:12px;background:var(--surface2);color:var(--text);resize:vertical"></textarea>'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">'
+      +   '<label style="font-size:12.5px;color:var(--text);display:flex;align-items:center;gap:5px"><input type="radio" name="v16hGGMode" value="replace" checked> Replace existing list</label>'
+      +   '<label style="font-size:12.5px;color:var(--text);display:flex;align-items:center;gap:5px"><input type="radio" name="v16hGGMode" value="append"> Append</label>'
+      +   '<button class="btn btn-sm" style="background:#6378ff;color:#fff;border:none;margin-left:auto" onclick="v16hGGImportPaste()"><i class="fas fa-cloud-upload-alt"></i> Import</button>'
+      + '</div>';
+  } else if (tab === 'upload'){
+    panel.innerHTML = ''
+      + '<div style="font-size:12px;color:var(--muted);margin-bottom:14px">Drop or pick a <strong>.csv</strong> or <strong>.xlsx</strong> file exported from your GG Tasbiha WorkTracker.</div>'
+      + '<input type="file" id="v16hGGFileInput" accept=".csv,.xlsx,.xls" style="display:block;margin-bottom:14px;font-size:12.5px;color:var(--text)">'
+      + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+      +   '<label style="font-size:12.5px;color:var(--text);display:flex;align-items:center;gap:5px"><input type="radio" name="v16hGGMode2" value="replace" checked> Replace existing list</label>'
+      +   '<label style="font-size:12.5px;color:var(--text);display:flex;align-items:center;gap:5px"><input type="radio" name="v16hGGMode2" value="append"> Append</label>'
+      +   '<button class="btn btn-sm" style="background:#6378ff;color:#fff;border:none;margin-left:auto" onclick="v16hGGImportFile()"><i class="fas fa-cloud-upload-alt"></i> Import</button>'
+      + '</div>'
+      + '<div id="v16hGGFilePreview" style="margin-top:14px;font-size:11.5px;color:var(--muted)"></div>';
+  } else {
+    panel.innerHTML = '<div style="padding:14px;color:var(--muted);font-size:12.5px">Loading current list…</div>';
+    fetch('/api/v16g/gg/clients?owner='+encodeURIComponent((currentUser&&currentUser.username)||'thasbiha.s'), { cache:'no-store' })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        const items = (j && j.items) || [];
+        if (!items.length){
+          panel.innerHTML = '<div style="padding:14px;color:var(--muted);font-size:12.5px">No GG students imported yet. Use Paste CSV or Upload to start.</div>';
+          return;
+        }
+        panel.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:10px"><strong>'+items.length+'</strong> students imported. Showing first 50.</div>'
+          + '<div style="max-height:380px;overflow:auto;border:1px solid var(--border);border-radius:8px"><table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead><tr style="background:var(--surface2)"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">Name</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">Phone</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">Country</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">Course</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">Stage</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">Urgent</th></tr></thead><tbody>'
+          + items.slice(0,50).map(function(r){
+              return '<tr><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+_escHtml(r.name||'-')+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+_escHtml(r.phone||'-')+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+_escHtml(r.country||'-')+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+_escHtml(r.course||'-')+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+_escHtml(r.stage||'-')+'</td><td style="padding:5px 8px;border-bottom:1px solid var(--border)">'+(r.urgent?'<span style=\"color:#ef4444;font-weight:700\">YES</span>':'-')+'</td></tr>';
+          }).join('')
+          + '</tbody></table></div>'
+          + '<div style="margin-top:12px;display:flex;gap:8px"><button class="btn btn-sm" style="background:#ef4444;color:#fff;border:none" onclick="v16hGGClear()"><i class="fas fa-trash"></i> Clear all my GG students</button></div>';
+      })
+      .catch(function(){ panel.innerHTML = '<div style="padding:14px;color:var(--accent4);font-size:12.5px">Failed to load list.</div>'; });
+  }
+};
+
+window.v16hGGImportPaste = async function(){
+  const text = (document.getElementById('v16hGGPasteArea')||{}).value || '';
+  const modeEl = document.querySelector('input[name="v16hGGMode"]:checked');
+  const mode = (modeEl && modeEl.value) || 'replace';
+  if (!text.trim()){ alert('Please paste your CSV content first.'); return; }
+  const rows = _v16gParseCSV(text);
+  if (!rows.length){ alert('Could not parse any rows. Make sure the first line is a header.'); return; }
+  await _v16hGGImport(rows, mode);
+};
+
+window.v16hGGImportFile = async function(){
+  const fi = document.getElementById('v16hGGFileInput');
+  const file = fi && fi.files && fi.files[0];
+  if (!file){ alert('Please choose a file first.'); return; }
+  const modeEl = document.querySelector('input[name="v16hGGMode2"]:checked');
+  const mode = (modeEl && modeEl.value) || 'replace';
+  const ext = (file.name.split('.').pop()||'').toLowerCase();
+  let rows = [];
+  try {
+    if (ext === 'csv'){
+      const text = await file.text();
+      rows = _v16gParseCSV(text);
+    } else if (ext === 'xlsx' || ext === 'xls'){
+      if (!window.XLSX){
+        await new Promise(function(res, rej){
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+          s.onload = res; s.onerror = rej;
+          document.head.appendChild(s);
+        });
+      }
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type:'array' });
+      const sn = wb.SheetNames[0];
+      rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { defval:'' });
+    } else {
+      alert('Unsupported file type. Please use .csv or .xlsx.'); return;
+    }
+  } catch(e){ alert('Failed to read file: '+e.message); return; }
+  if (!rows.length){ alert('No rows found in the file.'); return; }
+  await _v16hGGImport(rows, mode);
+};
+
+async function _v16hGGImport(rows, mode){
+  try {
+    const r = await fetch('/api/v16g/gg/clients/import', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ owner: (currentUser && currentUser.username) || 'thasbiha.s', rows: rows, mode: mode })
+    });
+    const j = await r.json();
+    if (j && j.success){
+      if (typeof showToast === 'function') showToast('✅ Imported '+j.imported+' GG students ('+j.totalForOwner+' total).','success',4500);
+      else alert('Imported '+j.imported+' students ('+j.totalForOwner+' total).');
+      v16hGGTab('existing');
+    } else {
+      alert('Import failed: '+(j&&j.error||'unknown'));
+    }
+  } catch(e){ alert('Network error: '+e.message); }
+}
+
+window.v16hGGClear = async function(){
+  if (!confirm('Remove all your imported Global Guidance students? This does NOT affect their actual records — only the imported list.')) return;
+  try {
+    const r = await fetch('/api/v16g/gg/clients?owner='+encodeURIComponent((currentUser&&currentUser.username)||'thasbiha.s'), { method:'DELETE' });
+    const j = await r.json();
+    if (j && j.success){
+      if (typeof showToast === 'function') showToast('Cleared '+j.removed+' GG students.','info',3500);
+      v16hGGTab('existing');
     }
   } catch(e){ alert('Failed: '+e.message); }
 };
@@ -22586,6 +22784,55 @@ window._notifPollStart = function(){
       else if (fresh.length > 0) notifToast(fresh.length+' new notification'+(fresh.length===1?'':'s'), 'info');
     }
   }, 30000);
+  // v16h FIX 7 — Live heartbeat: every 60s, re-fetch team overview, rebuild
+  // notifications from the freshest source, and add personal EOD-due nudge
+  // if the user has checked-in but not submitted EOD after 16:00.
+  if (window._tbLiveHeartbeatInterval) return;
+  window._tbLiveHeartbeatInterval = setInterval(async () => {
+    try {
+      // 1) Re-fetch team overview (powers live-ops notifs for managers)
+      if (currentUser && currentUser.level >= 80) {
+        try {
+          const r = await fetch('/api/team-overview', { cache:'no-store' });
+          if (r.ok) {
+            const j = await r.json();
+            if (j && j.success && j.data) {
+              window.TEAM_OVERVIEW_CACHE = j.data;
+            }
+          }
+        } catch(e){}
+      }
+      // 2) Self EOD-due nudge — if user checked-in but did not submit EOD, after 16:00 local time
+      try {
+        const nowD = new Date();
+        const hr = nowD.getHours();
+        if (typeof attendanceState === 'object' && attendanceState && attendanceState.checkinDone && !attendanceState.eodDone && hr >= 16) {
+          const nudgeId = 'n-self-eod-' + nowD.toISOString().slice(0,10);
+          // Only push once per day per user
+          const exists = (TB_STATE.notifs||[]).some(n => n && n.id === nudgeId);
+          if (!exists) {
+            tbAddNotif({
+              id: nudgeId, cat:'hr', icon:'fa-file-circle-exclamation', color:'#f59e0b',
+              title:'Submit your End-of-Day report',
+              sub:'You\'re checked in but EOD is still pending — please submit before leaving.',
+              prio:'high',
+              link: () => nav('attendance')
+            });
+          }
+        }
+      } catch(e){}
+      // 3) Rebuild + render
+      if (typeof _tbRebuildNotifs === 'function') _tbRebuildNotifs();
+      if (typeof _tbSave === 'function') _tbSave();
+      if (typeof _tbRenderBadges === 'function') _tbRenderBadges();
+      // If notifications dropdown is open, refresh it live
+      const pop = document.getElementById('tbPopNotif');
+      if (pop && pop.classList.contains('open')) {
+        const listEl = document.getElementById('tbNotifList');
+        if (listEl && typeof _tbNotifList === 'function') listEl.innerHTML = _tbNotifList('all');
+      }
+    } catch(e){}
+  }, 60000);
 };
 function tbNotifFilter(cat, el){
   document.querySelectorAll('#tbPopNotif .tb-status-pill').forEach(p=>p.classList.remove('active'));

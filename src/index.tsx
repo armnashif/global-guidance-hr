@@ -6999,6 +6999,7 @@ app.post('/api/thasbiha/call/delete', async (c) => {
 const KV_DR_FEED          = 'v16g:daily-reports';          // unified feed of all submitted reports (cap 2000)
 const KV_DL_REQUESTS      = 'v16g:download-requests';      // staff download requests (cap 500)
 const KV_HIMAAUS_CLIENTS  = 'v16g:himaaus:clients';        // Thasbiha's imported clients (cap 5000)
+const KV_GG_CLIENTS       = 'v16g:gg:clients';             // v16h — Global Guidance students/clients (cap 5000)
 
 // --- Daily Reports Feed (CEO/COO see ALL staff EOD reports) ---------
 app.get('/api/v16g/daily-reports/today', async (c) => {
@@ -7214,6 +7215,70 @@ app.delete('/api/v16g/himaaus/clients', async (c) => {
         const before = arr.length;
         arr = arr.filter((r: any) => r.owner !== owner);
         await kvSaveArr(c, KV_HIMAAUS_CLIENTS, arr, 5000);
+        return c.json({ success: true, removed: before - arr.length });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+
+// --- Global Guidance Client/Student List (CSV/XLSX import) ---------
+// v16h — mirrors Himaaus pattern. Owner-scoped (default thasbiha.s).
+app.get('/api/v16g/gg/clients', async (c) => {
+    try {
+        const owner = c.req.query('owner') || 'thasbiha.s';
+        const arr = await kvLoadArr(c, KV_GG_CLIENTS);
+        const items = arr.filter((r: any) => !owner || r.owner === owner);
+        return c.json({ success: true, count: items.length, items });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e), items: [] }, 500);
+    }
+});
+
+app.post('/api/v16g/gg/clients/import', async (c) => {
+    try {
+        const body = await c.req.json();
+        const owner = String(body.owner || 'thasbiha.s');
+        const rows: any[] = Array.isArray(body.rows) ? body.rows : [];
+        const mode = String(body.mode || 'replace'); // 'replace' | 'append'
+        if (!rows.length) return c.json({ success: false, error: 'rows array required' }, 400);
+        let arr = await kvLoadArr(c, KV_GG_CLIENTS);
+        if (mode === 'replace') {
+            arr = arr.filter((r: any) => r.owner !== owner);
+        }
+        const now = new Date().toISOString();
+        rows.forEach((r: any, i: number) => {
+            arr.push({
+                id: 'gg_' + Date.now().toString(36) + '_' + i + '_' + Math.random().toString(36).slice(2, 5),
+                owner,
+                name:    String(r.name    || r.Name    || r['Student Name'] || r['Client Name'] || '').slice(0, 200),
+                phone:   String(r.phone   || r.Phone   || r.mobile || r.Mobile || r['Contact'] || '').slice(0, 50),
+                email:   String(r.email   || r.Email   || '').slice(0, 200),
+                country: String(r.country || r.Country || r.destination || r.Destination || '').slice(0, 80),
+                course:  String(r.course  || r.Course  || r.program || r.Program || '').slice(0, 200),
+                stage:   String(r.stage   || r.Stage   || r.status || r.Status || 'New').slice(0, 80),
+                status:  String(r.status  || r.Status  || 'Active').slice(0, 50),
+                urgent:  /(^y|^true|^1$|urgent)/i.test(String(r.urgent || r.Urgent || r.priority || '')),
+                todo:    String(r.todo    || r.ToDo    || r['Next Action'] || r.action || '').slice(0, 500),
+                notes:   String(r.notes   || r.Notes   || r.summary || '').slice(0, 1000),
+                source:  String(r.source  || r.Source  || '').slice(0, 80),
+                importedAt: now,
+                raw: r
+            });
+        });
+        await kvSaveArr(c, KV_GG_CLIENTS, arr, 5000);
+        return c.json({ success: true, imported: rows.length, totalForOwner: arr.filter((r: any) => r.owner === owner).length, mode });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+
+app.delete('/api/v16g/gg/clients', async (c) => {
+    try {
+        const owner = c.req.query('owner') || 'thasbiha.s';
+        let arr = await kvLoadArr(c, KV_GG_CLIENTS);
+        const before = arr.length;
+        arr = arr.filter((r: any) => r.owner !== owner);
+        await kvSaveArr(c, KV_GG_CLIENTS, arr, 5000);
         return c.json({ success: true, removed: before - arr.length });
     } catch (e: any) {
         return c.json({ success: false, error: e?.message || String(e) }, 500);
