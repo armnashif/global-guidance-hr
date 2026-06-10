@@ -23374,6 +23374,649 @@ function _tbBoot(){
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _tbBoot);
 else _tbBoot();
+
+// ====================================================================
+// v16i — Unified Workspace+Attendance, Standalone Overview Page,
+//        Universal Daily Tasks, CEO All-Staff Reports, Dashboard
+//        Today's Tasks widget, Schedule + .ics Google Calendar export.
+// All additive — does not modify legacy renderers, only injects on top.
+// ====================================================================
+
+(function v16iBoot(){
+  // ---------- 1) DASHBOARD: Today's Attendance + Tasks strip ----------
+  // After dashboard renders, inject a strip ABOVE the existing content
+  // showing live check-in status and today's tasks (after check-in).
+  function v16iDashStrip(){
+    const att = (typeof attendanceState === 'object' && attendanceState) ? attendanceState : null;
+    if (!att) return '';
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    let status, color, ctaHtml, taskBlock = '';
+    if (!att.checkinDone) {
+      status = '🔴 Not checked in';
+      color = 'linear-gradient(135deg,#dc2626,#ef4444)';
+      ctaHtml = '<button onclick="nav(\'workspace2\')" style="background:#fff;color:#dc2626;border:0;padding:9px 18px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer"><i class="fas fa-sign-in-alt"></i> Check in</button>';
+    } else if (!att.eodDone) {
+      status = '✅ Checked in ' + (att.checkinSubmittedAt || '—');
+      color = 'linear-gradient(135deg,#16a34a,#22c55e)';
+      ctaHtml = '<button onclick="nav(\'workspace2\')" style="background:#fff;color:#16a34a;border:0;padding:9px 18px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer"><i class="fas fa-moon"></i> File EOD</button>';
+      const tasks = att.tasks || [];
+      const done = tasks.filter(t=>t.done).length;
+      const pct = tasks.length ? Math.round(done/tasks.length*100) : 0;
+      if (tasks.length){
+        taskBlock = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-top:10px">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+          +   '<div style="font-weight:700;font-size:14px;color:var(--text)"><i class="fas fa-list-check"></i> Today\'s Tasks</div>'
+          +   '<div style="font-size:12px;color:var(--muted)">'+done+' / '+tasks.length+' · '+pct+'%</div>'
+          + '</div>'
+          + '<div style="max-height:200px;overflow-y:auto">'
+          + tasks.slice(0, 10).map(function(t, i){
+              return '<div style="display:flex;align-items:center;gap:10px;padding:5px 4px;border-bottom:1px solid var(--border);font-size:12.5px">'
+                + '<input type="checkbox" '+(t.done?'checked':'')+' onchange="attendanceState.tasks['+i+'].done=this.checked;saveAtt();v16iRerenderDashStrip()" style="width:15px;height:15px;cursor:pointer">'
+                + '<span style="flex:1;'+(t.done?'text-decoration:line-through;color:var(--muted)':'color:var(--text)')+'">'+(t.text||'')+'</span>'
+                + '<span class="badge badge-'+(t.p==='P1'?'hot':t.p==='P2'?'warm':'cold')+'" style="font-size:10px">'+(t.p||'')+'</span>'
+              + '</div>';
+            }).join('')
+          + (tasks.length > 10 ? '<div style="text-align:center;padding:6px;font-size:11px;color:var(--muted)">+ '+(tasks.length-10)+' more · <a href="javascript:void(0)" onclick="nav(\'workspace2\')" style="color:var(--accent)">View all</a></div>' : '')
+          + '</div></div>';
+      }
+    } else {
+      status = '🎉 Day complete — In ' + (att.checkinSubmittedAt||'—') + ' · Out ' + (att.eodSubmittedAt||'—');
+      color = 'linear-gradient(135deg,#7c3aed,#9333ea)';
+      ctaHtml = '<button onclick="nav(\'workspace2\')" style="background:rgba(255,255,255,0.2);color:#fff;border:0;padding:9px 16px;border-radius:10px;font-weight:600;font-size:12.5px;cursor:pointer"><i class="fas fa-eye"></i> View summary</button>';
+    }
+    return '<div id="v16iDashStrip" style="margin-bottom:14px">'
+      + '<div style="background:'+color+';color:#fff;border-radius:12px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">'
+      +   '<div><div style="font-size:14.5px;font-weight:700">'+status+'</div><div style="font-size:11.5px;opacity:0.9;margin-top:2px">'+dateStr+'</div></div>'
+      +   ctaHtml
+      + '</div>'
+      + taskBlock
+      + '</div>';
+  }
+  window.v16iRerenderDashStrip = function(){
+    const old = document.getElementById('v16iDashStrip');
+    if (!old || !old.parentElement) return;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = v16iDashStrip();
+    if (tmp.firstElementChild) old.replaceWith(tmp.firstElementChild);
+  };
+  // Inject the strip after each nav() to dashboard
+  const _origNav = window.nav;
+  window.nav = function(page){
+    const r = _origNav.apply(this, arguments);
+    try {
+      if (page === 'dashboard') {
+        setTimeout(function(){
+          const mc = document.getElementById('mainContent');
+          if (!mc) return;
+          const inner = mc.querySelector('.page');
+          if (!inner) return;
+          if (inner.querySelector('#v16iDashStrip')) return;
+          const wrap = document.createElement('div');
+          wrap.innerHTML = v16iDashStrip();
+          if (wrap.firstElementChild) inner.insertBefore(wrap.firstElementChild, inner.firstChild);
+        }, 120);
+      }
+    } catch(e){}
+    return r;
+  };
+
+  // ---------- 2) UNIFIED WORKSPACE 2 — Workspace + Attendance combined ----------
+  // New page route 'workspace2' that combines Today's tasks, attendance
+  // controls, schedule, and the workspace widgets all in one screen.
+  function renderWorkspace2(){
+    const u = currentUser || {};
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    const timeStr = now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});
+    return '<div id="v16iWS2Root" class="fade-in" style="max-width:1200px;margin:0 auto;padding:6px 4px 30px">'
+      + '<div style="background:linear-gradient(135deg,rgba(99,120,255,0.10),rgba(56,217,169,0.06));border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin-bottom:16px">'
+      +   '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'
+      +     '<div>'
+      +       '<div style="font-size:20px;font-weight:700;color:var(--text)">My Workspace</div>'
+      +       '<div style="font-size:12.5px;color:var(--muted);margin-top:3px"><i class="far fa-calendar"></i> '+dateStr+' · <i class="far fa-clock"></i> <span id="v16iWS2Clock">'+timeStr+'</span></div>'
+      +     '</div>'
+      +     '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      +       '<button onclick="nav(\'overview\')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:9px 16px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-th-large"></i> My Overview</button>'
+      +       '<button onclick="v16iOpenSchedule()" style="background:#6378ff;color:#fff;border:0;padding:9px 16px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-calendar-alt"></i> Schedule</button>'
+      +     '</div>'
+      +   '</div>'
+      + '</div>'
+      + '<div id="v16iWS2AttPanel"></div>'
+      + '<div id="v16iWS2TaskPanel" style="margin-top:14px"></div>'
+      + '<div id="v16iWS2SchedulePanel" style="margin-top:14px"></div>'
+      + '<div id="v16iWS2Embed" style="margin-top:14px"></div>'
+      + '</div>';
+  }
+  function v16iWS2Render(){
+    v16iWS2RenderAttPanel();
+    v16iWS2RenderTaskPanel();
+    v16iWS2RenderSchedulePanel();
+    // Optionally embed the legacy renderMyWorkspace below
+    const embed = document.getElementById('v16iWS2Embed');
+    if (embed && typeof renderMyWorkspace === 'function') {
+      try {
+        embed.innerHTML = '<details style="border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow:hidden"><summary style="cursor:pointer;padding:14px 18px;font-weight:600;font-size:13.5px;color:var(--text);background:var(--surface2)"><i class="fas fa-chevron-right"></i> Advanced workspace widgets (AI tools, role widgets)</summary><div style="padding:0">'+renderMyWorkspace()+'</div></details>';
+        setTimeout(function(){ if (typeof initMyWorkspace==='function') try { initMyWorkspace(); } catch(e){} }, 80);
+      } catch(e){}
+    }
+  }
+  function v16iWS2RenderAttPanel(){
+    const host = document.getElementById('v16iWS2AttPanel'); if (!host) return;
+    const att = attendanceState;
+    if (!att.checkinDone) {
+      host.innerHTML = '<div class="card" style="border-top:3px solid #16a34a;padding:20px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">'
+        +   '<div><div style="font-weight:700;font-size:15px;color:var(--text)"><i class="fas fa-sun" style="color:#f59e0b"></i> Start your day</div>'
+        +     '<div style="font-size:12.5px;color:var(--muted);margin-top:4px">Choose your work mode, optionally add today\'s focus, and check in.</div></div>'
+        + '</div>'
+        + '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'
+        + ['Office','Remote','Field','Sick'].map(function(m){
+            return '<button onclick="attendanceState.mode=\''+m+'\';saveAtt();v16iWS2RenderAttPanel()" style="padding:9px 16px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;border:2px solid '+(att.mode===m?'#16a34a':'var(--border)')+';background:'+(att.mode===m?'rgba(22,163,74,0.12)':'var(--surface2)')+';color:'+(att.mode===m?'#16a34a':'var(--text)')+'">'+(m==='Office'?'🏢':m==='Remote'?'🏠':m==='Field'?'🚗':'🤒')+' '+m+'</button>';
+          }).join('')
+        + '</div>'
+        + '<div style="margin-top:14px;border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--surface2)">'
+        +   '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px"><i class="fas fa-list-check"></i> What are you working on today? <span style="color:var(--muted);font-weight:400">(required — 1+ task)</span></div>'
+        +   '<div id="v16iCheckinTaskList" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"></div>'
+        +   '<div style="display:flex;gap:6px"><input id="v16iCheckinTaskInput" placeholder="Add a task… (e.g. Follow up on Sara\'s visa docs)" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:12.5px" onkeydown="if(event.key===\'Enter\'){v16iAddCheckinTask();event.preventDefault()}">'
+        +     '<select id="v16iCheckinTaskP" style="padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:12px"><option value="P1">P1</option><option value="P2" selected>P2</option><option value="P3">P3</option></select>'
+        +     '<button onclick="v16iAddCheckinTask()" style="background:#6378ff;color:#fff;border:0;padding:8px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">Add</button></div>'
+        +   v16iRoleStarterChipsHTML()
+        + '</div>'
+        + '<div style="margin-top:14px;text-align:right">'
+        +   '<button onclick="v16iDoCheckin()" style="background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:0;padding:13px 32px;border-radius:11px;font-size:14.5px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(22,163,74,0.35)"><i class="fas fa-sign-in-alt"></i> Check in &amp; start day</button>'
+        + '</div>'
+        + '</div>';
+      v16iRefreshCheckinTaskList();
+    } else if (!att.eodDone) {
+      host.innerHTML = '<div class="card" style="border-top:3px solid #f59e0b;padding:18px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">'
+        +   '<div><div style="font-weight:700;font-size:14.5px;color:var(--text)">✅ Checked in at '+(att.checkinSubmittedAt||'—')+' · '+(att.mode||'Office')+'</div>'
+        +     '<div style="font-size:12px;color:var(--muted);margin-top:3px">When you finish, file your End-of-Day report below.</div></div>'
+        +   '<button onclick="v16iDoEOD()" style="background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;border:0;padding:10px 22px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer"><i class="fas fa-moon"></i> File EOD report</button>'
+        + '</div></div>';
+    } else {
+      host.innerHTML = '<div class="card" style="border-top:3px solid #7c3aed;padding:18px;text-align:center">'
+        + '<i class="fas fa-check-circle" style="font-size:36px;color:#16a34a;margin-bottom:8px"></i>'
+        + '<div style="font-weight:700;font-size:15px">🎉 Day complete</div>'
+        + '<div style="font-size:12.5px;color:var(--muted);margin-top:5px">In: '+(att.checkinSubmittedAt||'—')+' · Out: '+(att.eodSubmittedAt||'—')+' · '+(att.eod&&att.eod.completion||0)+'% completion</div>'
+        + '</div>';
+    }
+  }
+  // Role-based starter task chips. Helps non-Thasbiha staff seed their day.
+  function v16iRoleStarterChipsHTML(){
+    const u = currentUser || {};
+    const role = (u.username || '').toLowerCase();
+    const starters = {
+      'thasbiha.s':  ['Visa follow-ups','CAS chasing','HR check-ins','Offer letters review'],
+      'razan.thawus':['Visa case review','Application updates','Commission reconciliation','BDM outreach'],
+      'umair':       ['Student follow-ups','Mock interview prep','Course finder updates','Lead calls'],
+      'sukaina':     ['Walk-in registrations','Front-desk inquiries','Document collection','Mock prep'],
+      'binupa':      ['TikTok content','Lead replies','Counselling calls','Content scheduling'],
+      'mohamed.s':   ['Comms WhatsApp sweep','Email campaign reply','Lead nurture','CRM updates'],
+      'shiran':      ['Design queue items','Brand assets review','Social graphics','Campaign creatives'],
+      'nafees.razzak':['Team attendance check','Leave approvals','EOD review','Staff 1:1s'],
+      'superadmin':  ['System health check','User access review','Audit log review','Backup verify']
+    };
+    const list = starters[role] || ['Reply to emails','Team standup','Daily admin','Follow-ups'];
+    return '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">'
+      + '<span style="font-size:11px;color:var(--muted);align-self:center;margin-right:4px">Quick add:</span>'
+      + list.map(function(s){
+          return '<button onclick="v16iAddStarterTask(\''+s.replace(/\'/g,'\\\'')+'\')" style="background:var(--surface);color:var(--text);border:1px dashed var(--border);padding:5px 10px;border-radius:14px;font-size:11.5px;cursor:pointer">+ '+s+'</button>';
+        }).join('')
+      + '</div>';
+  }
+  window.v16iAddStarterTask = function(text){
+    if (!attendanceState.tasks) attendanceState.tasks = [];
+    attendanceState.tasks.push({ id: Date.now()+Math.random(), text: text, p:'P2', done:false, source:'manual' });
+    saveAtt();
+    v16iRefreshCheckinTaskList();
+  };
+  window.v16iAddCheckinTask = function(){
+    const i = document.getElementById('v16iCheckinTaskInput');
+    const p = document.getElementById('v16iCheckinTaskP');
+    if (!i || !i.value.trim()) return;
+    if (!attendanceState.tasks) attendanceState.tasks = [];
+    attendanceState.tasks.push({ id: Date.now()+Math.random(), text: i.value.trim(), p: (p&&p.value)||'P2', done:false, source:'manual' });
+    saveAtt();
+    i.value = '';
+    v16iRefreshCheckinTaskList();
+  };
+  window.v16iRemoveCheckinTask = function(idx){
+    if (!attendanceState.tasks) return;
+    attendanceState.tasks.splice(idx, 1);
+    saveAtt();
+    v16iRefreshCheckinTaskList();
+  };
+  function v16iRefreshCheckinTaskList(){
+    const host = document.getElementById('v16iCheckinTaskList'); if (!host) return;
+    const tasks = (attendanceState.tasks||[]).filter(t=>t.source==='manual');
+    if (!tasks.length){
+      host.innerHTML = '<div style="font-size:11.5px;color:var(--muted);padding:6px 4px;font-style:italic">No tasks yet — add at least one to enable check-in.</div>';
+      return;
+    }
+    host.innerHTML = tasks.map(function(t, i){
+      const realIdx = attendanceState.tasks.indexOf(t);
+      return '<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:7px;font-size:12px">'
+        + '<span class="badge badge-'+(t.p==='P1'?'hot':t.p==='P2'?'warm':'cold')+'" style="font-size:10px">'+t.p+'</span>'
+        + '<span style="flex:1;color:var(--text)">'+(t.text||'')+'</span>'
+        + '<button onclick="v16iRemoveCheckinTask('+realIdx+')" style="background:none;border:0;color:var(--muted);cursor:pointer;font-size:14px">×</button>'
+        + '</div>';
+    }).join('');
+  }
+  window.v16iDoCheckin = function(){
+    const manualCount = (attendanceState.tasks||[]).filter(t=>t.source==='manual').length;
+    if (!manualCount){
+      const msg = '⚠️ Please add at least one task before checking in. Use the quick-add chips or type your own.';
+      if (typeof showToast === 'function') showToast(msg, 'warning', 4500); else alert(msg);
+      return;
+    }
+    if (!attendanceState.mode) attendanceState.mode = 'Office';
+    if (typeof quickCheckIn === 'function') {
+      quickCheckIn(attendanceState.mode);
+    } else if (typeof attSubmitCheckin === 'function') {
+      attSubmitCheckin();
+    }
+    setTimeout(v16iWS2Render, 300);
+  };
+  window.v16iDoEOD = function(){
+    nav('attendance');
+    setTimeout(function(){
+      attendanceState.activeSubTab = 'eod';
+      saveAtt();
+      nav('attendance');
+    }, 30);
+  };
+  function v16iWS2RenderTaskPanel(){
+    const host = document.getElementById('v16iWS2TaskPanel'); if (!host) return;
+    const tasks = attendanceState.tasks || [];
+    if (!attendanceState.checkinDone || !tasks.length){
+      host.innerHTML = '';
+      return;
+    }
+    const done = tasks.filter(t=>t.done).length;
+    const pct = tasks.length ? Math.round(done/tasks.length*100) : 0;
+    host.innerHTML = '<div class="card" style="border-top:3px solid #6378ff;padding:18px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+      +   '<div><div style="font-weight:700;font-size:14.5px"><i class="fas fa-list-check"></i> Today\'s Tasks</div>'
+      +     '<div style="font-size:12px;color:var(--muted);margin-top:2px">'+done+' / '+tasks.length+' complete · '+pct+'%</div></div>'
+      +   '<div style="display:flex;gap:6px"><input id="v16iAddTaskInput" placeholder="Add task…" style="padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:12px;width:180px" onkeydown="if(event.key===\'Enter\'){v16iAddTaskInline();event.preventDefault()}">'
+      +     '<button onclick="v16iAddTaskInline()" style="background:#6378ff;color:#fff;border:0;padding:7px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">+ Add</button></div>'
+      + '</div>'
+      + '<div style="max-height:340px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">'
+      + tasks.map(function(t, i){
+          return '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);font-size:12.5px">'
+            + '<input type="checkbox" '+(t.done?'checked':'')+' onchange="attendanceState.tasks['+i+'].done=this.checked;saveAtt();v16iWS2RenderTaskPanel();v16iRerenderDashStrip()" style="width:16px;height:16px;cursor:pointer">'
+            + '<span style="flex:1;'+(t.done?'text-decoration:line-through;color:var(--muted)':'color:var(--text)')+'">'+(t.text||'')+'</span>'
+            + '<span class="badge badge-'+(t.p==='P1'?'hot':t.p==='P2'?'warm':'cold')+'" style="font-size:10px">'+(t.p||'')+'</span>'
+            + '<button onclick="if(confirm(\'Remove task?\')){attendanceState.tasks.splice('+i+',1);saveAtt();v16iWS2RenderTaskPanel();v16iRerenderDashStrip()}" style="background:none;border:0;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px">×</button>'
+          + '</div>';
+        }).join('')
+      + '</div></div>';
+  }
+  window.v16iAddTaskInline = function(){
+    const el = document.getElementById('v16iAddTaskInput');
+    if (!el || !el.value.trim()) return;
+    if (!attendanceState.tasks) attendanceState.tasks = [];
+    attendanceState.tasks.push({ id: Date.now()+Math.random(), text: el.value.trim(), p:'P2', done:false, source:'manual' });
+    saveAtt();
+    el.value = '';
+    v16iWS2RenderTaskPanel();
+    v16iRerenderDashStrip();
+  };
+
+  // ---------- 3) SCHEDULE / APPOINTMENTS (KV-backed + .ics export) ----------
+  // Lightweight schedule system that lives in localStorage + KV via v16g/v16i
+  // The .ics export URL can be subscribed in Google Calendar:
+  //   Settings → Add calendar → From URL → paste the URL
+  const SCHED_KEY = 'v16i:schedule:'+((currentUser&&currentUser.username)||'guest');
+  function v16iLoadSchedule(){
+    try { return JSON.parse(localStorage.getItem(SCHED_KEY)||'[]'); } catch(e){ return []; }
+  }
+  function v16iSaveSchedule(items){
+    try { localStorage.setItem(SCHED_KEY, JSON.stringify(items||[])); } catch(e){}
+    // Best-effort KV sync (no-op if endpoint missing)
+    try {
+      fetch('/api/v16i/schedule', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ owner:(currentUser&&currentUser.username)||'guest', items: items||[] }) }).catch(()=>{});
+    } catch(e){}
+  }
+  function v16iWS2RenderSchedulePanel(){
+    const host = document.getElementById('v16iWS2SchedulePanel'); if (!host) return;
+    const items = v16iLoadSchedule();
+    const today = new Date().toISOString().slice(0,10);
+    const upcoming = items.filter(i => i && i.start && i.start.slice(0,10) >= today).sort((a,b)=>a.start.localeCompare(b.start)).slice(0, 6);
+    host.innerHTML = '<div class="card" style="border-top:3px solid #ec4899;padding:18px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">'
+      +   '<div><div style="font-weight:700;font-size:14.5px"><i class="fas fa-calendar-alt"></i> My Schedule &amp; Appointments</div>'
+      +     '<div style="font-size:12px;color:var(--muted);margin-top:2px">'+items.length+' total · '+upcoming.length+' upcoming</div></div>'
+      +   '<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      +     '<button onclick="v16iOpenSchedule()" style="background:#ec4899;color:#fff;border:0;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer"><i class="fas fa-plus"></i> Add</button>'
+      +     '<button onclick="v16iExportICS()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer" title="Download .ics — import into Google Calendar"><i class="fas fa-download"></i> .ics for Google Calendar</button>'
+      +   '</div>'
+      + '</div>'
+      + (upcoming.length
+          ? '<div style="display:flex;flex-direction:column;gap:6px">'
+            + upcoming.map(function(it){
+                const d = new Date(it.start);
+                const datePart = d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+                const timePart = d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});
+                return '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);font-size:12.5px">'
+                  + '<span style="background:#ec4899;color:#fff;padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600;min-width:80px;text-align:center">'+datePart+'</span>'
+                  + '<span style="font-family:DM Mono,monospace;font-size:12px;color:var(--muted);min-width:50px">'+timePart+'</span>'
+                  + '<span style="flex:1;color:var(--text);font-weight:500">'+(it.title||'(no title)')+'</span>'
+                  + (it.location ? '<span style="font-size:11px;color:var(--muted)"><i class="fas fa-map-marker-alt"></i> '+it.location+'</span>' : '')
+                  + '<button onclick="v16iRemoveSchedule(\''+(it.id||'')+'\')" style="background:none;border:0;color:var(--muted);cursor:pointer;font-size:14px">×</button>'
+                + '</div>';
+              }).join('')
+            + '</div>'
+          : '<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:18px;font-style:italic">No appointments scheduled. Click "Add" to create one or "+ Schedule" to plan your week.</div>')
+      + '</div>';
+  }
+  window.v16iOpenSchedule = function(){
+    let m = document.getElementById('v16iSchedModal'); if (m) m.remove();
+    m = document.createElement('div');
+    m.id = 'v16iSchedModal';
+    m.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,0.65);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)';
+    m.innerHTML = '<div style="background:var(--surface);border-radius:14px;max-width:520px;width:100%;box-shadow:0 28px 80px rgba(0,0,0,0.5);color:var(--text)">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--border)">'
+      +   '<div><div style="font-size:17px;font-weight:700;color:#ec4899">New Appointment</div><div style="font-size:11.5px;color:var(--muted)">Saved locally and synced via .ics export.</div></div>'
+      +   '<button class="btn btn-sm btn-secondary" onclick="document.getElementById(\'v16iSchedModal\').remove()"><i class="fas fa-times"></i></button>'
+      + '</div>'
+      + '<div style="padding:18px 22px;display:flex;flex-direction:column;gap:10px">'
+      +   '<label style="font-size:12px;font-weight:600;color:var(--text)">Title <input id="v16iSchedTitle" placeholder="e.g. Call with Ahmed (visa interview prep)" style="display:block;width:100%;margin-top:4px;padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px"></label>'
+      +   '<div style="display:flex;gap:10px"><label style="flex:1;font-size:12px;font-weight:600;color:var(--text)">Date <input id="v16iSchedDate" type="date" style="display:block;width:100%;margin-top:4px;padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px"></label>'
+      +     '<label style="flex:1;font-size:12px;font-weight:600;color:var(--text)">Time <input id="v16iSchedTime" type="time" style="display:block;width:100%;margin-top:4px;padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px"></label></div>'
+      +   '<div style="display:flex;gap:10px"><label style="flex:1;font-size:12px;font-weight:600;color:var(--text)">Duration (min) <input id="v16iSchedDuration" type="number" value="30" min="5" max="480" style="display:block;width:100%;margin-top:4px;padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px"></label>'
+      +     '<label style="flex:1;font-size:12px;font-weight:600;color:var(--text)">Location <input id="v16iSchedLocation" placeholder="Office / Zoom / WhatsApp" style="display:block;width:100%;margin-top:4px;padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px"></label></div>'
+      +   '<label style="font-size:12px;font-weight:600;color:var(--text)">Notes <textarea id="v16iSchedNotes" rows="2" placeholder="Optional notes / agenda" style="display:block;width:100%;margin-top:4px;padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px;resize:vertical"></textarea></label>'
+      +   '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px"><button class="btn btn-sm btn-secondary" onclick="document.getElementById(\'v16iSchedModal\').remove()">Cancel</button>'
+      +     '<button onclick="v16iSaveAppt()" style="background:#ec4899;color:#fff;border:0;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer"><i class="fas fa-save"></i> Save appointment</button></div>'
+      + '</div></div>';
+    document.body.appendChild(m);
+    // Default date = today
+    const t = new Date();
+    document.getElementById('v16iSchedDate').value = t.toISOString().slice(0,10);
+    document.getElementById('v16iSchedTime').value = '09:00';
+  };
+  window.v16iSaveAppt = function(){
+    const title = (document.getElementById('v16iSchedTitle')||{}).value || '';
+    const date = (document.getElementById('v16iSchedDate')||{}).value || '';
+    const time = (document.getElementById('v16iSchedTime')||{}).value || '';
+    const dur = parseInt((document.getElementById('v16iSchedDuration')||{}).value || '30', 10);
+    const loc = (document.getElementById('v16iSchedLocation')||{}).value || '';
+    const notes = (document.getElementById('v16iSchedNotes')||{}).value || '';
+    if (!title.trim() || !date || !time) { alert('Please fill in title, date and time.'); return; }
+    const start = date + 'T' + time + ':00';
+    const startD = new Date(start);
+    const endD = new Date(startD.getTime() + dur*60000);
+    const items = v16iLoadSchedule();
+    items.push({ id: 'appt_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6), title: title.trim(), start, end: endD.toISOString().slice(0,19), durationMin: dur, location: loc, notes: notes, createdAt: new Date().toISOString() });
+    v16iSaveSchedule(items);
+    document.getElementById('v16iSchedModal').remove();
+    if (typeof showToast === 'function') showToast('✅ Appointment saved.', 'success', 3500);
+    v16iWS2RenderSchedulePanel();
+  };
+  window.v16iRemoveSchedule = function(id){
+    if (!id) return;
+    if (!confirm('Remove this appointment?')) return;
+    const items = v16iLoadSchedule().filter(i => i.id !== id);
+    v16iSaveSchedule(items);
+    v16iWS2RenderSchedulePanel();
+  };
+  // Build .ics file content (RFC 5545)
+  function v16iBuildICS(){
+    const items = v16iLoadSchedule();
+    function pad(n){ return n<10?'0'+n:''+n; }
+    function fmt(iso){ const d = new Date(iso); return d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+'T'+pad(d.getUTCHours())+pad(d.getUTCMinutes())+pad(d.getUTCSeconds())+'Z'; }
+    function esc(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;'); }
+    const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Global Guidance//Command Portal v16i//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+    lines.push('X-WR-CALNAME:GG Schedule — '+((currentUser&&currentUser.name)||'Me'));
+    items.forEach(function(it){
+      lines.push('BEGIN:VEVENT');
+      lines.push('UID:'+(it.id||('appt_'+Date.now()))+'@globalguidance');
+      lines.push('DTSTAMP:'+fmt(new Date().toISOString()));
+      lines.push('DTSTART:'+fmt(it.start));
+      lines.push('DTEND:'+fmt(it.end||it.start));
+      lines.push('SUMMARY:'+esc(it.title));
+      if (it.location) lines.push('LOCATION:'+esc(it.location));
+      if (it.notes)    lines.push('DESCRIPTION:'+esc(it.notes));
+      lines.push('END:VEVENT');
+    });
+    lines.push('END:VCALENDAR');
+    return lines.join('\r\n');
+  }
+  window.v16iExportICS = function(){
+    const ics = v16iBuildICS();
+    const blob = new Blob([ics], { type:'text/calendar' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'gg-schedule-'+((currentUser&&currentUser.username)||'me')+'.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+    if (typeof showToast === 'function') showToast('📅 .ics downloaded — import it in Google Calendar (Settings → Import & export).', 'info', 6000);
+  };
+
+  // ---------- 4) STANDALONE OVERVIEW PAGE ----------
+  function renderV16iOverviewPage(){
+    return '<div style="max-width:1200px;margin:0 auto;padding:6px 4px 30px" id="v16iOvRoot">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">'
+      +   '<div><div style="font-size:20px;font-weight:700;color:var(--text)">My Overview</div>'
+      +     '<div style="font-size:12px;color:var(--muted);margin-top:3px">A focused snapshot of your role and today.</div></div>'
+      +   '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      +     '<button onclick="nav(\'workspace2\')" style="background:#6378ff;color:#fff;border:0;padding:9px 16px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-briefcase"></i> My Workspace</button>'
+      +     '<button onclick="nav(\'dashboard\')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:9px 16px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-th"></i> Dashboard</button>'
+      +   '</div>'
+      + '</div>'
+      + '<div id="v16iOvBody">'
+      +   (typeof renderRoleOverviewTab === 'function' ? renderRoleOverviewTab() : '<div class="card" style="padding:24px">Overview unavailable.</div>')
+      + '</div></div>';
+  }
+
+  // ---------- 5) CEO ADMIN — All Staff Daily Reports ----------
+  function renderV16iCEOReports(){
+    const u = currentUser || {};
+    const isCEO = u.username === 'superadmin' || (u.level && u.level >= 100);
+    if (!isCEO){
+      return '<div class="card" style="padding:30px;text-align:center"><i class="fas fa-lock" style="font-size:34px;color:var(--accent4);margin-bottom:10px"></i><div style="font-weight:700">CEO / Admin only</div><div style="color:var(--muted);font-size:12.5px;margin-top:6px">This page is restricted.</div></div>';
+    }
+    return '<div style="max-width:1280px;margin:0 auto;padding:6px 4px 30px" id="v16iAdminRoot">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">'
+      +   '<div><div style="font-size:20px;font-weight:700;color:var(--text)"><i class="fas fa-clipboard-list"></i> All Staff Daily Reports</div>'
+      +     '<div style="font-size:12px;color:var(--muted);margin-top:3px">Live feed of every staff\'s check-ins, tasks, and end-of-day reports.</div></div>'
+      +   '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      +     '<select id="v16iAdminRange" onchange="v16iAdminLoad()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:12.5px"><option value="1">Today</option><option value="7" selected>Last 7 days</option><option value="30">Last 30 days</option></select>'
+      +     '<button onclick="v16iAdminLoad()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:9px 14px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-sync"></i> Refresh</button>'
+      +     '<button onclick="v16iAdminDownloadCSV()" style="background:#16a34a;color:#fff;border:0;padding:9px 14px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-download"></i> Download CSV</button>'
+      +   '</div>'
+      + '</div>'
+      + '<div id="v16iAdminBody"><div class="card" style="padding:24px;text-align:center;color:var(--muted)"><i class="fas fa-spinner fa-spin"></i> Loading reports…</div></div>'
+      + '</div>';
+  }
+  window.v16iAdminLoad = async function(){
+    const host = document.getElementById('v16iAdminBody'); if (!host) return;
+    const range = (document.getElementById('v16iAdminRange')||{}).value || '7';
+    host.innerHTML = '<div class="card" style="padding:24px;text-align:center;color:var(--muted)"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+    try {
+      const url = range === '1' ? '/api/v16g/daily-reports/today' : ('/api/v16g/daily-reports/range?days='+range);
+      const r = await fetch(url, { cache:'no-store' });
+      const j = await r.json();
+      const items = (j && j.items) || [];
+      window._v16iAdminItems = items;
+      if (!items.length){
+        host.innerHTML = '<div class="card" style="padding:24px;text-align:center;color:var(--muted)"><i class="fas fa-inbox" style="font-size:30px;display:block;margin-bottom:10px"></i>No reports in this range yet.</div>';
+        return;
+      }
+      host.innerHTML = '<div class="card" style="padding:0;overflow:hidden">'
+        + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px">'
+        +   '<thead><tr style="background:var(--surface2)">'
+        +     '<th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)">Date</th>'
+        +     '<th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)">Staff</th>'
+        +     '<th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)">In</th>'
+        +     '<th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)">Out</th>'
+        +     '<th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)">Mode</th>'
+        +     '<th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)">Completion</th>'
+        +     '<th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)">Status</th>'
+        +     '<th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)">Actions</th>'
+        +   '</tr></thead><tbody>'
+        + items.map(function(r, i){
+            const cmp = r.completion ? r.completion + '%' : '—';
+            const st = r.status || (r.checkoutTime ? 'submitted' : 'in-progress');
+            const stColor = st === 'submitted' ? '#16a34a' : (st === 'in-progress' ? '#f59e0b' : '#6b7280');
+            return '<tr style="border-bottom:1px solid var(--border)">'
+              + '<td style="padding:8px 12px;color:var(--text)">'+(r.date||'').slice(0,10)+'</td>'
+              + '<td style="padding:8px 12px;font-weight:600;color:var(--text)">'+(r.userName||r.userId||'—')+'</td>'
+              + '<td style="padding:8px 12px;font-family:DM Mono,monospace;color:var(--text)">'+(r.checkinTime||'—')+'</td>'
+              + '<td style="padding:8px 12px;font-family:DM Mono,monospace;color:var(--text)">'+(r.checkoutTime||'—')+'</td>'
+              + '<td style="padding:8px 12px;color:var(--muted)">'+(r.mode||'—')+'</td>'
+              + '<td style="padding:8px 12px;color:var(--text)">'+cmp+'</td>'
+              + '<td style="padding:8px 12px"><span style="background:'+stColor+';color:#fff;padding:3px 8px;border-radius:4px;font-size:10.5px;font-weight:600">'+st+'</span></td>'
+              + '<td style="padding:8px 12px"><button onclick="v16iAdminView('+i+')" style="background:#6378ff;color:#fff;border:0;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer"><i class="fas fa-eye"></i> View</button></td>'
+            + '</tr>';
+          }).join('')
+        + '</tbody></table></div></div>';
+    } catch(e){
+      host.innerHTML = '<div class="card" style="padding:24px;text-align:center;color:var(--accent4)">Failed to load: '+(e.message||e)+'</div>';
+    }
+  };
+  window.v16iAdminView = function(idx){
+    const items = window._v16iAdminItems || [];
+    const r = items[idx]; if (!r) return;
+    let m = document.getElementById('v16iAdminViewModal'); if (m) m.remove();
+    m = document.createElement('div');
+    m.id = 'v16iAdminViewModal';
+    m.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,0.7);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)';
+    const tasks = Array.isArray(r.tasks) ? r.tasks : [];
+    m.innerHTML = '<div style="background:var(--surface);border-radius:14px;max-width:720px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 28px 80px rgba(0,0,0,0.5);color:var(--text)">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--border)">'
+      +   '<div><div style="font-size:17px;font-weight:700">'+(r.userName||r.userId||'—')+' · '+(r.date||'').slice(0,10)+'</div>'
+      +     '<div style="font-size:11.5px;color:var(--muted)">'+(r.mode||'—')+' · In '+(r.checkinTime||'—')+' / Out '+(r.checkoutTime||'—')+'</div></div>'
+      +   '<div style="display:flex;gap:6px"><button onclick="v16iAdminDownloadOne('+idx+')" style="background:#16a34a;color:#fff;border:0;padding:6px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer"><i class="fas fa-download"></i> JSON</button>'
+      +   '<button class="btn btn-sm btn-secondary" onclick="document.getElementById(\'v16iAdminViewModal\').remove()"><i class="fas fa-times"></i></button></div>'
+      + '</div>'
+      + '<div style="padding:18px 22px">'
+      +   '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">'
+      +     '<div style="background:var(--surface2);padding:10px;border-radius:8px"><div style="font-size:11px;color:var(--muted)">Completion</div><div style="font-size:18px;font-weight:700;color:var(--text)">'+(r.completion||0)+'%</div></div>'
+      +     '<div style="background:var(--surface2);padding:10px;border-radius:8px"><div style="font-size:11px;color:var(--muted)">Tasks</div><div style="font-size:18px;font-weight:700;color:var(--text)">'+tasks.length+'</div></div>'
+      +     '<div style="background:var(--surface2);padding:10px;border-radius:8px"><div style="font-size:11px;color:var(--muted)">Self-Declaration</div><div style="font-size:13px;font-weight:600;color:var(--text);margin-top:3px">'+(r.selfDeclaration||'—')+'</div></div>'
+      +   '</div>'
+      +   (tasks.length ? '<div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text)">Tasks</div><div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px">'
+          + tasks.map(function(t){
+              return '<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid var(--border);font-size:12px">'
+                + '<i class="fas '+(t.done?'fa-check-circle" style="color:#16a34a':'fa-circle" style="color:var(--muted)')+'"></i>'
+                + '<span style="flex:1;'+(t.done?'text-decoration:line-through;color:var(--muted)':'')+'">'+(t.text||'')+'</span>'
+                + '<span class="badge badge-'+(t.p==='P1'?'hot':t.p==='P2'?'warm':'cold')+'" style="font-size:10px">'+(t.p||'')+'</span>'
+              + '</div>';
+            }).join('')
+          + '</div>' : '')
+      +   (r.achievement ? '<div style="font-size:12px;font-weight:600;margin:8px 0 4px">Achievements</div><div style="font-size:12.5px;color:var(--text);background:var(--surface2);padding:10px;border-radius:7px">'+(r.achievement||'')+'</div>' : '')
+      +   (r.issues      ? '<div style="font-size:12px;font-weight:600;margin:10px 0 4px">Issues / Blockers</div><div style="font-size:12.5px;color:var(--text);background:var(--surface2);padding:10px;border-radius:7px">'+(r.issues||'')+'</div>' : '')
+      +   (r.tomorrow    ? '<div style="font-size:12px;font-weight:600;margin:10px 0 4px">Plan for Tomorrow</div><div style="font-size:12.5px;color:var(--text);background:var(--surface2);padding:10px;border-radius:7px">'+(r.tomorrow||'')+'</div>' : '')
+      + '</div></div>';
+    document.body.appendChild(m);
+  };
+  window.v16iAdminDownloadOne = function(idx){
+    const items = window._v16iAdminItems || [];
+    const r = items[idx]; if (!r) return;
+    const blob = new Blob([JSON.stringify(r, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'report-'+(r.userId||'staff')+'-'+(r.date||'').slice(0,10)+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+  };
+  window.v16iAdminDownloadCSV = function(){
+    const items = window._v16iAdminItems || [];
+    if (!items.length) { alert('No data to export.'); return; }
+    const cols = ['date','userId','userName','checkinTime','checkoutTime','mode','completion','status','achievement','issues','tomorrow','selfDeclaration'];
+    function esc(s){ s = String(s==null?'':s); if (/[",\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"'; return s; }
+    const csv = [cols.join(',')].concat(items.map(function(r){ return cols.map(function(c){ return esc(r[c]); }).join(','); })).join('\n');
+    const blob = new Blob([csv], { type:'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'all-staff-reports-'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+    if (typeof showToast === 'function') showToast('📊 CSV downloaded.', 'success', 3000);
+  };
+
+  // ---------- 6) WIRE UP NEW PAGE ROUTES ----------
+  // Patch the existing pages dispatcher used by nav(). We do this by
+  // wrapping nav() — after it runs, if the requested page isn't recognised
+  // by the existing dispatcher (it would fallback to dashboard), we
+  // intercept BEFORE the call and inject the page ourselves.
+  const __origNav2 = window.nav;
+  window.nav = function(page){
+    const newPages = { 'workspace2': renderWorkspace2, 'overview': renderV16iOverviewPage, 'adminreports': renderV16iCEOReports };
+    if (newPages[page]) {
+      // Reuse the existing nav infrastructure (page lifecycle, breadcrumbs) but
+      // swap in our custom render. The simplest reliable way is to render
+      // into #mainContent ourselves and update active page state.
+      try {
+        const mc = document.getElementById('mainContent');
+        if (mc) {
+          if (typeof cbSyncActive === 'function') cbSyncActive(page);
+          if (typeof cbCloseDrawer === 'function') cbCloseDrawer();
+          mc.innerHTML = '<div class="page active" id="page-'+page+'">'+newPages[page]()+'</div>';
+          window.__v16iCurrentPage = page;
+          if (page === 'workspace2') setTimeout(v16iWS2Render, 50);
+          if (page === 'adminreports') setTimeout(function(){ if (typeof v16iAdminLoad === 'function') v16iAdminLoad(); }, 50);
+          // Clock ticker for workspace2
+          if (page === 'workspace2') {
+            if (window._v16iClockInt) clearInterval(window._v16iClockInt);
+            window._v16iClockInt = setInterval(function(){
+              const el = document.getElementById('v16iWS2Clock'); if (!el){ clearInterval(window._v16iClockInt); return; }
+              el.textContent = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});
+            }, 1000);
+          }
+          return;
+        }
+      } catch(e){ console.warn('v16i nav failed', e); }
+    }
+    return __origNav2.apply(this, arguments);
+  };
+
+  // ---------- 7) ADD QUICK-LAUNCH BUTTONS TO TOP BAR (if CEO) ----------
+  function v16iAddCEOAdminLink(){
+    try {
+      const u = currentUser || {};
+      const isCEO = u.username === 'superadmin' || (u.level && u.level >= 100);
+      if (!isCEO) return;
+      // Look for top-bar area; if a quick-launch host exists, inject a button there
+      const host = document.querySelector('.topbar-actions, .tb-actions, #topRightActions, .calm-topbar-right');
+      if (host && !host.querySelector('#v16iAdminBtn')) {
+        const btn = document.createElement('button');
+        btn.id = 'v16iAdminBtn';
+        btn.title = 'All Staff Reports';
+        btn.style.cssText = 'background:#16a34a;color:#fff;border:0;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;margin:0 6px;display:inline-flex;align-items:center;gap:5px';
+        btn.innerHTML = '<i class="fas fa-clipboard-list"></i> Staff Reports';
+        btn.onclick = function(){ nav('adminreports'); };
+        host.insertBefore(btn, host.firstChild);
+      }
+    } catch(e){}
+  }
+  setTimeout(v16iAddCEOAdminLink, 1500);
+  setInterval(v16iAddCEOAdminLink, 5000); // re-inject if topbar re-renders
+
+  // ---------- 8) Boot — inject dashboard strip on initial load ----------
+  setTimeout(function(){
+    try {
+      if (window.__v16iCurrentPage || (document.getElementById('mainContent') && document.getElementById('mainContent').querySelector('.page'))) {
+        // If already on dashboard, inject the strip
+        const mc = document.getElementById('mainContent');
+        if (mc) {
+          const inner = mc.querySelector('.page');
+          if (inner && !inner.querySelector('#v16iDashStrip') && (inner.id||'').indexOf('dashboard') >= 0) {
+            const wrap = document.createElement('div'); wrap.innerHTML = v16iDashStrip();
+            if (wrap.firstElementChild) inner.insertBefore(wrap.firstElementChild, inner.firstChild);
+          }
+        }
+      }
+    } catch(e){}
+  }, 1200);
+
+  console.log('[v16i] Unified Workspace + Overview + CEO Reports + Schedule loaded.');
+})();
 </script>
 <script src="/static/agent-portal.js"></script>
 <script src="/static/media-suite.js"></script>

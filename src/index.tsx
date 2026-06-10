@@ -7000,6 +7000,7 @@ const KV_DR_FEED          = 'v16g:daily-reports';          // unified feed of al
 const KV_DL_REQUESTS      = 'v16g:download-requests';      // staff download requests (cap 500)
 const KV_HIMAAUS_CLIENTS  = 'v16g:himaaus:clients';        // Thasbiha's imported clients (cap 5000)
 const KV_GG_CLIENTS       = 'v16g:gg:clients';             // v16h — Global Guidance students/clients (cap 5000)
+const KV_SCHEDULE_PREFIX  = 'v16i:schedule:';              // v16i — per-staff schedule items (KV key suffix = owner username)
 
 // --- Daily Reports Feed (CEO/COO see ALL staff EOD reports) ---------
 app.get('/api/v16g/daily-reports/today', async (c) => {
@@ -7280,6 +7281,33 @@ app.delete('/api/v16g/gg/clients', async (c) => {
         arr = arr.filter((r: any) => r.owner !== owner);
         await kvSaveArr(c, KV_GG_CLIENTS, arr, 5000);
         return c.json({ success: true, removed: before - arr.length });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+
+// --- v16i Schedule / Appointments (per-staff KV-backed) ------------
+// Stores a list of appointments per owner. Owner = currentUser.username.
+// Fully replaces on POST (frontend sends authoritative full list).
+app.get('/api/v16i/schedule', async (c) => {
+    try {
+        const owner = c.req.query('owner') || '';
+        if (!owner) return c.json({ success: false, error: 'owner required', items: [] }, 400);
+        const arr = await kvLoadArr(c, KV_SCHEDULE_PREFIX + owner);
+        return c.json({ success: true, count: arr.length, items: arr });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e), items: [] }, 500);
+    }
+});
+
+app.post('/api/v16i/schedule', async (c) => {
+    try {
+        const body = await c.req.json();
+        const owner = String(body.owner || '');
+        const items: any[] = Array.isArray(body.items) ? body.items : [];
+        if (!owner) return c.json({ success: false, error: 'owner required' }, 400);
+        await kvSaveArr(c, KV_SCHEDULE_PREFIX + owner, items, 500);
+        return c.json({ success: true, count: items.length });
     } catch (e: any) {
         return c.json({ success: false, error: e?.message || String(e) }, 500);
     }
