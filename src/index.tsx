@@ -7380,6 +7380,325 @@ app.delete('/api/v16j/team-updates', async (c) => {
 });
 
 // ==========================================================
+// v16l — Unified Attendance (Issues 01–08)
+//   Single source of truth for attendance, GPS, daily plan,
+//   daily report, office locations, and team activity feed.
+// ==========================================================
+const KV_V16L_ATT       = 'v16l:attendance';      // array, cap 5000 — every check-in/out event
+const KV_V16L_OFFICES   = 'v16l:offices';         // array — office locations master
+const KV_V16L_PLAN      = 'v16l:daily-plan';      // array, cap 2000
+const KV_V16L_REPORT    = 'v16l:daily-report';    // array, cap 2000
+const KV_V16L_ACTIVITY  = 'v16l:team-activity';   // array, cap 500 — live activity feed
+
+// Default office master (CEO can edit)
+const DEFAULT_OFFICES = [
+    { id: 'hq',          name: 'Global Guidance HQ', city: 'Colombo',    lat: 6.9271,  lng: 79.8612, radius: 100, active: true },
+    { id: 'jaffna',      name: 'Jaffna Office',      city: 'Jaffna',     lat: 9.6615,  lng: 80.0255, radius: 100, active: true },
+    { id: 'kandy',       name: 'Kandy Office',       city: 'Kandy',      lat: 7.2906,  lng: 80.6337, radius: 100, active: true },
+    { id: 'kurunegala',  name: 'Kurunegala Office',  city: 'Kurunegala', lat: 7.4863,  lng: 80.3623, radius: 100, active: true }
+];
+
+function v16lColomboDayKey(): string {
+    const now = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+    return now.toISOString().slice(0, 10);
+}
+function v16lId(prefix: string){ return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7); }
+
+// ---- OFFICES ----------------------------------------------
+app.get('/api/v16l/offices', async (c) => {
+    try {
+        let arr = await kvLoadArr(c, KV_V16L_OFFICES);
+        if (!arr || !arr.length) {
+            arr = DEFAULT_OFFICES.slice();
+            await kvSaveArr(c, KV_V16L_OFFICES, arr, 100);
+        }
+        return c.json({ success: true, offices: arr });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e), offices: DEFAULT_OFFICES }, 200);
+    }
+});
+app.post('/api/v16l/offices', async (c) => {
+    try {
+        const body = await c.req.json();
+        const level = parseInt(String(body.level || 0), 10);
+        if (level < 100) return c.json({ success: false, error: 'CEO/admin only' }, 403);
+        let arr = await kvLoadArr(c, KV_V16L_OFFICES);
+        if (!arr.length) arr = DEFAULT_OFFICES.slice();
+        const op = String(body.op || 'upsert');
+        if (op === 'delete' && body.id) {
+            arr = arr.filter((o: any) => o.id !== body.id);
+        } else {
+            const office = {
+                id:     body.id || v16lId('off'),
+                name:   String(body.name || 'Untitled office'),
+                city:   String(body.city || ''),
+                lat:    Number(body.lat) || 0,
+                lng:    Number(body.lng) || 0,
+                radius: Number(body.radius) || 100,
+                active: body.active !== false
+            };
+            const idx = arr.findIndex((o: any) => o.id === office.id);
+            if (idx >= 0) arr[idx] = { ...arr[idx], ...office }; else arr.push(office);
+        }
+        await kvSaveArr(c, KV_V16L_OFFICES, arr, 100);
+        return c.json({ success: true, offices: arr });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+
+// ---- ATTENDANCE event log --------------------------------
+app.get('/api/v16l/attendance', async (c) => {
+    try {
+        const day = c.req.query('day') || v16lColomboDayKey();
+        const user = c.req.query('user');
+        const arr = await kvLoadArr(c, KV_V16L_ATT);
+        const filtered = arr.filter((r: any) =>
+            (!day || r.dayKey === day) && (!user || r.user === user)
+        );
+        return c.json({ success: true, count: filtered.length, items: filtered });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+app.post('/api/v16l/attendance', async (c) => {
+    try {
+        const body = await c.req.json();
+        const user = String(body.user || '').trim();
+        const kind = String(body.kind || 'checkin'); // 'checkin' | 'checkout'
+        if (!user) return c.json({ success: false, error: 'user required' }, 400);
+        // Audit capture
+        const ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown';
+        const ua = c.req.header('user-agent') || 'unknown';
+        const day = v16lColomboDayKey();
+        const arr = await kvLoadArr(c, KV_V16L_ATT);
+        const entry = {
+            id:        v16lId('att'),
+            user:      user,
+            name:      String(body.name || ''),
+            empId:     String(body.empId || ''),
+            level:     Number(body.level) || 0,
+            kind:      kind,                      // 'checkin' | 'checkout'
+            status:    String(body.status || 'Present'),
+            mode:      String(body.mode || 'Office'),
+            // GPS
+            lat:       (body.lat != null) ? Number(body.lat) : null,
+            lng:       (body.lng != null) ? Number(body.lng) : null,
+            accuracy:  (body.accuracy != null) ? Number(body.accuracy) : null,
+            address:   String(body.address || ''),
+            officeId:  String(body.officeId || ''),
+            officeMatch: !!body.officeMatch,
+            distanceM: (body.distanceM != null) ? Number(body.distanceM) : null,
+            // mode-specific
+            fieldVisit:  body.fieldVisit || null,   // { client, institution, location, purpose }
+            remoteReason: String(body.remoteReason || ''),
+            // audit
+            ip:        ip,
+            userAgent: ua,
+            device:    String(body.device || ''),
+            browser:   String(body.browser || ''),
+            ts:        Date.now(),
+            dayKey:    day
+        };
+        arr.push(entry);
+        await kvSaveArr(c, KV_V16L_ATT, arr, 5000);
+        // Also push to activity feed
+        const activity = await kvLoadArr(c, KV_V16L_ACTIVITY);
+        activity.unshift({
+            id: v16lId('act'),
+            user, name: entry.name,
+            type: kind === 'checkin' ? 'check-in' : 'check-out',
+            text: (kind === 'checkin' ? 'Checked in' : 'Checked out') + ' — ' + entry.mode + (entry.address ? ' · ' + entry.address.split(',')[0] : ''),
+            mode: entry.mode,
+            ts: entry.ts,
+            dayKey: day
+        });
+        await kvSaveArr(c, KV_V16L_ACTIVITY, activity, 500);
+        return c.json({ success: true, entry });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+
+// ---- DAILY PLAN -------------------------------------------
+app.get('/api/v16l/daily-plan', async (c) => {
+    try {
+        const day = c.req.query('day') || v16lColomboDayKey();
+        const user = c.req.query('user');
+        const arr = await kvLoadArr(c, KV_V16L_PLAN);
+        const filtered = arr.filter((r: any) =>
+            (!day || r.dayKey === day) && (!user || r.user === user)
+        );
+        return c.json({ success: true, count: filtered.length, items: filtered });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+app.post('/api/v16l/daily-plan', async (c) => {
+    try {
+        const body = await c.req.json();
+        const user = String(body.user || '').trim();
+        if (!user) return c.json({ success: false, error: 'user required' }, 400);
+        const day = v16lColomboDayKey();
+        const arr = await kvLoadArr(c, KV_V16L_PLAN);
+        // Upsert per (user, day) — one plan per day
+        const idx = arr.findIndex((r: any) => r.user === user && r.dayKey === day);
+        const entry = {
+            id: idx >= 0 ? arr[idx].id : v16lId('plan'),
+            user, name: String(body.name || ''),
+            tasks: Array.isArray(body.tasks) ? body.tasks.slice(0, 20) : [],
+            students: body.students || { count: 0, highRisk: '', pendingReg: '', priorityConv: '' },
+            universities: body.universities || { offers: '', cas: '', coe: '', docs: '' },
+            ops: body.ops || { admin: '', hr: '', finance: '', mgmt: '' },
+            expectedOutcomes: String(body.expectedOutcomes || ''),
+            ts: Date.now(),
+            dayKey: day
+        };
+        if (idx >= 0) arr[idx] = entry; else arr.push(entry);
+        await kvSaveArr(c, KV_V16L_PLAN, arr, 2000);
+        // Activity feed
+        const activity = await kvLoadArr(c, KV_V16L_ACTIVITY);
+        activity.unshift({
+            id: v16lId('act'), user, name: entry.name,
+            type: 'daily-plan',
+            text: 'Submitted daily plan — ' + (entry.tasks.length || 0) + ' priority task(s)',
+            ts: Date.now(), dayKey: day
+        });
+        await kvSaveArr(c, KV_V16L_ACTIVITY, activity, 500);
+        return c.json({ success: true, entry });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+
+// ---- DAILY REPORT (required for check-out) ---------------
+app.get('/api/v16l/daily-report', async (c) => {
+    try {
+        const day = c.req.query('day') || v16lColomboDayKey();
+        const user = c.req.query('user');
+        const arr = await kvLoadArr(c, KV_V16L_REPORT);
+        const filtered = arr.filter((r: any) =>
+            (!day || r.dayKey === day) && (!user || r.user === user)
+        );
+        return c.json({ success: true, count: filtered.length, items: filtered });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+app.post('/api/v16l/daily-report', async (c) => {
+    try {
+        const body = await c.req.json();
+        const user = String(body.user || '').trim();
+        if (!user) return c.json({ success: false, error: 'user required' }, 400);
+        const day = v16lColomboDayKey();
+        const arr = await kvLoadArr(c, KV_V16L_REPORT);
+        const idx = arr.findIndex((r: any) => r.user === user && r.dayKey === day);
+        const entry = {
+            id: idx >= 0 ? arr[idx].id : v16lId('rpt'),
+            user, name: String(body.name || ''),
+            completed:   String(body.completed || ''),
+            pending:     String(body.pending || ''),
+            challenges:  String(body.challenges || ''),
+            tomorrow:    String(body.tomorrow || ''),
+            mgmtNotes:   String(body.mgmtNotes || ''),
+            ts: Date.now(), dayKey: day
+        };
+        if (idx >= 0) arr[idx] = entry; else arr.push(entry);
+        await kvSaveArr(c, KV_V16L_REPORT, arr, 2000);
+        const activity = await kvLoadArr(c, KV_V16L_ACTIVITY);
+        activity.unshift({
+            id: v16lId('act'), user, name: entry.name,
+            type: 'daily-report',
+            text: 'Filed daily report',
+            ts: Date.now(), dayKey: day
+        });
+        await kvSaveArr(c, KV_V16L_ACTIVITY, activity, 500);
+        return c.json({ success: true, entry });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+
+// ---- TEAM ACTIVITY FEED -----------------------------------
+app.get('/api/v16l/team-activity', async (c) => {
+    try {
+        const day = c.req.query('day') || v16lColomboDayKey();
+        const limit = parseInt(c.req.query('limit') || '50', 10);
+        const arr = await kvLoadArr(c, KV_V16L_ACTIVITY);
+        const filtered = day ? arr.filter((r: any) => r.dayKey === day) : arr;
+        return c.json({ success: true, count: filtered.length, items: filtered.slice(0, limit) });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+app.post('/api/v16l/team-activity', async (c) => {
+    try {
+        const body = await c.req.json();
+        if (!body.user || !body.text) return c.json({ success: false, error: 'user + text required' }, 400);
+        const day = v16lColomboDayKey();
+        const arr = await kvLoadArr(c, KV_V16L_ACTIVITY);
+        const entry = {
+            id: v16lId('act'),
+            user: String(body.user),
+            name: String(body.name || ''),
+            type: String(body.type || 'activity'),
+            text: String(body.text).slice(0, 280),
+            ts: Date.now(), dayKey: day
+        };
+        arr.unshift(entry);
+        await kvSaveArr(c, KV_V16L_ACTIVITY, arr, 500);
+        return c.json({ success: true, entry });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+
+// ---- CEO DASHBOARD aggregate ------------------------------
+app.get('/api/v16l/ceo-dashboard', async (c) => {
+    try {
+        const day = c.req.query('day') || v16lColomboDayKey();
+        const [att, plans, reports, activity, offices] = await Promise.all([
+            kvLoadArr(c, KV_V16L_ATT),
+            kvLoadArr(c, KV_V16L_PLAN),
+            kvLoadArr(c, KV_V16L_REPORT),
+            kvLoadArr(c, KV_V16L_ACTIVITY),
+            kvLoadArr(c, KV_V16L_OFFICES)
+        ]);
+        const todayAtt = att.filter((r: any) => r.dayKey === day);
+        // De-duplicate per user — latest event wins
+        const byUser: { [k: string]: any } = {};
+        todayAtt.forEach((r: any) => {
+            const cur = byUser[r.user];
+            if (!cur || r.ts > cur.ts) byUser[r.user] = r;
+        });
+        const users = Object.values(byUser);
+        // Aggregates
+        const counts = {
+            checkedIn:    users.filter((u: any) => u.kind === 'checkin' && u.status !== 'Leave').length,
+            checkedOut:   users.filter((u: any) => u.kind === 'checkout').length,
+            late:         users.filter((u: any) => u.status === 'Late').length,
+            sick:         users.filter((u: any) => u.status === 'Sick').length,
+            leave:        users.filter((u: any) => u.status === 'Leave').length,
+            office:       users.filter((u: any) => u.mode === 'Office' && u.kind === 'checkin').length,
+            remote:       users.filter((u: any) => u.mode === 'Remote' && u.kind === 'checkin').length,
+            field:        users.filter((u: any) => u.mode === 'Field' && u.kind === 'checkin').length,
+            plansToday:   plans.filter((r: any) => r.dayKey === day).length,
+            reportsToday: reports.filter((r: any) => r.dayKey === day).length
+        };
+        return c.json({
+            success: true,
+            day,
+            counts,
+            users,
+            activity: activity.filter((a: any) => a.dayKey === day).slice(0, 30),
+            offices: offices.length ? offices : DEFAULT_OFFICES
+        });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+
+// ==========================================================
 // v16h — Staff Controls (CEO-managed per-staff toggles)
 // + EOD submission lock + notifications
 // ==========================================================

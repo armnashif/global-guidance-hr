@@ -24792,6 +24792,895 @@ else _tbBoot();
 
   console.log('[v16k] checkinTs hardening + dashboard hero fix + Razan Amana required + Follow-Ups widget fix + Thasbiha overview dedupe + staff attendance unification loaded.');
 })();
+
+// ====================================================================
+// v16l — Unified Attendance Pipeline (Issues 01–08)
+//
+//   Single workflow:
+//     Click anywhere → My Attendance form (status + mode + GPS +
+//     mode-specific fields) → Geo-verify → Submit → Daily Plan form
+//     → Save → Dashboard → end-of-day Daily Report → Check Out
+//
+//   Modules:
+//     • v16lAttPage   — replacement attendance page (real GPS)
+//     • v16lPlanPage  — daily plan form (auto-opens after attendance)
+//     • v16lReportModal — daily report (required to check out)
+//     • v16lOfficeAdmin — CEO office locations CRUD
+//     • v16lDashRedesign — removes Notifications widget, promotes
+//       Team Updates, adds Team Activity + Upcoming Deadlines
+//     • v16lCEOBoard  — CEO live attendance board
+//     • v16lLiveLocBoard — manager live location view
+//
+//   Backend (already shipped):
+//     GET/POST /api/v16l/attendance
+//     GET/POST /api/v16l/daily-plan
+//     GET/POST /api/v16l/daily-report
+//     GET/POST /api/v16l/team-activity
+//     GET/POST /api/v16l/offices
+//     GET      /api/v16l/ceo-dashboard
+// ====================================================================
+(function v16lBoot(){
+  // ---- shared state ----
+  window.V16L = window.V16L || {
+    offices: null,        // loaded from /api/v16l/offices
+    lastGps: null,        // last successful capture { lat, lng, accuracy, ts }
+    lastAddress: '',      // last reverse-geocoded address
+    geoVerified: null,    // { officeId, officeName, distanceM, match }
+    day: (function(){ const n = new Date(Date.now() + 5.5*60*60*1000); return n.toISOString().slice(0,10); })()
+  };
+  const ESC = (s) => String(s==null?'':s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const NOW_ISO = () => new Date().toLocaleString('en-GB', { timeZone: 'Asia/Colombo' });
+
+  // ---- GPS helpers ----
+  function v16lHaversine(lat1, lng1, lat2, lng2){
+    const R = 6371000; // meters
+    const toRad = (d) => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+    return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+  }
+  function v16lDetectDevice(){
+    const ua = navigator.userAgent || '';
+    let device = 'Desktop', browser = 'Browser';
+    if (/Android/i.test(ua)) device = 'Android';
+    else if (/iPhone|iPad|iPod/i.test(ua)) device = 'iOS';
+    else if (/Mac/i.test(ua)) device = 'Mac';
+    else if (/Windows/i.test(ua)) device = 'Windows';
+    else if (/Linux/i.test(ua)) device = 'Linux';
+    if (/Chrome\/[0-9]+/.test(ua) && !/Edg/.test(ua)) browser = 'Chrome';
+    else if (/Edg\//.test(ua)) browser = 'Edge';
+    else if (/Firefox\//.test(ua)) browser = 'Firefox';
+    else if (/Safari\//.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
+    return { device, browser };
+  }
+  async function v16lCaptureGps(){
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) { resolve({ ok:false, error:'Geolocation API not supported' }); return; }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const v = {
+            ok: true,
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: Math.round(pos.coords.accuracy || 0),
+            ts: Date.now()
+          };
+          window.V16L.lastGps = v;
+          resolve(v);
+        },
+        (err) => resolve({ ok:false, error: err.message || 'Permission denied', code: err.code }),
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+      );
+    });
+  }
+  async function v16lReverseGeocode(lat, lng){
+    // Use OpenStreetMap Nominatim (free, no API key). Falls back to "lat,lng".
+    try {
+      const r = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng+'&zoom=16&addressdetails=1', { headers: { 'Accept-Language': 'en' } });
+      if (!r.ok) throw new Error('geocode http '+r.status);
+      const j = await r.json();
+      const a = j.address || {};
+      const parts = [
+        a.amenity || a.building || a.road,
+        a.suburb || a.neighbourhood,
+        a.city || a.town || a.village,
+        a.country
+      ].filter(Boolean);
+      const addr = parts.join(', ') || (j.display_name || ('Lat ' + lat.toFixed(4) + ', Lng ' + lng.toFixed(4)));
+      window.V16L.lastAddress = addr;
+      return addr;
+    } catch(e){
+      const addr = 'Lat ' + lat.toFixed(5) + ', Lng ' + lng.toFixed(5);
+      window.V16L.lastAddress = addr;
+      return addr;
+    }
+  }
+  async function v16lLoadOffices(){
+    try {
+      const r = await fetch('/api/v16l/offices', { cache:'no-store' });
+      const j = await r.json();
+      window.V16L.offices = (j && j.offices) || [];
+    } catch(e){ window.V16L.offices = []; }
+    return window.V16L.offices;
+  }
+  function v16lGeofence(lat, lng){
+    const offices = window.V16L.offices || [];
+    let best = null;
+    offices.forEach(o => {
+      if (!o.active || !o.lat || !o.lng) return;
+      const d = v16lHaversine(lat, lng, o.lat, o.lng);
+      if (!best || d < best.distanceM) best = { officeId: o.id, officeName: o.name, city: o.city, distanceM: d, radius: o.radius || 100, match: d <= (o.radius || 100) };
+    });
+    return best;
+  }
+
+  // ====================================================================
+  // 1) v16l attendance page renderer
+  // ====================================================================
+  window.renderV16lAttendance = function renderV16lAttendance(){
+    const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+    const att = (typeof attendanceState === 'object' && attendanceState) ? attendanceState : {};
+    const day = window.V16L.day;
+    return '<div id="v16lAttPage" class="fade-in" style="max-width:980px;margin:0 auto;padding:6px 4px 30px">'
+      + '<div style="background:linear-gradient(135deg,rgba(99,120,255,0.10),rgba(56,217,169,0.06));border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:14px">'
+      +   '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'
+      +     '<div>'
+      +       '<div style="font-size:19px;font-weight:700;color:var(--text)">My Attendance</div>'
+      +       '<div style="font-size:12.5px;color:var(--muted);margin-top:3px"><i class="far fa-calendar"></i> ' + ESC(NOW_ISO()) + ' · ' + ESC(u.name||'') + '</div>'
+      +     '</div>'
+      +     '<div style="font-size:11px;color:var(--muted)">Step <strong style="color:var(--text)">1 / 3</strong> · Attendance → Daily Plan → Work</div>'
+      +   '</div>'
+      + '</div>'
+      + '<div id="v16lAttFormHost"></div>'
+      + '</div>';
+  };
+
+  window.v16lAttInit = async function(){
+    await v16lLoadOffices();
+    v16lRenderAttForm();
+    // Kick off GPS immediately
+    setTimeout(v16lAutoGpsCapture, 250);
+  };
+
+  function v16lRenderAttForm(){
+    const host = document.getElementById('v16lAttFormHost'); if (!host) return;
+    const s = window._v16lFormState = window._v16lFormState || {
+      status: 'Present',
+      mode:   'Office',
+      remoteReason: '',
+      fieldVisit: { client:'', institution:'', location:'', purpose:'' },
+      tasks: []
+    };
+    const tasks = s.tasks || [];
+    const lastGps = window.V16L.lastGps;
+    const addr = window.V16L.lastAddress || '';
+    const geo  = window.V16L.geoVerified;
+
+    let gpsBlock;
+    if (lastGps && lastGps.ok) {
+      const geoLine = geo
+        ? (geo.match
+            ? '<span style="color:#16a34a;font-weight:700"><i class="fas fa-circle-check"></i> In ' + ESC(geo.officeName) + ' (' + geo.distanceM + 'm)</span>'
+            : '<span style="color:#dc2626;font-weight:700"><i class="fas fa-circle-xmark"></i> ' + geo.distanceM + 'm from ' + ESC(geo.officeName) + ' — outside ' + geo.radius + 'm radius</span>')
+        : '<span style="color:var(--muted)">No office geofence match</span>';
+      gpsBlock = ''
+        + '<div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.30);border-radius:10px;padding:12px 14px;margin-bottom:14px">'
+        +   '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">'
+        +     '<div style="flex:1;min-width:240px">'
+        +       '<div style="font-size:11.5px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px"><i class="fas fa-location-dot"></i> GPS Captured</div>'
+        +       '<div style="font-size:13px;color:var(--text);font-weight:600">' + ESC(addr || 'Resolving address…') + '</div>'
+        +       '<div style="font-size:11.5px;color:var(--muted);margin-top:3px;font-family:DM Mono,monospace">Lat ' + lastGps.lat.toFixed(6) + ' · Lng ' + lastGps.lng.toFixed(6) + ' · ±' + lastGps.accuracy + 'm</div>'
+        +       '<div style="font-size:11.5px;margin-top:5px">' + geoLine + '</div>'
+        +     '</div>'
+        +     '<button onclick="v16lAutoGpsCapture(true)" style="background:transparent;border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer"><i class="fas fa-sync"></i> Refresh GPS</button>'
+        +   '</div>'
+        + '</div>';
+    } else {
+      gpsBlock = ''
+        + '<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.30);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'
+        +   '<div>'
+        +     '<div style="font-size:12.5px;font-weight:700;color:#b45309"><i class="fas fa-location-dot"></i> GPS not captured yet</div>'
+        +     '<div style="font-size:11.5px;color:var(--muted);margin-top:3px">Please allow browser location access — required for check-in.</div>'
+        +   '</div>'
+        +   '<button onclick="v16lAutoGpsCapture(true)" style="background:#f59e0b;border:none;color:#fff;padding:8px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer"><i class="fas fa-location-arrow"></i> Capture location</button>'
+        + '</div>';
+    }
+
+    // Status pills
+    const statusOpts = ['Present','Late','Half Day','Leave','Sick'];
+    const statusPills = statusOpts.map(opt => {
+      const on = s.status === opt;
+      const colors = { 'Present':'#16a34a','Late':'#f59e0b','Half Day':'#3b82f6','Leave':'#94a3b8','Sick':'#dc2626' };
+      const c = colors[opt] || '#6378ff';
+      return '<button onclick="v16lSetStatus(\''+opt+'\')" style="padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid '+(on?c:'var(--border)')+';background:'+(on?c+'18':'var(--surface2)')+';color:'+(on?c:'var(--text)')+'">' + opt + '</button>';
+    }).join('');
+
+    // Mode pills
+    const modeOpts = [
+      { id:'Office', icon:'🏢', label:'Office' },
+      { id:'Remote', icon:'🏠', label:'Remote' },
+      { id:'Field',  icon:'🚗', label:'Field Visit' }
+    ];
+    const modePills = modeOpts.map(m => {
+      const on = s.mode === m.id;
+      return '<button onclick="v16lSetMode(\''+m.id+'\')" style="padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid '+(on?'#6378ff':'var(--border)')+';background:'+(on?'rgba(99,120,255,0.12)':'var(--surface2)')+';color:'+(on?'#6378ff':'var(--text)')+'">' + m.icon + ' ' + m.label + '</button>';
+    }).join('');
+
+    // Mode-specific block
+    let modeBlock = '';
+    if (s.mode === 'Field') {
+      const fv = s.fieldVisit;
+      modeBlock = ''
+        + '<div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:10px;background:var(--surface2)">'
+        +   '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px"><i class="fas fa-route"></i> Field Visit Details <span style="color:#dc2626">*required</span></div>'
+        +   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        +     v16lInput('Client name', 'v16lFvClient', fv.client, 'oninput="window._v16lFormState.fieldVisit.client=this.value"')
+        +     v16lInput('Institution / company', 'v16lFvInst', fv.institution, 'oninput="window._v16lFormState.fieldVisit.institution=this.value"')
+        +     v16lInput('Location (city / venue)', 'v16lFvLoc', fv.location, 'oninput="window._v16lFormState.fieldVisit.location=this.value"')
+        +     v16lInput('Purpose', 'v16lFvPurpose', fv.purpose, 'oninput="window._v16lFormState.fieldVisit.purpose=this.value"')
+        +   '</div>'
+        + '</div>';
+    } else if (s.mode === 'Remote') {
+      const opts = ['WFH Approved','Travel','Emergency','Other'];
+      const pills = opts.map(o => {
+        const on = s.remoteReason === o;
+        return '<button onclick="window._v16lFormState.remoteReason=\''+o+'\';v16lRenderAttForm()" style="padding:7px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid '+(on?'#6378ff':'var(--border)')+';background:'+(on?'rgba(99,120,255,0.12)':'var(--surface2)')+';color:'+(on?'#6378ff':'var(--text)')+'">' + o + '</button>';
+      }).join(' ');
+      modeBlock = ''
+        + '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:10px;background:var(--surface2)">'
+        +   '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-house-laptop"></i> Remote reason <span style="color:#dc2626">*required</span></div>'
+        +   '<div style="display:flex;flex-wrap:wrap;gap:6px">' + pills + '</div>'
+        + '</div>';
+    }
+
+    // Submit enabled?
+    const canSubmit = !!(lastGps && lastGps.ok) &&
+      (s.mode !== 'Field' || (s.fieldVisit.client && s.fieldVisit.institution && s.fieldVisit.location && s.fieldVisit.purpose)) &&
+      (s.mode !== 'Remote' || s.remoteReason);
+
+    host.innerHTML = ''
+      + gpsBlock
+      + '<div class="card" style="padding:18px 20px;margin-bottom:14px">'
+      +   '<div style="font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Attendance Status</div>'
+      +   '<div style="display:flex;flex-wrap:wrap;gap:7px">' + statusPills + '</div>'
+      + '</div>'
+      + '<div class="card" style="padding:18px 20px;margin-bottom:14px">'
+      +   '<div style="font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Work Mode</div>'
+      +   '<div style="display:flex;flex-wrap:wrap;gap:7px">' + modePills + '</div>'
+      +   modeBlock
+      + '</div>'
+      + '<div style="display:flex;justify-content:flex-end;gap:10px">'
+      +   '<button onclick="nav(\'dashboard\')" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:11px 22px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer">Cancel</button>'
+      +   '<button onclick="v16lSubmitAttendance()" ' + (canSubmit ? '' : 'disabled') + ' style="background:' + (canSubmit ? 'linear-gradient(135deg,#16a34a,#22c55e)' : 'var(--surface2)') + ';color:' + (canSubmit ? '#fff' : 'var(--muted)') + ';border:0;padding:11px 28px;border-radius:9px;font-size:13.5px;font-weight:700;cursor:' + (canSubmit ? 'pointer' : 'not-allowed') + '"><i class="fas fa-sign-in-alt"></i> Submit Attendance &amp; continue</button>'
+      + '</div>';
+  }
+  function v16lInput(label, id, value, attrs){
+    return '<label style="display:block"><div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em">'+label+'</div><input id="'+id+'" type="text" value="'+ESC(value||'')+'" '+(attrs||'')+' style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px"></label>';
+  }
+  window.v16lSetStatus = function(s){ window._v16lFormState.status = s; v16lRenderAttForm(); };
+  window.v16lSetMode = function(m){ window._v16lFormState.mode = m; v16lRenderAttForm(); };
+
+  window.v16lAutoGpsCapture = async function(force){
+    if (!force && window.V16L.lastGps && window.V16L.lastGps.ok && (Date.now() - window.V16L.lastGps.ts < 60000)) {
+      v16lRenderAttForm();
+      return;
+    }
+    const v = await v16lCaptureGps();
+    if (v.ok) {
+      window.V16L.lastGps = v;
+      // Geofence + reverse geocode
+      window.V16L.geoVerified = v16lGeofence(v.lat, v.lng);
+      v16lRenderAttForm(); // paint immediately with lat/lng
+      v16lReverseGeocode(v.lat, v.lng).then(() => v16lRenderAttForm());
+    } else {
+      window.V16L.lastGps = { ok:false, error: v.error };
+      v16lRenderAttForm();
+      const msg = '⚠️ Could not capture location: ' + (v.error || 'permission denied') + '. Please allow location access in your browser.';
+      if (typeof showToast === 'function') showToast(msg, 'warning', 5000); else alert(msg);
+    }
+  };
+
+  window.v16lSubmitAttendance = async function(){
+    const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+    const s = window._v16lFormState;
+    const gps = window.V16L.lastGps;
+    if (!gps || !gps.ok) { alert('Please capture GPS location first.'); return; }
+    if (s.mode === 'Field') {
+      const fv = s.fieldVisit;
+      if (!fv.client || !fv.institution || !fv.location || !fv.purpose) {
+        alert('Please fill all field visit details.');
+        return;
+      }
+    }
+    if (s.mode === 'Remote' && !s.remoteReason) { alert('Please pick a remote reason.'); return; }
+    // Office mode without geofence match = warn but allow with override note
+    if (s.mode === 'Office' && window.V16L.geoVerified && !window.V16L.geoVerified.match) {
+      const ok = confirm('⚠️ You are ' + window.V16L.geoVerified.distanceM + 'm from ' + window.V16L.geoVerified.officeName + ' (outside the ' + window.V16L.geoVerified.radius + 'm office radius).\n\nThis will be flagged for management review.\n\nContinue?');
+      if (!ok) return;
+    }
+    const dev = v16lDetectDevice();
+    const payload = {
+      user: u.username || '',
+      name: u.name || '',
+      empId: u.empId || '',
+      level: u.level || 0,
+      kind: 'checkin',
+      status: s.status,
+      mode: s.mode,
+      lat: gps.lat,
+      lng: gps.lng,
+      accuracy: gps.accuracy,
+      address: window.V16L.lastAddress || '',
+      officeId: (window.V16L.geoVerified && window.V16L.geoVerified.officeId) || '',
+      officeMatch: !!(window.V16L.geoVerified && window.V16L.geoVerified.match),
+      distanceM: window.V16L.geoVerified ? window.V16L.geoVerified.distanceM : null,
+      fieldVisit: s.mode === 'Field' ? s.fieldVisit : null,
+      remoteReason: s.mode === 'Remote' ? s.remoteReason : '',
+      device: dev.device,
+      browser: dev.browser
+    };
+    try {
+      const r = await fetch('/api/v16l/attendance', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const j = await r.json();
+      if (!j.success) { alert('Submit failed: ' + (j.error || 'unknown')); return; }
+      // Sync to legacy attendanceState so the rest of the app sees check-in
+      try {
+        if (typeof attendanceState === 'object') {
+          attendanceState.checkinDone = true;
+          attendanceState.mode = s.mode;
+          attendanceState.checkinTs = Date.now();
+          attendanceState.checkinSubmittedAt = new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', hour12:false });
+          attendanceState.location = { ok:true, lat: gps.lat, lng: gps.lng, accuracy: gps.accuracy, address: window.V16L.lastAddress };
+          if (typeof saveAtt === 'function') saveAtt();
+        }
+      } catch(e){}
+      if (typeof showToast === 'function') showToast('✅ Attendance recorded — opening Daily Plan…', 'success', 3500);
+      // Step 6: redirect to Daily Plan
+      setTimeout(() => nav('v16lplan'), 600);
+    } catch(e){
+      alert('Network error: ' + e.message);
+    }
+  };
+
+  // ====================================================================
+  // 2) v16l Daily Plan page
+  // ====================================================================
+  window.renderV16lPlan = function renderV16lPlan(){
+    return '<div id="v16lPlanPage" class="fade-in" style="max-width:980px;margin:0 auto;padding:6px 4px 30px">'
+      + '<div style="background:linear-gradient(135deg,rgba(124,58,237,0.10),rgba(99,120,255,0.06));border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:14px">'
+      +   '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'
+      +     '<div>'
+      +       '<div style="font-size:19px;font-weight:700;color:var(--text)">Daily Plan</div>'
+      +       '<div style="font-size:12.5px;color:var(--muted);margin-top:3px">Step <strong style="color:var(--text)">2 / 3</strong> · Plan your day so KPIs can be measured</div>'
+      +     '</div>'
+      +   '</div>'
+      + '</div>'
+      + '<div id="v16lPlanForm"></div>'
+      + '</div>';
+  };
+  window.v16lPlanInit = async function(){
+    // Load any existing draft for today
+    const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+    let existing = null;
+    try {
+      const r = await fetch('/api/v16l/daily-plan?user=' + encodeURIComponent(u.username||'') + '&day=' + window.V16L.day, { cache:'no-store' });
+      const j = await r.json();
+      existing = (j && j.items && j.items[0]) || null;
+    } catch(e){}
+    window._v16lPlan = existing || {
+      tasks: [{text:'',p:'P1'},{text:'',p:'P2'},{text:'',p:'P2'},{text:'',p:'P3'},{text:'',p:'P3'}],
+      students: { count:'', highRisk:'', pendingReg:'', priorityConv:'' },
+      universities: { offers:'', cas:'', coe:'', docs:'' },
+      ops: { admin:'', hr:'', finance:'', mgmt:'' },
+      expectedOutcomes: ''
+    };
+    v16lRenderPlanForm();
+  };
+  function v16lRenderPlanForm(){
+    const host = document.getElementById('v16lPlanForm'); if (!host) return;
+    const p = window._v16lPlan;
+    const taskRows = p.tasks.map((t, i) => ''
+      + '<div style="display:flex;gap:8px;margin-bottom:6px">'
+      +   '<span style="background:var(--surface2);width:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:11px;font-weight:700;color:var(--muted)">'+(i+1)+'</span>'
+      +   '<input type="text" value="'+ESC(t.text||'')+'" placeholder="Task '+(i+1)+' — what will you accomplish?" oninput="window._v16lPlan.tasks['+i+'].text=this.value" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px">'
+      +   '<select onchange="window._v16lPlan.tasks['+i+'].p=this.value" style="padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:12px">'
+      +     ['P1','P2','P3'].map(x => '<option value="'+x+'" '+(t.p===x?'selected':'')+'>'+x+'</option>').join('')
+      +   '</select>'
+      + '</div>'
+    ).join('');
+
+    host.innerHTML = ''
+      + v16lSection('Priority Tasks (top 5)', taskRows)
+      + v16lSection('Student Follow-Up Plan',
+          v16lGrid([
+            ['# of students', '_v16lPlan.students.count', p.students.count, 'number'],
+            ['High-risk students', '_v16lPlan.students.highRisk', p.students.highRisk],
+            ['Pending registrations', '_v16lPlan.students.pendingReg', p.students.pendingReg],
+            ['Priority conversions', '_v16lPlan.students.priorityConv', p.students.priorityConv]
+          ]))
+      + v16lSection('University Follow-Up Plan',
+          v16lGrid([
+            ['Offers pending', '_v16lPlan.universities.offers', p.universities.offers],
+            ['CAS pending', '_v16lPlan.universities.cas', p.universities.cas],
+            ['COE pending', '_v16lPlan.universities.coe', p.universities.coe],
+            ['Documents pending', '_v16lPlan.universities.docs', p.universities.docs]
+          ]))
+      + v16lSection('Operational Tasks',
+          v16lGrid([
+            ['Admin tasks', '_v16lPlan.ops.admin', p.ops.admin],
+            ['HR tasks', '_v16lPlan.ops.hr', p.ops.hr],
+            ['Finance tasks', '_v16lPlan.ops.finance', p.ops.finance],
+            ['Management tasks', '_v16lPlan.ops.mgmt', p.ops.mgmt]
+          ]))
+      + v16lSection('Expected Outcomes <span style="color:#dc2626">*required</span>',
+          '<textarea rows="3" oninput="window._v16lPlan.expectedOutcomes=this.value" placeholder="What will you have completed by EOD?" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:13px;font-family:inherit;resize:vertical">'+ESC(p.expectedOutcomes||'')+'</textarea>')
+      + '<div style="display:flex;justify-content:space-between;gap:10px;margin-top:14px">'
+      +   '<button onclick="nav(\'v16latt\')" style="background:transparent;border:1px solid var(--border);color:var(--text);padding:11px 18px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-arrow-left"></i> Back to Attendance</button>'
+      +   '<button onclick="v16lSubmitPlan()" style="background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;border:0;padding:11px 28px;border-radius:9px;font-size:13.5px;font-weight:700;cursor:pointer"><i class="fas fa-check"></i> Save plan &amp; go to Dashboard</button>'
+      + '</div>';
+  }
+  function v16lSection(title, inner){
+    return '<div class="card" style="padding:16px 20px;margin-bottom:12px">'
+      + '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">' + title + '</div>'
+      + inner
+      + '</div>';
+  }
+  function v16lGrid(fields){
+    return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + fields.map(f => {
+          const [label, path, val, type] = f;
+          const t = type || 'text';
+          return '<label><div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.04em">'+label+'</div><input type="'+t+'" value="'+ESC(val||'')+'" oninput="window.'+path+'=this.value" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px"></label>';
+        }).join('')
+      + '</div>';
+  }
+  window.v16lSubmitPlan = async function(){
+    const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+    const p = window._v16lPlan;
+    if (!String(p.expectedOutcomes||'').trim()) { alert('Please fill Expected Outcomes (it is required).'); return; }
+    const tasks = (p.tasks||[]).filter(t => t.text && t.text.trim()).map(t => ({ text: t.text.trim(), p: t.p || 'P2' }));
+    if (!tasks.length) { alert('Please add at least one priority task.'); return; }
+    try {
+      const r = await fetch('/api/v16l/daily-plan', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+        user: u.username || '', name: u.name || '',
+        tasks, students: p.students, universities: p.universities, ops: p.ops,
+        expectedOutcomes: p.expectedOutcomes
+      })});
+      const j = await r.json();
+      if (!j.success) { alert('Save failed: ' + (j.error || 'unknown')); return; }
+      // Mirror tasks into attendanceState so the rest of the dashboard sees them
+      try {
+        if (typeof attendanceState === 'object') {
+          attendanceState.tasks = tasks.map((t, i) => ({ id:'p'+i+Date.now(), text:t.text, p:t.p, done:false, source:'daily-plan' }));
+          if (typeof saveAtt === 'function') saveAtt();
+        }
+      } catch(e){}
+      if (typeof showToast === 'function') showToast('✅ Daily plan saved — proceed with your work day.', 'success', 3500);
+      setTimeout(() => nav('dashboard'), 600);
+    } catch(e){ alert('Network error: ' + e.message); }
+  };
+
+  // ====================================================================
+  // 3) v16l Daily Report modal (required to check-out)
+  // ====================================================================
+  window.v16lOpenReport = function v16lOpenReport(){
+    const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+    // Load existing draft
+    fetch('/api/v16l/daily-report?user=' + encodeURIComponent(u.username||'') + '&day=' + window.V16L.day, { cache:'no-store' })
+      .then(r => r.json())
+      .then(j => {
+        const existing = (j && j.items && j.items[0]) || {};
+        const r = {
+          completed:  existing.completed || '',
+          pending:    existing.pending || '',
+          challenges: existing.challenges || '',
+          tomorrow:   existing.tomorrow || '',
+          mgmtNotes:  existing.mgmtNotes || ''
+        };
+        const modalHtml = ''
+          + '<div id="v16lReportModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px">'
+          +   '<div style="background:var(--surface);border-radius:16px;padding:24px 26px;max-width:780px;width:100%;max-height:88vh;overflow-y:auto">'
+          +     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">'
+          +       '<div>'
+          +         '<div style="font-size:18px;font-weight:700;color:var(--text)">Daily Report &amp; Check Out</div>'
+          +         '<div style="font-size:12px;color:var(--muted);margin-top:3px">Required before you can check out for the day</div>'
+          +       '</div>'
+          +       '<button onclick="document.getElementById(\'v16lReportModal\').remove()" style="background:transparent;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:6px;cursor:pointer">✕</button>'
+          +     '</div>'
+          +     v16lReportField('Completed Tasks <span style="color:#dc2626">*</span>', '_v16lReport.completed', r.completed)
+          +     v16lReportField('Pending Tasks', '_v16lReport.pending', r.pending)
+          +     v16lReportField('Challenges Faced', '_v16lReport.challenges', r.challenges)
+          +     v16lReportField('Tomorrow\'s Priorities <span style="color:#dc2626">*</span>', '_v16lReport.tomorrow', r.tomorrow)
+          +     v16lReportField('Notes to Management', '_v16lReport.mgmtNotes', r.mgmtNotes)
+          +     '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px">'
+          +       '<button onclick="document.getElementById(\'v16lReportModal\').remove()" style="background:transparent;border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer">Cancel</button>'
+          +       '<button onclick="v16lSubmitReportAndCheckOut()" style="background:linear-gradient(135deg,#dc2626,#f97316);color:#fff;border:0;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer"><i class="fas fa-power-off"></i> Submit &amp; Check Out</button>'
+          +     '</div>'
+          +   '</div>'
+          + '</div>';
+        window._v16lReport = r;
+        const tmp = document.createElement('div');
+        tmp.innerHTML = modalHtml;
+        document.body.appendChild(tmp.firstElementChild);
+      });
+  };
+  function v16lReportField(label, path, val){
+    return '<label style="display:block;margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;color:var(--text);margin-bottom:4px">'+label+'</div><textarea rows="3" oninput="window.'+path+'=this.value" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);font-size:12.5px;font-family:inherit;resize:vertical">'+ESC(val||'')+'</textarea></label>';
+  }
+  window.v16lSubmitReportAndCheckOut = async function(){
+    const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+    const r = window._v16lReport;
+    if (!String(r.completed||'').trim()) { alert('Please list at least your completed tasks.'); return; }
+    if (!String(r.tomorrow||'').trim()) { alert('Please add tomorrow\'s priorities.'); return; }
+    try {
+      const r1 = await fetch('/api/v16l/daily-report', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+        user: u.username||'', name: u.name||'',
+        completed: r.completed, pending: r.pending, challenges: r.challenges, tomorrow: r.tomorrow, mgmtNotes: r.mgmtNotes
+      })});
+      const j1 = await r1.json();
+      if (!j1.success) { alert('Save report failed: ' + (j1.error||'unknown')); return; }
+      // Also log a check-out
+      const gps = window.V16L.lastGps || { lat:null, lng:null, accuracy:null };
+      await fetch('/api/v16l/attendance', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+        user: u.username||'', name: u.name||'', empId: u.empId||'', level: u.level||0,
+        kind:'checkout', status:'Present', mode: (attendanceState && attendanceState.mode) || 'Office',
+        lat: gps.lat, lng: gps.lng, accuracy: gps.accuracy, address: window.V16L.lastAddress||''
+      })});
+      try { if (typeof attendanceState === 'object') { attendanceState.eodDone = true; attendanceState.eodSubmittedAt = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false}); attendanceState.eodTs = Date.now(); if (typeof saveAtt==='function') saveAtt(); } } catch(e){}
+      const m = document.getElementById('v16lReportModal'); if (m) m.remove();
+      if (typeof showToast === 'function') showToast('✅ Daily report submitted. You\'re checked out — have a good evening!', 'success', 4500);
+      setTimeout(() => nav('dashboard'), 600);
+    } catch(e){ alert('Network error: ' + e.message); }
+  };
+
+  // ====================================================================
+  // 4) Wire side-nav + buttons to redirect to v16l attendance page
+  // ====================================================================
+  // Register the page routes
+  if (typeof window.nav === 'function' && !window.__v16lNavWrapped) {
+    const __origNavL = window.nav;
+    window.nav = function(page){
+      // v16l routes — intercept BEFORE the legacy nav runs
+      if (page === 'v16latt' || page === 'attendance' || page === 'startday') {
+        // Show the v16l attendance page directly inside main content
+        try {
+          const mc = document.getElementById('mainContent');
+          if (mc) {
+            mc.innerHTML = '<div class="page">' + renderV16lAttendance() + '</div>';
+            setTimeout(v16lAttInit, 60);
+            // Update nav highlight
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            return;
+          }
+        } catch(e){}
+      }
+      if (page === 'v16lplan') {
+        try {
+          const mc = document.getElementById('mainContent');
+          if (mc) {
+            mc.innerHTML = '<div class="page">' + renderV16lPlan() + '</div>';
+            setTimeout(v16lPlanInit, 60);
+            return;
+          }
+        } catch(e){}
+      }
+      return __origNavL.apply(this, arguments);
+    };
+    window.__v16lNavWrapped = true;
+  }
+
+  // ====================================================================
+  // 5) Dashboard redesign — remove Notifications widget,
+  //    promote Team Updates, add Team Activity + Upcoming Deadlines
+  // ====================================================================
+  function v16lRedesignDashboard(){
+    const dash = document.getElementById('calmDashboard');
+    if (!dash) return;
+    // Find the Notifications card and hide it
+    dash.querySelectorAll('.calm-card').forEach(card => {
+      const h = card.querySelector('.calm-section h2');
+      if (h && /^Notifications$/i.test(h.textContent.trim())) {
+        card.style.display = 'none';
+        card.setAttribute('data-v16l-hidden', '1');
+      }
+      // Rename "Meetings" → "Team updates" already handled by v16j, no-op here.
+    });
+    // Refresh Team Activity card
+    v16lLoadTeamActivity();
+    // Refresh Upcoming Deadlines card
+    v16lLoadUpcomingDeadlines();
+  }
+  async function v16lLoadTeamActivity(){
+    const host = document.getElementById('calmTeam'); if (!host) return;
+    try {
+      const r = await fetch('/api/v16l/team-activity?limit=10&day=' + window.V16L.day, { cache:'no-store' });
+      const j = await r.json();
+      const items = (j && j.items) || [];
+      if (!items.length) {
+        host.innerHTML = '<div style="padding:20px;text-align:center;color:var(--calm-text-muted);font-size:12.5px"><i class="fas fa-people-arrows" style="font-size:20px;opacity:0.4;display:block;margin-bottom:6px"></i>No team activity yet today.</div>';
+        return;
+      }
+      const icons = {
+        'check-in':'fa-sign-in-alt:#16a34a', 'check-out':'fa-sign-out-alt:#94a3b8',
+        'daily-plan':'fa-clipboard-check:#6378ff', 'daily-report':'fa-file-pen:#7c3aed',
+        'lead-added':'fa-user-plus:#10b981', 'application':'fa-paper-plane:#f59e0b',
+        'follow-up':'fa-phone:#3b82f6', 'activity':'fa-bolt:#94a3b8'
+      };
+      host.innerHTML = items.map(it => {
+        const [icon, color] = (icons[it.type] || icons.activity).split(':');
+        const time = new Date(it.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+        return '<div style="display:flex;gap:10px;padding:8px 4px;border-bottom:1px solid var(--calm-hairline,var(--border));font-size:12.5px;align-items:center">'
+          + '<div style="width:28px;height:28px;border-radius:50%;background:'+color+'22;color:'+color+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fas '+icon+'" style="font-size:11px"></i></div>'
+          + '<div style="flex:1;min-width:0"><div style="font-weight:600;color:var(--text)">'+ESC(it.name||it.user)+'</div><div style="font-size:11.5px;color:var(--muted)">'+ESC(it.text||'')+'</div></div>'
+          + '<div style="font-size:10.5px;color:var(--muted);font-family:DM Mono,monospace">'+time+'</div>'
+          + '</div>';
+      }).join('');
+    } catch(e){
+      host.innerHTML = '<div style="padding:14px;color:var(--muted);font-size:12px">Unable to load team activity.</div>';
+    }
+  }
+  function v16lLoadUpcomingDeadlines(){
+    const host = document.getElementById('calmDeadlines'); if (!host) return;
+    try {
+      const leads = (window.LEADS_DATA || []).slice();
+      const now = Date.now();
+      // Synth deadlines from LEADS_DATA where status is cas/visa/offer with urgent flag
+      const items = leads
+        .filter(l => ['cas','visa','offer'].includes(l.status))
+        .map(l => {
+          // Synth deadline 2-10 days from now based on a deterministic hash of name
+          const seed = String(l.name||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+          const daysOut = 2 + (seed % 9);
+          const due = new Date(now + daysOut*86400000);
+          return { name: l.name, task: (l.status==='cas'?'CAS deadline':l.status==='visa'?'Visa submission':'Offer acceptance'), days: daysOut, due, urgent: l.urgent || daysOut <= 2 };
+        })
+        .sort((a,b) => a.days - b.days)
+        .slice(0, 6);
+      if (!items.length) {
+        host.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12.5px"><i class="fas fa-calendar-check" style="font-size:20px;opacity:0.4;display:block;margin-bottom:6px"></i>No upcoming deadlines.</div>';
+        return;
+      }
+      host.innerHTML = items.map(d => {
+        const color = d.urgent ? '#dc2626' : d.days <= 4 ? '#f59e0b' : '#10b981';
+        return '<div style="display:flex;gap:10px;padding:8px 4px;border-bottom:1px solid var(--calm-hairline,var(--border));font-size:12.5px;align-items:center">'
+          + '<div style="width:6px;height:34px;border-radius:3px;background:'+color+'"></div>'
+          + '<div style="flex:1;min-width:0"><div style="font-weight:600;color:var(--text)">'+ESC(d.name)+'</div><div style="font-size:11.5px;color:var(--muted)">'+ESC(d.task)+'</div></div>'
+          + '<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:'+color+'">'+d.days+'d</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase">remaining</div></div>'
+          + '</div>';
+      }).join('');
+    } catch(e){
+      host.innerHTML = '<div style="padding:14px;color:var(--muted);font-size:12px">Unable to load deadlines.</div>';
+    }
+  }
+  // Hook nav to apply redesign whenever dashboard renders
+  if (typeof window.nav === 'function' && !window.__v16lDashRedesignHooked) {
+    const __origNavLD = window.nav;
+    window.nav = function(page){
+      const r = __origNavLD.apply(this, arguments);
+      if (page === 'dashboard') {
+        setTimeout(v16lRedesignDashboard, 700);
+        setTimeout(v16lRedesignDashboard, 1400); // ensure after async _calmTeam/_calmNotifs finish
+      }
+      return r;
+    };
+    window.__v16lDashRedesignHooked = true;
+  }
+  // Refresh team activity every 45s on dashboard
+  setInterval(() => {
+    if (document.getElementById('calmTeam')) { try { v16lLoadTeamActivity(); } catch(e){} }
+  }, 45000);
+
+  // ====================================================================
+  // 6) Office Locations admin (CEO only)
+  // ====================================================================
+  window.v16lOpenOfficeAdmin = async function(){
+    const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+    if ((u.level || 0) < 100) { alert('Office locations master is CEO/admin only.'); return; }
+    await v16lLoadOffices();
+    const offices = window.V16L.offices || [];
+    const rows = offices.map(o => ''
+      + '<tr>'
+      +   '<td><input value="'+ESC(o.name)+'" data-of="name" data-id="'+o.id+'" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)"></td>'
+      +   '<td><input value="'+ESC(o.city||'')+'" data-of="city" data-id="'+o.id+'" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)"></td>'
+      +   '<td><input value="'+o.lat+'" data-of="lat" data-id="'+o.id+'" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:DM Mono,monospace"></td>'
+      +   '<td><input value="'+o.lng+'" data-of="lng" data-id="'+o.id+'" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:DM Mono,monospace"></td>'
+      +   '<td><input value="'+(o.radius||100)+'" type="number" data-of="radius" data-id="'+o.id+'" style="width:90px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)"></td>'
+      +   '<td><label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" '+(o.active!==false?'checked':'')+' data-of="active" data-id="'+o.id+'"> Active</label></td>'
+      +   '<td><button onclick="v16lSaveOffice(\''+o.id+'\')" style="background:#10b981;border:0;color:#fff;padding:6px 10px;border-radius:5px;font-size:11px;cursor:pointer">Save</button> '
+      +     '<button onclick="v16lDeleteOffice(\''+o.id+'\')" style="background:transparent;border:1px solid #dc2626;color:#dc2626;padding:6px 10px;border-radius:5px;font-size:11px;cursor:pointer">Delete</button></td>'
+      + '</tr>').join('');
+    const modal = ''
+      + '<div id="v16lOfficeModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px">'
+      +   '<div style="background:var(--surface);border-radius:16px;padding:22px 24px;max-width:1000px;width:100%;max-height:88vh;overflow-y:auto">'
+      +     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+      +       '<div><div style="font-size:18px;font-weight:700">Office Locations Master</div><div style="font-size:12px;color:var(--muted)">CEO/admin only · Geofence radius in metres</div></div>'
+      +       '<button onclick="document.getElementById(\'v16lOfficeModal\').remove()" style="background:transparent;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:6px;cursor:pointer">✕</button>'
+      +     '</div>'
+      +     '<div style="overflow-x:auto"><table class="data-table" style="font-size:12.5px;width:100%"><thead><tr><th>Name</th><th>City</th><th>Lat</th><th>Lng</th><th>Radius (m)</th><th>State</th><th>Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+      +     '<div style="margin-top:14px;display:flex;justify-content:space-between"><button onclick="v16lAddOffice()" style="background:#6378ff;border:0;color:#fff;padding:9px 16px;border-radius:7px;font-size:12.5px;font-weight:700;cursor:pointer"><i class="fas fa-plus"></i> Add office</button><button onclick="document.getElementById(\'v16lOfficeModal\').remove()" style="background:transparent;border:1px solid var(--border);color:var(--text);padding:9px 16px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer">Close</button></div>'
+      +   '</div>'
+      + '</div>';
+    const tmp = document.createElement('div'); tmp.innerHTML = modal; document.body.appendChild(tmp.firstElementChild);
+  };
+  window.v16lSaveOffice = async function(id){
+    const u = currentUser || {};
+    const modal = document.getElementById('v16lOfficeModal'); if (!modal) return;
+    const inputs = modal.querySelectorAll('[data-id="'+id+'"]');
+    const payload = { id, level: u.level || 0 };
+    inputs.forEach(i => {
+      const f = i.getAttribute('data-of');
+      if (f === 'active') payload.active = i.checked;
+      else if (f === 'lat' || f === 'lng' || f === 'radius') payload[f] = parseFloat(i.value) || 0;
+      else payload[f] = i.value;
+    });
+    const r = await fetch('/api/v16l/offices', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const j = await r.json();
+    if (j.success) { if (typeof showToast==='function') showToast('Office saved', 'success'); window.V16L.offices = j.offices; }
+    else alert('Save failed: ' + (j.error||'unknown'));
+  };
+  window.v16lDeleteOffice = async function(id){
+    const u = currentUser || {};
+    if (!confirm('Delete this office?')) return;
+    const r = await fetch('/api/v16l/offices', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, op:'delete', level: u.level||0 }) });
+    const j = await r.json();
+    if (j.success) { document.getElementById('v16lOfficeModal').remove(); v16lOpenOfficeAdmin(); }
+    else alert('Delete failed: ' + (j.error||'unknown'));
+  };
+  window.v16lAddOffice = async function(){
+    const u = currentUser || {};
+    const name = prompt('Office name?', 'New Office'); if (!name) return;
+    const city = prompt('City?', '') || '';
+    const lat = parseFloat(prompt('Latitude?', '6.9271')) || 0;
+    const lng = parseFloat(prompt('Longitude?', '79.8612')) || 0;
+    const radius = parseInt(prompt('Radius (metres)?', '100'), 10) || 100;
+    const r = await fetch('/api/v16l/offices', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, city, lat, lng, radius, active:true, level: u.level||0 }) });
+    const j = await r.json();
+    if (j.success) { document.getElementById('v16lOfficeModal').remove(); v16lOpenOfficeAdmin(); }
+  };
+
+  // ====================================================================
+  // 7) CEO Live Attendance Board — accessible from side-nav for CEO
+  // ====================================================================
+  window.renderV16lCEOBoard = function renderV16lCEOBoard(){
+    return '<div id="v16lCeoPage" class="fade-in" style="max-width:1280px;margin:0 auto;padding:6px 4px 30px">'
+      + '<div style="background:linear-gradient(135deg,rgba(15,23,42,0.05),rgba(99,120,255,0.05));border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">'
+      +   '<div><div style="font-size:19px;font-weight:700;color:var(--text)">CEO · Live Attendance Board</div><div style="font-size:12.5px;color:var(--muted);margin-top:3px">Real-time GPS · check-ins · daily plans &amp; reports</div></div>'
+      +   '<div style="display:flex;gap:8px"><button onclick="v16lOpenOfficeAdmin()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-building"></i> Office Master</button><button onclick="v16lCeoLoad()" style="background:#6378ff;border:0;color:#fff;padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-sync"></i> Refresh</button></div>'
+      + '</div>'
+      + '<div id="v16lCeoCounts" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px"></div>'
+      + '<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px" id="v16lCeoGrid">'
+      +   '<div class="card" style="padding:0;overflow:hidden"><div style="padding:14px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:13.5px">Staff status</div><div id="v16lCeoTable"></div></div>'
+      +   '<div class="card" style="padding:0;overflow:hidden"><div style="padding:14px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:13.5px">Activity feed</div><div id="v16lCeoActivity" style="max-height:580px;overflow-y:auto"></div></div>'
+      + '</div>'
+      + '</div>';
+  };
+  window.v16lCeoInit = function(){ v16lCeoLoad(); if (window._v16lCeoHb) clearInterval(window._v16lCeoHb); window._v16lCeoHb = setInterval(v16lCeoLoad, 30000); };
+  window.v16lCeoLoad = async function(){
+    try {
+      const r = await fetch('/api/v16l/ceo-dashboard?day=' + window.V16L.day, { cache:'no-store' });
+      const j = await r.json();
+      if (!j.success) return;
+      const tiles = [
+        ['Checked in', j.counts.checkedIn, '#16a34a','fa-sign-in-alt'],
+        ['Checked out', j.counts.checkedOut, '#94a3b8','fa-sign-out-alt'],
+        ['Late', j.counts.late, '#f59e0b','fa-clock'],
+        ['Sick / Leave', j.counts.sick + j.counts.leave, '#dc2626','fa-user-minus'],
+        ['Office', j.counts.office, '#16a34a','fa-building'],
+        ['Remote', j.counts.remote, '#3b82f6','fa-house-laptop'],
+        ['Field', j.counts.field, '#7c3aed','fa-route'],
+        ['Plans filed', j.counts.plansToday, '#6378ff','fa-clipboard-check'],
+        ['Reports filed', j.counts.reportsToday, '#7c3aed','fa-file-pen']
+      ];
+      const cs = document.getElementById('v16lCeoCounts');
+      if (cs) cs.innerHTML = tiles.map(t => '<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid '+t[2]+';border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em"><i class="fas '+t[3]+'" style="margin-right:5px;color:'+t[2]+'"></i>'+t[0]+'</div><div style="font-size:22px;font-weight:800;color:var(--text);margin-top:3px">'+t[1]+'</div></div>').join('');
+
+      const tbody = (j.users||[]).sort((a,b) => b.ts - a.ts).map(u => {
+        const dotColor = u.kind === 'checkout' ? '#94a3b8' : (u.mode === 'Office' ? '#16a34a' : u.mode === 'Remote' ? '#3b82f6' : '#7c3aed');
+        const time = new Date(u.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+        const loc = u.address ? u.address.split(',').slice(0,2).join(', ') : '—';
+        const geo = u.officeMatch ? '<span style="color:#16a34a;font-size:10.5px;font-weight:700">✓ in radius</span>' : (u.distanceM != null ? '<span style="color:#dc2626;font-size:10.5px;font-weight:700">⚠ '+u.distanceM+'m out</span>' : '');
+        return '<tr style="border-bottom:1px solid var(--border)">'
+          + '<td style="padding:9px 14px"><div style="display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+dotColor+'"></span><div><div style="font-weight:600">'+ESC(u.name||u.user)+'</div><div style="font-size:10.5px;color:var(--muted)">'+ESC(u.user)+'</div></div></div></td>'
+          + '<td style="padding:9px 14px"><span style="font-size:11px;font-weight:700;color:'+dotColor+';text-transform:uppercase">'+(u.kind==='checkout'?'Checked out':u.mode)+'</span><div style="font-size:10.5px;color:var(--muted);margin-top:2px">'+ESC(u.status||'')+'</div></td>'
+          + '<td style="padding:9px 14px;font-size:12px">'+ESC(loc)+'<div style="font-size:10px;color:var(--muted);margin-top:2px">'+geo+'</div></td>'
+          + '<td style="padding:9px 14px;font-size:11.5px;font-family:DM Mono,monospace;text-align:right">'+time+'</td>'
+          + '</tr>';
+      }).join('');
+      const tt = document.getElementById('v16lCeoTable');
+      if (tt) tt.innerHTML = (j.users && j.users.length)
+        ? '<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead style="background:var(--surface2)"><tr><th style="text-align:left;padding:9px 14px;font-weight:700;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">Staff</th><th style="text-align:left;padding:9px 14px;font-weight:700;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">Mode</th><th style="text-align:left;padding:9px 14px;font-weight:700;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">Location</th><th style="text-align:right;padding:9px 14px;font-weight:700;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">Last event</th></tr></thead><tbody>'+tbody+'</tbody></table>'
+        : '<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px">No staff have checked in yet today.</div>';
+
+      const af = document.getElementById('v16lCeoActivity');
+      if (af) {
+        if (!j.activity || !j.activity.length) {
+          af.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px">No activity yet today.</div>';
+        } else {
+          af.innerHTML = j.activity.map(a => {
+            const t = new Date(a.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+            return '<div style="padding:10px 16px;border-bottom:1px solid var(--border);font-size:12.5px"><div style="display:flex;justify-content:space-between;gap:10px"><strong>'+ESC(a.name||a.user)+'</strong><span style="font-size:10.5px;color:var(--muted);font-family:DM Mono,monospace">'+t+'</span></div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">'+ESC(a.text||'')+'</div></div>';
+          }).join('');
+        }
+      }
+    } catch(e){}
+  };
+
+  // Route ceoboard
+  if (typeof window.nav === 'function' && !window.__v16lCeoNav) {
+    const __origNavCeo = window.nav;
+    window.nav = function(page){
+      if (page === 'v16lceo') {
+        try {
+          const mc = document.getElementById('mainContent');
+          if (mc) {
+            mc.innerHTML = '<div class="page">' + renderV16lCEOBoard() + '</div>';
+            setTimeout(v16lCeoInit, 60);
+            return;
+          }
+        } catch(e){}
+      }
+      return __origNavCeo.apply(this, arguments);
+    };
+    window.__v16lCeoNav = true;
+  }
+
+  // Add CEO Board entry to side-nav (CEO only)
+  function v16lInjectCeoNavEntry(){
+    try {
+      const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+      if ((u.level || 0) < 100) return;
+      const sb = document.querySelector('.sidebar');
+      if (!sb) return;
+      if (sb.querySelector('[data-nav="v16lceo"]')) return;
+      // Find the Staff Reports button (added by v16j) and insert after it,
+      // else insert at the end of the first nav section.
+      const target = sb.querySelector('[data-nav="staffreports"]') || sb.querySelector('.nav-item');
+      if (!target) return;
+      const li = document.createElement('div');
+      li.className = 'nav-item';
+      li.setAttribute('data-nav','v16lceo');
+      li.innerHTML = '<i class="fas fa-tower-broadcast" style="width:18px"></i><span>Live Attendance</span>';
+      li.style.cursor = 'pointer';
+      li.onclick = () => nav('v16lceo');
+      target.parentNode.insertBefore(li, target.nextSibling);
+    } catch(e){}
+  }
+  setTimeout(v16lInjectCeoNavEntry, 1200);
+  setInterval(v16lInjectCeoNavEntry, 8000);
+
+  // ====================================================================
+  // 8) Wire EOD/check-out buttons to open the v16l Daily Report modal
+  // ====================================================================
+  function v16lInterceptEodButtons(){
+    try {
+      document.querySelectorAll('button, a').forEach(el => {
+        const txt = (el.textContent || '').toLowerCase().trim();
+        if (/file eod|file eod report|submit eod|check out|check-out/i.test(txt) && !el.getAttribute('data-v16l-eod')) {
+          el.setAttribute('data-v16l-eod', '1');
+          const __origOnclick = el.onclick;
+          el.onclick = function(ev){
+            // For now, ALWAYS open the v16l Daily Report modal — that's the
+            // canonical EOD/check-out flow per Issue 07.
+            ev && ev.preventDefault && ev.preventDefault();
+            ev && ev.stopPropagation && ev.stopPropagation();
+            v16lOpenReport();
+            return false;
+          };
+        }
+      });
+    } catch(e){}
+  }
+  setTimeout(v16lInterceptEodButtons, 1500);
+  setInterval(v16lInterceptEodButtons, 6000);
+
+  // ====================================================================
+  // 9) Boot once — apply dashboard redesign on first load
+  // ====================================================================
+  setTimeout(v16lRedesignDashboard, 2000);
+
+  console.log('[v16l] Unified attendance pipeline + GPS + geofence + daily plan/report + Office Master + CEO Live Board + dashboard redesign loaded.');
+})();
 </script>
 <script src="/static/agent-portal.js"></script>
 <script src="/static/media-suite.js"></script>
