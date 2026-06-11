@@ -25680,6 +25680,287 @@ else _tbBoot();
   setTimeout(v16lRedesignDashboard, 2000);
 
   console.log('[v16l] Unified attendance pipeline + GPS + geofence + daily plan/report + Office Master + CEO Live Board + dashboard redesign loaded.');
+
+  // ============================================================================
+  // v16m — Universal Role-Tabbed Dashboard for ALL staff
+  //
+  // Problem: Calm dashboard was sometimes painting blank for non-Thasbiha
+  // staff (Razan's screenshot showed completely empty main content), and the
+  // user wants every staff to see the same Thasbiha-style portal with the
+  // Attendance / Daily Plan / Daily Report / Workload status row at the top
+  // of their own role-specific overview.
+  //
+  // Fix: Wrap renderDashboard so EVERY staff routes through the role-tabbed
+  // portal (renderStaffRoleDashboard). Prepend a universal v16m status row
+  // to every role overview tab, sourced LIVE from the v16l KV endpoints
+  // (so it reflects real attendance/plan/report state, not Thasbiha-only
+  // THB_DASH state).
+  // ============================================================================
+
+  // ---- live state cache (per-day, fetched from v16l endpoints) ----
+  window.V16M = window.V16M || { day:null, att:null, plan:null, report:null, lastFetch:0, fetching:false };
+
+  function v16mTodayKey(){
+    try {
+      const fmt = new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Colombo', year:'numeric', month:'2-digit', day:'2-digit' });
+      return fmt.format(new Date());
+    } catch(e){
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+  }
+
+  function v16mUserKey(){
+    const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+    return u.username || u.user || (u.name||'').toLowerCase().replace(/\s+/g,'.');
+  }
+
+  async function v16mLoadLiveState(force){
+    const now = Date.now();
+    if (!force && window.V16M.lastFetch && (now - window.V16M.lastFetch) < 8000) return window.V16M; // soft cache 8s
+    if (window.V16M.fetching) return window.V16M;
+    window.V16M.fetching = true;
+    const day = v16mTodayKey();
+    const user = v16mUserKey();
+    window.V16M.day = day;
+    try {
+      const [aR, pR, rR] = await Promise.all([
+        fetch('/api/v16l/attendance?day=' + encodeURIComponent(day) + '&user=' + encodeURIComponent(user), { cache:'no-store' }).then(r=>r.json()).catch(()=>null),
+        fetch('/api/v16l/daily-plan?day=' + encodeURIComponent(day) + '&user=' + encodeURIComponent(user), { cache:'no-store' }).then(r=>r.json()).catch(()=>null),
+        fetch('/api/v16l/daily-report?day=' + encodeURIComponent(day) + '&user=' + encodeURIComponent(user), { cache:'no-store' }).then(r=>r.json()).catch(()=>null)
+      ]);
+      window.V16M.att = (aR && aR.success) ? (aR.entries || aR.items || []) : [];
+      // backend returns { items:[…] } — keep the most recent entry for that user/day
+      const pItems = (pR && pR.success) ? (pR.items || []) : [];
+      window.V16M.plan = pItems.length ? pItems[pItems.length - 1] : null;
+      const rItems = (rR && rR.success) ? (rR.items || []) : [];
+      window.V16M.report = rItems.length ? rItems[rItems.length - 1] : null;
+      window.V16M.lastFetch = now;
+    } catch(e){
+      // leave previous values
+    }
+    window.V16M.fetching = false;
+    return window.V16M;
+  }
+
+  // ---- status tile helpers (role-color aware) ----
+  function v16mStatusTile(opts){
+    const cta = opts.cta
+      ? '<button onclick="' + opts.cta.onclick + '" style="margin-top:10px;background:' + opts.color + ';color:#fff;border:0;padding:7px 12px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;width:100%">' + ESC(opts.cta.label) + '</button>'
+      : '';
+    return ''
+      + '<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ' + opts.color + ';border-radius:12px;padding:14px 16px">'
+      +   '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'
+      +     '<div style="flex:1;min-width:0">'
+      +       '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">' + ESC(opts.title) + '</div>'
+      +       '<div style="font-size:17px;font-weight:700;color:var(--text);margin-top:4px">' + ESC(opts.label) + '</div>'
+      +       '<div style="font-size:11.5px;color:var(--muted);margin-top:3px">' + ESC(opts.sub || '') + '</div>'
+      +     '</div>'
+      +     '<div style="width:36px;height:36px;border-radius:50%;background:' + opts.color + '20;color:' + opts.color + ';display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0"><i class="fas ' + opts.icon + '"></i></div>'
+      +   '</div>'
+      +   cta
+      + '</div>';
+  }
+
+  function v16mAttStatus(){
+    const items = (window.V16M.att || []).filter(e => e && e.kind === 'checkin');
+    const checkout = (window.V16M.att || []).find(e => e && e.kind === 'checkout');
+    // Fallback to local attendanceState
+    const local = (typeof attendanceState === 'object' && attendanceState) ? attendanceState : null;
+    if (items.length) {
+      const last = items[items.length-1];
+      const t = new Date(last.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      if (checkout) {
+        const ot = new Date(checkout.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+        return { label:'Checked out', sub:'In ' + t + ' · Out ' + ot, color:'#7c3aed', icon:'fa-circle-check' };
+      }
+      const tsHr = new Date(last.ts).getHours();
+      const tsMn = new Date(last.ts).getMinutes();
+      const late = tsHr > 9 || (tsHr === 9 && tsMn > 15);
+      const statusLabel = last.status === 'Leave' ? 'On Leave' : (last.status === 'Sick' ? 'Sick' : (late ? 'Present (late)' : 'Present'));
+      const color = last.status === 'Leave' ? '#94a3b8' : (last.status === 'Sick' ? '#dc2626' : (late ? '#f59e0b' : '#10b981'));
+      const icon  = last.status === 'Leave' ? 'fa-umbrella-beach' : (last.status === 'Sick' ? 'fa-thermometer' : (late ? 'fa-clock' : 'fa-circle-check'));
+      return { label:statusLabel, sub:'Checked in at ' + t + ' · ' + (last.mode||'Office'), color, icon };
+    }
+    // local fallback
+    if (local && local.checkinDone) {
+      const t = local.checkinSubmittedAt || '—';
+      if (local.eodDone) return { label:'Checked out', sub:'In ' + t + ' · Out ' + (local.eodSubmittedAt||'—'), color:'#7c3aed', icon:'fa-circle-check' };
+      const hh = parseInt(String(t).split(':')[0] || '0', 10);
+      const mm = parseInt(String(t).split(':')[1] || '0', 10);
+      const late = hh > 9 || (hh === 9 && mm > 15);
+      return { label:late?'Present (late)':'Present', sub:'Checked in at ' + t + ' · ' + (local.mode||'Office'), color:late?'#f59e0b':'#10b981', icon:late?'fa-clock':'fa-circle-check' };
+    }
+    return { label:'Not checked in', sub:'Click check-in to start your day', color:'#dc2626', icon:'fa-circle-xmark' };
+  }
+
+  function v16mPlanStatus(){
+    const p = window.V16M.plan;
+    if (!p) return { label:'Not submitted', sub:'Plan required before noon', color:'#dc2626', icon:'fa-clipboard-question' };
+    const at = p.ts ? new Date(p.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—';
+    return { label:'Submitted', sub:'Plan filed at ' + at, color:'#10b981', icon:'fa-clipboard-check' };
+  }
+
+  function v16mReportStatus(){
+    const r = window.V16M.report;
+    if (!r) return { label:'Pending', sub:'Required before logout', color:'#f59e0b', icon:'fa-file-pen' };
+    const at = r.ts ? new Date(r.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—';
+    return { label:'Submitted', sub:'Report filed at ' + at, color:'#10b981', icon:'fa-file-circle-check' };
+  }
+
+  function v16mWorkloadStatus(){
+    const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+    let pendingTasks = 0;
+    try {
+      // pending tasks from local state
+      if (typeof attendanceState === 'object' && attendanceState && Array.isArray(attendanceState.tasks)) {
+        pendingTasks = attendanceState.tasks.filter(t => t && !t.done).length;
+      }
+    } catch(e){}
+    let leadsCount = 0;
+    try {
+      if (typeof LEADS_DATA !== 'undefined' && Array.isArray(LEADS_DATA) && u.name) {
+        const firstName = (u.name||'').split(' ')[0];
+        leadsCount = LEADS_DATA.filter(l =>
+          l && l.assigned && (
+            l.assigned === firstName ||
+            l.assigned === u.name ||
+            (typeof l.assigned === 'string' && l.assigned.toLowerCase().indexOf(firstName.toLowerCase()) >= 0)
+          ) && (l.status === 'visa' || l.status === 'cas' || l.status === 'applied' || l.status === 'offer')
+        ).length;
+      }
+    } catch(e){}
+    const score = pendingTasks * 1.0 + leadsCount * 0.3;
+    if (score >= 18) return { label:'🔴 Overloaded', sub:'Pending: ' + pendingTasks + ' · active: ' + leadsCount, color:'#dc2626', icon:'fa-gauge-high' };
+    if (score >= 9)  return { label:'🟡 Heavy',      sub:'Pending: ' + pendingTasks + ' · active: ' + leadsCount, color:'#f59e0b', icon:'fa-gauge-high' };
+    return                  { label:'🟢 Normal',     sub:'Pending: ' + pendingTasks + ' · active: ' + leadsCount, color:'#10b981', icon:'fa-gauge-high' };
+  }
+
+  // ---- universal status row HTML ----
+  function v16mRenderStatusRow(){
+    const att = v16mAttStatus();
+    const plan = v16mPlanStatus();
+    const rep  = v16mReportStatus();
+    const wl   = v16mWorkloadStatus();
+    const checkedIn = (window.V16M.att || []).some(e => e && e.kind === 'checkin') || (typeof attendanceState === 'object' && attendanceState && attendanceState.checkinDone);
+    const checkedOut = (window.V16M.att || []).some(e => e && e.kind === 'checkout') || (typeof attendanceState === 'object' && attendanceState && attendanceState.eodDone);
+    const attCta = checkedIn ? null : { label:'Open Attendance →', onclick:"nav('v16latt')" };
+    const planCta = (plan.label === 'Submitted')
+      ? { label:'Edit plan', onclick:"nav('v16lplan')" }
+      : { label:'Fill daily plan', onclick:"nav('v16lplan')" };
+    const repCta  = checkedOut
+      ? null
+      : (rep.label === 'Submitted')
+          ? { label:'Edit report', onclick:"typeof v16lOpenReport==='function'&&v16lOpenReport()" }
+          : { label:'Fill daily report', onclick:"typeof v16lOpenReport==='function'&&v16lOpenReport()" };
+    return ''
+      + '<div id="v16mStatusRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px">'
+      + v16mStatusTile({ title:'Attendance', label:att.label, sub:att.sub, color:att.color, icon:att.icon, cta:attCta })
+      + v16mStatusTile({ title:'Daily Plan', label:plan.label, sub:plan.sub, color:plan.color, icon:plan.icon, cta:planCta })
+      + v16mStatusTile({ title:'Daily Report', label:rep.label, sub:rep.sub, color:rep.color, icon:rep.icon, cta:repCta })
+      + v16mStatusTile({ title:'Workload', label:wl.label, sub:wl.sub, color:wl.color, icon:wl.icon })
+      + '</div>';
+  }
+
+  // ---- inject status row into role overview after render ----
+  function v16mInjectStatusRow(){
+    // Only on the Overview tab of the role-tabbed dashboard
+    if (typeof roleDashTab !== 'undefined' && roleDashTab && roleDashTab !== 'overview') return;
+    const mc = document.getElementById('mainContent');
+    if (!mc) return;
+    // Skip if already present
+    if (mc.querySelector('#v16mStatusRow')) return;
+    // Find the role-banner (the colored gradient header). It's the first child .page > div with linear-gradient style.
+    const page = mc.querySelector('.page'); if (!page) return;
+    // Skip Thasbiha — she already has her own v16h status row (#thbStatusRow) so don't double up
+    if (page.querySelector('#thbStatusRow')) return;
+    // Find the tab bar (it has border-bottom:2px) — insert AFTER it
+    const children = Array.from(page.children);
+    let insertAfter = null;
+    for (const c of children) {
+      // Looking for the tab-bar div. Heuristic: contains "Overview" text and a border-bottom style.
+      if (c.tagName === 'DIV' && c.style && (c.style.borderBottom || (c.getAttribute('style')||'').indexOf('border-bottom') >= 0) && c.textContent.indexOf('Overview') >= 0) {
+        insertAfter = c;
+      }
+    }
+    const wrap = document.createElement('div');
+    wrap.innerHTML = v16mRenderStatusRow();
+    const row = wrap.firstElementChild;
+    if (insertAfter && insertAfter.nextSibling) {
+      page.insertBefore(row, insertAfter.nextSibling);
+    } else if (insertAfter) {
+      page.appendChild(row);
+    } else {
+      page.insertBefore(row, page.firstChild);
+    }
+  }
+
+  async function v16mRefreshAndInject(){
+    await v16mLoadLiveState(false);
+    v16mInjectStatusRow();
+  }
+
+  // ---- route dashboard for every staff through the role-tabbed portal ----
+  // (Calm wrapper was sometimes producing blank output for Razan — bypass it
+  // by overriding the inner _renderLegacyDashboard *and* renderCalmDashboard.)
+  if (typeof window.renderDashboard === 'function' && !window.__v16mDashWrapped) {
+    window.__v16mDashWrapped = true;
+    const __origRender = window.renderDashboard;
+    window.renderDashboard = function v16mRenderDashboard(){
+      try {
+        // Always route to the role-tabbed portal. Each user has their own
+        // ROLE_TABS config + role-specific Overview renderer.
+        if (typeof renderStaffRoleDashboard === 'function') {
+          // Schedule status row injection + live data fetch right after paint.
+          setTimeout(() => { v16mRefreshAndInject(); }, 50);
+          // 30s heartbeat to keep status fresh while user lingers on overview
+          if (!window.__v16mHb) {
+            window.__v16mHb = setInterval(() => {
+              const mc = document.getElementById('mainContent');
+              if (!mc || !mc.querySelector('.page')) return;
+              // Only refresh while on dashboard
+              if (window.currentPage !== 'dashboard') return;
+              v16mRefreshAndInject();
+            }, 30000);
+          }
+          return renderStaffRoleDashboard();
+        }
+      } catch(e){
+        console.warn('[v16m] role dashboard failed, falling back to original', e);
+      }
+      return __origRender.apply(this, arguments);
+    };
+  }
+
+  // Re-inject the status row when the user clicks "Overview" tab inside the
+  // role-tabbed dashboard. switchRoleTab() re-renders mainContent, so we hook
+  // it post-hoc with a MutationObserver-lite via setTimeout retry.
+  if (typeof window.switchRoleTab === 'function' && !window.__v16mTabWrapped) {
+    window.__v16mTabWrapped = true;
+    const __origSwitch = window.switchRoleTab;
+    window.switchRoleTab = function(tabId){
+      const r = __origSwitch.apply(this, arguments);
+      if (tabId === 'overview' || tabId === 'attendance') {
+        setTimeout(v16mRefreshAndInject, 60);
+      }
+      // Issue 01: when user clicks "My Attendance" tab inside their portal,
+      // we want to land them on the unified v16l attendance page (real GPS),
+      // not the legacy inline tab. This honors the user's "ONE workflow" rule.
+      if (tabId === 'attendance' && typeof nav === 'function') {
+        setTimeout(() => { try { nav('v16latt'); } catch(e){} }, 80);
+      }
+      return r;
+    };
+  }
+
+  // First boot — if we land directly on dashboard, prime the row.
+  setTimeout(() => {
+    if (window.currentPage === 'dashboard' || !window.currentPage) {
+      v16mRefreshAndInject();
+    }
+  }, 1500);
+
+  console.log('[v16m] Universal role-tabbed dashboard + universal status row (Attendance/Plan/Report/Workload) wired for ALL staff. v16l attendance route hooked into role-tab My Attendance.');
 })();
 </script>
 <script src="/static/agent-portal.js"></script>
