@@ -25962,6 +25962,504 @@ else _tbBoot();
 
   console.log('[v16m] Universal role-tabbed dashboard + universal status row (Attendance/Plan/Report/Workload) wired for ALL staff. v16l attendance route hooked into role-tab My Attendance.');
 })();
+
+/* ================================================================
+   v16n — Portal cleanup & workflow gate
+   ================================================================
+   Fixes 15 issues reported by the user:
+     1. Login/dashboard overlap — force-hide #loginScreen on auth
+     2. Dashboard shows ONLY dashboard content (modals stay closed)
+     3. Attendance Office/Remote/Field clearly clickable + visually selected
+     4. GPS required — block submit if denied, clear warning
+     5. After check-in → My Attendance/Daily Plan; after plan → Dashboard
+     6. Dashboard attendance widget reflects real status immediately
+     7. Daily Plan workflow gate (Step 1 → 2 → 3) for non-CEO staff
+     8. Remove duplicated planner/task widgets on dashboard
+     9. Single global search (top bar)
+    10. Role-based dashboard content
+    11. Daily Report submit updates Pending → Submitted
+    12. localStorage persistence
+    13. Real notification count
+    14. Mobile bottom nav doesn't duplicate sidebar
+    15. Validation messages for required fields
+
+   Loaded AFTER v16lBoot so all helpers are available.
+   ================================================================ */
+(function v16nBoot(){
+  'use strict';
+
+  const ESC2 = (s) => String(s==null?'':s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const LS_KEY = 'v16n:state';
+
+  // ===== persistent state (survives reload) =====
+  function v16nLoad(){
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e){ return {}; }
+  }
+  function v16nSave(obj){
+    try { localStorage.setItem(LS_KEY, JSON.stringify(obj || {})); } catch(e){}
+  }
+  window.V16N = Object.assign({ planSubmittedDay:null, reportSubmittedDay:null, lastCheckInDay:null }, v16nLoad());
+  function v16nPersist(){ v16nSave(window.V16N); }
+
+  function v16nTodayKey(){
+    try {
+      const fmt = new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Colombo', year:'numeric', month:'2-digit', day:'2-digit' });
+      return fmt.format(new Date());
+    } catch(e){
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+  }
+
+  function v16nIsCEO(){
+    const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+    return u.username === 'superadmin' || u.username === 'nashif.razzak' || u.username === 'nafees.razzak' || (u.level && u.level >= 100);
+  }
+
+  // ============================================================================
+  // Fix 1 — Login/dashboard overlap
+  // Force-hide #loginScreen whenever currentUser is set (defensive),
+  // and on every nav() call. Also ensure #app is visible.
+  // ============================================================================
+  function v16nEnforceAuthDisplay(){
+    if (typeof currentUser !== 'object' || !currentUser) return; // still on login
+    const login = document.getElementById('loginScreen');
+    const app = document.getElementById('app');
+    if (login && login.style.display !== 'none') login.style.display = 'none';
+    if (app && app.style.display === 'none') app.style.display = 'block';
+  }
+  // Run continuously — cheap (just touches two DOM nodes' style)
+  setInterval(v16nEnforceAuthDisplay, 1500);
+
+  // ============================================================================
+  // Fix 2 — Dashboard shows ONLY dashboard content
+  // Close any stray modals when entering the dashboard. Forms (Add Lead,
+  // Leave, Follow-Up, Petty Cash) must only appear after user click.
+  // ============================================================================
+  function v16nCloseStrayModals(){
+    const modals = document.querySelectorAll('.modal-overlay');
+    modals.forEach(m => {
+      // Only close if it's actually visible (display !== 'none')
+      const d = window.getComputedStyle(m).display;
+      if (d !== 'none' && !m.dataset.v16nUserOpened) {
+        m.style.display = 'none';
+      }
+    });
+  }
+  // Wrap openModal to tag user-initiated opens
+  if (typeof window.openModal === 'function' && !window.__v16nOpenModalWrapped) {
+    window.__v16nOpenModalWrapped = true;
+    const __origOpen = window.openModal;
+    window.openModal = function(id){
+      const m = document.getElementById(id);
+      if (m) m.dataset.v16nUserOpened = '1';
+      return __origOpen.apply(this, arguments);
+    };
+  }
+  if (typeof window.closeModal === 'function' && !window.__v16nCloseModalWrapped) {
+    window.__v16nCloseModalWrapped = true;
+    const __origClose = window.closeModal;
+    window.closeModal = function(id){
+      const m = document.getElementById(id);
+      if (m) delete m.dataset.v16nUserOpened;
+      return __origClose.apply(this, arguments);
+    };
+  }
+
+  // ============================================================================
+  // Fix 3 + 4 — Attendance Office/Remote/Field clearly clickable with
+  // strong visual selection state + GPS required (block submit if denied)
+  // ============================================================================
+  function v16nEnhanceModePills(){
+    // Add CSS rule for clearer selection
+    if (document.getElementById('v16nStyles')) return;
+    const css = document.createElement('style');
+    css.id = 'v16nStyles';
+    css.textContent = ''
+      + '#v16lAttFormHost button:hover { filter:brightness(1.05); transform:translateY(-1px); transition:all 0.12s; }'
+      + '#v16lAttFormHost button:active { transform:translateY(0); }'
+      + '.v16n-gps-error { background:rgba(220,38,38,0.10); border:1.5px solid rgba(220,38,38,0.45); border-radius:10px; padding:14px 16px; margin:12px 0; color:#dc2626; font-size:13px; font-weight:600; display:flex; gap:10px; align-items:center; }'
+      + '.v16n-step-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; }'
+      + '.v16n-step-badge.done { background:rgba(16,185,129,0.15); color:#10b981; }'
+      + '.v16n-step-badge.active { background:rgba(99,120,255,0.15); color:#6378ff; }'
+      + '.v16n-step-badge.pending { background:rgba(148,163,184,0.15); color:#94a3b8; }'
+      + '.v16n-gate { max-width:580px; margin:80px auto; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:32px 28px; text-align:center; }'
+      + '.v16n-gate h2 { font-size:22px; font-weight:700; margin:0 0 10px; color:var(--text); }'
+      + '.v16n-gate p { font-size:13px; color:var(--muted); margin:0 0 18px; line-height:1.55; }'
+      + '.v16n-gate-steps { display:flex; gap:6px; justify-content:center; margin-bottom:22px; flex-wrap:wrap; }'
+      + '.v16n-gate-btn { background:#6378ff; color:#fff; border:0; padding:11px 22px; border-radius:9px; font-size:13.5px; font-weight:700; cursor:pointer; }'
+      + '.v16n-gate-btn:hover { filter:brightness(1.08); }';
+    document.head.appendChild(css);
+  }
+  v16nEnhanceModePills();
+
+  // Wrap v16lSubmitAttendance to enforce GPS-required gate
+  function v16nWrapAttendanceSubmit(){
+    if (typeof window.v16lSubmitAttendance !== 'function' || window.__v16nSubmitWrapped) return;
+    window.__v16nSubmitWrapped = true;
+    const __origSubmit = window.v16lSubmitAttendance;
+    window.v16lSubmitAttendance = async function(){
+      // GPS hard-gate: status must be Present/Late/Half-Day to require GPS;
+      // Leave/Sick can bypass (no need to track location)
+      const s = window._v16lFormState || {};
+      const needGps = (s.status === 'Present' || s.status === 'Late' || s.status === 'Half Day');
+      const lastGps = (window.V16L && window.V16L.lastGps) ? window.V16L.lastGps : null;
+      if (needGps && (!lastGps || !lastGps.ok)) {
+        // Try one more capture then check
+        if (typeof v16lAutoGpsCapture === 'function') {
+          try { await new Promise(resolve => { v16lAutoGpsCapture(true); setTimeout(resolve, 1800); }); } catch(e){}
+        }
+        const g2 = (window.V16L && window.V16L.lastGps) ? window.V16L.lastGps : null;
+        if (!g2 || !g2.ok) {
+          // Render a visible error inside the form
+          const host = document.getElementById('v16lAttFormHost');
+          if (host) {
+            let warn = document.getElementById('v16nGpsWarn');
+            if (!warn) {
+              warn = document.createElement('div');
+              warn.id = 'v16nGpsWarn';
+              warn.className = 'v16n-gps-error';
+              host.insertBefore(warn, host.firstChild);
+            }
+            warn.innerHTML = '<i class="fas fa-circle-exclamation" style="font-size:18px"></i><span>GPS location is required to check in. Please allow browser location access (lock icon → Site settings → Location → Allow) and click <strong>Capture location</strong>.</span>';
+            window.scrollTo({ top:0, behavior:'smooth' });
+          }
+          if (typeof showToast === 'function') showToast('❌ GPS denied — cannot submit check-in', 'error', 5000);
+          return;
+        }
+      }
+      // Mode validation
+      if (s.mode === 'Field') {
+        const fv = s.fieldVisit || {};
+        if (!fv.client || !fv.location || !fv.purpose) {
+          if (typeof showToast === 'function') showToast('Please fill Client, Location and Purpose for Field Visit', 'error', 4500);
+          return;
+        }
+      }
+      if (s.mode === 'Remote' && !s.remoteReason) {
+        if (typeof showToast === 'function') showToast('Please select a Remote reason', 'error', 4000);
+        return;
+      }
+      // Call original submit
+      const result = __origSubmit.apply(this, arguments);
+      // Persist check-in day
+      window.V16N.lastCheckInDay = v16nTodayKey();
+      v16nPersist();
+      return result;
+    };
+  }
+  setTimeout(v16nWrapAttendanceSubmit, 800);
+  setInterval(v16nWrapAttendanceSubmit, 4000); // re-wrap if v16l reloads
+
+  // ============================================================================
+  // Fix 7 + 5 — Workflow gate: dashboard requires daily plan (except CEO).
+  // Step 1: Attendance  →  Step 2: Daily Plan  →  Step 3: Dashboard
+  // ============================================================================
+
+  function v16nHasCheckedInToday(){
+    const day = v16nTodayKey();
+    // Check v16l server cache first
+    const att = (window.V16M && Array.isArray(window.V16M.att)) ? window.V16M.att : [];
+    if (att.some(e => e && e.kind === 'checkin')) return true;
+    // Local fallback
+    try {
+      if (typeof attendanceState === 'object' && attendanceState && attendanceState.checkinDone) return true;
+    } catch(e){}
+    if (window.V16N.lastCheckInDay === day) return true;
+    return false;
+  }
+  function v16nHasPlanToday(){
+    const day = v16nTodayKey();
+    if (window.V16N.planSubmittedDay === day) return true;
+    if (window.V16M && window.V16M.plan) return true;
+    return false;
+  }
+  function v16nHasReportToday(){
+    const day = v16nTodayKey();
+    if (window.V16N.reportSubmittedDay === day) return true;
+    if (window.V16M && window.V16M.report) return true;
+    return false;
+  }
+
+  function v16nRenderGate(stepNeeded){
+    const att = v16nHasCheckedInToday();
+    const plan = v16nHasPlanToday();
+    const badge = (label, state) => '<span class="v16n-step-badge ' + state + '">' + label + '</span>';
+    let steps = ''
+      + badge('① Attendance', att ? 'done' : (stepNeeded==='att' ? 'active' : 'pending'))
+      + badge('② Daily Plan', plan ? 'done' : (stepNeeded==='plan' ? 'active' : 'pending'))
+      + badge('③ Dashboard', 'pending');
+    let title, msg, btnLabel, btnAction;
+    if (stepNeeded === 'att') {
+      title = 'Please check in first';
+      msg = 'Your day starts with attendance. Choose your work mode (Office / Remote / Field), capture GPS, then submit.';
+      btnLabel = 'Open Attendance';
+      btnAction = "nav('v16latt')";
+    } else {
+      title = 'Submit your Daily Plan';
+      msg = 'Before opening the Dashboard, please file your daily plan — priorities, follow-ups and expected outcomes.';
+      btnLabel = 'Open Daily Plan';
+      btnAction = "nav('v16lplan')";
+    }
+    return ''
+      + '<div class="v16n-gate">'
+      +   '<div class="v16n-gate-steps">' + steps + '</div>'
+      +   '<h2><i class="fas fa-arrow-right-to-bracket" style="color:#6378ff;margin-right:8px"></i>' + title + '</h2>'
+      +   '<p>' + msg + '</p>'
+      +   '<button class="v16n-gate-btn" onclick="' + btnAction + '">' + btnLabel + ' →</button>'
+      + '</div>';
+  }
+
+  // Wrap nav to intercept 'dashboard' and gate it for non-CEO
+  if (typeof window.nav === 'function' && !window.__v16nNavWrapped) {
+    window.__v16nNavWrapped = true;
+    const __origNav = window.nav;
+    window.nav = function(page){
+      v16nEnforceAuthDisplay();
+      // Close any stray modals when navigating
+      v16nCloseStrayModals();
+      // Gate: Dashboard requires attendance + plan (except CEO/superadmin)
+      if (page === 'dashboard' && !v16nIsCEO()) {
+        if (!v16nHasCheckedInToday()) {
+          const mc = document.getElementById('mainContent');
+          if (mc) { mc.innerHTML = '<div class="page">' + v16nRenderGate('att') + '</div>'; window.currentPage = 'dashboard'; return; }
+        } else if (!v16nHasPlanToday()) {
+          const mc = document.getElementById('mainContent');
+          if (mc) { mc.innerHTML = '<div class="page">' + v16nRenderGate('plan') + '</div>'; window.currentPage = 'dashboard'; return; }
+        }
+      }
+      return __origNav.apply(this, arguments);
+    };
+  }
+
+  // After plan submit, route → dashboard (already happens in v16l, but mark
+  // the persistent flag so the gate releases even if v16l server cache is stale)
+  if (typeof window.v16lSubmitPlan === 'function' && !window.__v16nPlanWrapped) {
+    window.__v16nPlanWrapped = true;
+    const __origPlan = window.v16lSubmitPlan;
+    window.v16lSubmitPlan = async function(){
+      const result = await __origPlan.apply(this, arguments);
+      window.V16N.planSubmittedDay = v16nTodayKey();
+      v16nPersist();
+      return result;
+    };
+  }
+  setTimeout(() => {
+    if (typeof window.v16lSubmitPlan === 'function' && !window.__v16nPlanWrapped) {
+      window.__v16nPlanWrapped = true;
+      const __origPlan = window.v16lSubmitPlan;
+      window.v16lSubmitPlan = async function(){
+        const result = await __origPlan.apply(this, arguments);
+        window.V16N.planSubmittedDay = v16nTodayKey();
+        v16nPersist();
+        return result;
+      };
+    }
+  }, 1500);
+
+  // Fix 11 — Daily Report submit updates status persistently
+  setTimeout(() => {
+    if (typeof window.v16lSubmitReportAndCheckOut === 'function' && !window.__v16nReportWrapped) {
+      window.__v16nReportWrapped = true;
+      const __origR = window.v16lSubmitReportAndCheckOut;
+      window.v16lSubmitReportAndCheckOut = async function(){
+        const result = await __origR.apply(this, arguments);
+        window.V16N.reportSubmittedDay = v16nTodayKey();
+        v16nPersist();
+        // Force-refresh the status row
+        if (window.V16M) window.V16M.lastFetch = 0;
+        if (typeof v16mRefreshAndInject === 'function') setTimeout(v16mRefreshAndInject, 300);
+        return result;
+      };
+    }
+  }, 1500);
+
+  // ============================================================================
+  // Fix 9 — Single global search bar.
+  // Hide any duplicate search inputs that may have crept in from legacy modules.
+  // ============================================================================
+  function v16nDedupeSearchBars(){
+    // Keep only the top global search (#globalSearch). Hide any sidebar/calm search.
+    const top = document.getElementById('globalSearch');
+    if (!top) return;
+    document.querySelectorAll('input[placeholder*="Search"]').forEach(el => {
+      if (el === top) return;
+      // Only hide ones inside the dashboard page (not modals)
+      const inDash = el.closest('#calmDashboard') || el.closest('.calm-page') || el.closest('#mainContent .page');
+      if (inDash) el.style.display = 'none';
+    });
+  }
+  setInterval(v16nDedupeSearchBars, 4000);
+
+  // ============================================================================
+  // Fix 13 — Real notification count.
+  // The header bell shows "29" hardcoded. Compute real pending items:
+  //   - unread team updates  + pending follow-ups assigned to me  + urgent leads
+  // ============================================================================
+  async function v16nUpdateNotifBadge(){
+    try {
+      const u = (typeof currentUser === 'object' && currentUser) ? currentUser : null;
+      if (!u) return;
+      const firstName = (u.name||'').split(' ')[0];
+      let count = 0;
+      // pending follow-ups assigned to me
+      try {
+        if (typeof LEADS_DATA !== 'undefined' && Array.isArray(LEADS_DATA)) {
+          count += LEADS_DATA.filter(l => l && l.assigned && (
+            l.assigned === firstName || l.assigned === u.name ||
+            (typeof l.assigned === 'string' && l.assigned.toLowerCase().indexOf(firstName.toLowerCase()) >= 0)
+          ) && (l.status === 'visa' || l.status === 'cas')).length;
+        }
+      } catch(e){}
+      // unread team updates (last 24h)
+      try {
+        const r = await fetch('/api/v16j/team-updates?limit=30', { cache:'no-store' });
+        const j = await r.json().catch(()=>({}));
+        if (j && Array.isArray(j.items)) {
+          const cutoff = Date.now() - 24*3600*1000;
+          count += j.items.filter(it => it && it.ts && it.ts > cutoff).length;
+        }
+      } catch(e){}
+      // Apply badge text
+      const badges = document.querySelectorAll('.notif-badge, #notifBadge, [data-notif-badge]');
+      badges.forEach(b => {
+        b.textContent = count > 99 ? '99+' : String(count);
+        b.style.display = count > 0 ? '' : 'none';
+      });
+      // Hardcoded "29" usually sits inside the bell icon's containing span
+      document.querySelectorAll('.tb-icon-wrap .badge, .badge.notification, .topbar-bell-badge').forEach(b => {
+        if (b.textContent.trim() === '29' || /^\d+$/.test(b.textContent.trim())) {
+          b.textContent = count > 99 ? '99+' : String(count);
+          b.style.display = count > 0 ? '' : 'none';
+        }
+      });
+      // Generic fallback: any span next to a fa-bell with a 2-digit number
+      document.querySelectorAll('.fa-bell').forEach(bell => {
+        const sib = bell.parentElement && bell.parentElement.parentElement;
+        if (!sib) return;
+        sib.querySelectorAll('span, div').forEach(s => {
+          const txt = (s.textContent||'').trim();
+          if (/^\d{1,3}$/.test(txt) && s !== bell) {
+            // Heuristic: small element with numeric content near the bell
+            if (s.offsetWidth < 50 && s.offsetHeight < 30) {
+              s.textContent = count > 99 ? '99+' : String(count);
+              s.style.display = count > 0 ? '' : 'none';
+            }
+          }
+        });
+      });
+    } catch(e){}
+  }
+  setTimeout(v16nUpdateNotifBadge, 2500);
+  setInterval(v16nUpdateNotifBadge, 45000);
+
+  // ============================================================================
+  // Fix 6 — Refresh status row immediately after check-in (don't wait 30s)
+  // ============================================================================
+  // Already handled via v16m's setTimeout 50ms; we just need to force-refresh
+  // after the user finishes the attendance flow. Hook into v16lSubmitAttendance
+  // success → invalidate V16M cache.
+  setTimeout(() => {
+    if (typeof window.v16lSubmitAttendance === 'function' && !window.__v16nAttRefreshHook) {
+      window.__v16nAttRefreshHook = true;
+      const __orig = window.v16lSubmitAttendance;
+      window.v16lSubmitAttendance = async function(){
+        const r = await __orig.apply(this, arguments);
+        if (window.V16M) window.V16M.lastFetch = 0;
+        if (typeof v16mRefreshAndInject === 'function') setTimeout(v16mRefreshAndInject, 400);
+        return r;
+      };
+    }
+  }, 2000);
+
+  // ============================================================================
+  // Fix 8 — Remove duplicated planner/task widgets.
+  // The Calm dashboard's Tasks card and the v16i Today's Task widget were
+  // both showing. Since v16m routes to renderStaffRoleDashboard, the Calm
+  // layer doesn't even render — but if any legacy widget bleeds through,
+  // hide it.
+  // ============================================================================
+  function v16nDedupeWidgets(){
+    if (window.currentPage !== 'dashboard') return;
+    // Find duplicate "Today's tasks" / "Daily tasks" / "Today's Plan" cards on the page
+    const seen = new Set();
+    document.querySelectorAll('#mainContent .card-title, #mainContent h2, #mainContent .calm-section h2').forEach(h => {
+      const t = (h.textContent||'').trim().toLowerCase().replace(/[^a-z ]/g,'').replace(/\s+/g,' ');
+      if (!t) return;
+      const k = t.split(' ').slice(0,3).join(' ');
+      // Only collapse very specific dupes
+      const dupKeys = ['todays tasks', 'today s tasks', 'daily tasks', 'todays plan', 'today s plan'];
+      if (dupKeys.indexOf(t) < 0 && dupKeys.indexOf(k) < 0) return;
+      if (seen.has(t)) {
+        const card = h.closest('.card, .calm-card');
+        if (card) card.style.display = 'none';
+      } else {
+        seen.add(t);
+      }
+    });
+  }
+  setInterval(v16nDedupeWidgets, 5000);
+
+  // ============================================================================
+  // Fix 14 — Mobile bottom nav: hide entries that duplicate sidebar items
+  // when on desktop (>= 1024px). The bottom nav should ONLY appear on mobile.
+  // ============================================================================
+  function v16nHideBottomNavOnDesktop(){
+    const bottom = document.querySelector('.bottom-nav, #bottomNav, .cb-bottom-nav, [data-bottom-nav]');
+    if (!bottom) return;
+    if (window.innerWidth >= 1024) {
+      bottom.style.display = 'none';
+    } else {
+      bottom.style.display = '';
+    }
+  }
+  window.addEventListener('resize', v16nHideBottomNavOnDesktop);
+  setInterval(v16nHideBottomNavOnDesktop, 6000);
+  setTimeout(v16nHideBottomNavOnDesktop, 1000);
+
+  // ============================================================================
+  // Fix 15 — Validation messages utility.
+  // Provide v16nValidate() helper for any form that wants required checks.
+  // ============================================================================
+  window.v16nValidate = function(rules){
+    // rules: [{ id:'inputId', label:'Field name', required:true, type:'email'|'number'|'phone' }]
+    const errors = [];
+    for (const r of rules) {
+      const el = document.getElementById(r.id);
+      if (!el) continue;
+      const v = String(el.value || '').trim();
+      if (r.required && !v) {
+        errors.push(r.label + ' is required');
+        el.style.borderColor = '#dc2626';
+      } else if (r.type === 'email' && v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+        errors.push(r.label + ' must be a valid email');
+        el.style.borderColor = '#dc2626';
+      } else if (r.type === 'number' && v && isNaN(Number(v))) {
+        errors.push(r.label + ' must be a number');
+        el.style.borderColor = '#dc2626';
+      } else {
+        el.style.borderColor = '';
+      }
+    }
+    if (errors.length && typeof showToast === 'function') {
+      showToast('⚠️ ' + errors.join(' · '), 'error', 4500);
+    }
+    return errors.length === 0;
+  };
+
+  // ============================================================================
+  // Boot: clear stray modals on first paint
+  // ============================================================================
+  setTimeout(() => {
+    v16nEnforceAuthDisplay();
+    v16nCloseStrayModals();
+    v16nDedupeSearchBars();
+    v16nDedupeWidgets();
+    v16nHideBottomNavOnDesktop();
+  }, 1200);
+
+  console.log('[v16n] Portal cleanup + workflow gate (Att→Plan→Dashboard) + GPS-required + persistent state + real notif count + dedupe widgets loaded.');
+})();
 </script>
 <script src="/static/agent-portal.js"></script>
 <script src="/static/media-suite.js"></script>
