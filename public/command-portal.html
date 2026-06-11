@@ -25347,7 +25347,7 @@ else _tbBoot();
         try {
           const mc = document.getElementById('mainContent');
           if (mc) {
-            mc.innerHTML = '<div class="page">' + renderV16lAttendance() + '</div>';
+            mc.innerHTML = '<div class="page active" id="page-v16latt">' + renderV16lAttendance() + '</div>';
             setTimeout(v16lAttInit, 60);
             // Update nav highlight
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -25359,7 +25359,7 @@ else _tbBoot();
         try {
           const mc = document.getElementById('mainContent');
           if (mc) {
-            mc.innerHTML = '<div class="page">' + renderV16lPlan() + '</div>';
+            mc.innerHTML = '<div class="page active" id="page-v16lplan">' + renderV16lPlan() + '</div>';
             setTimeout(v16lPlanInit, 60);
             return;
           }
@@ -25614,7 +25614,7 @@ else _tbBoot();
         try {
           const mc = document.getElementById('mainContent');
           if (mc) {
-            mc.innerHTML = '<div class="page">' + renderV16lCEOBoard() + '</div>';
+            mc.innerHTML = '<div class="page active" id="page-v16lceo">' + renderV16lCEOBoard() + '</div>';
             setTimeout(v16lCeoInit, 60);
             return;
           }
@@ -26222,10 +26222,10 @@ else _tbBoot();
       if (page === 'dashboard' && !v16nIsCEO()) {
         if (!v16nHasCheckedInToday()) {
           const mc = document.getElementById('mainContent');
-          if (mc) { mc.innerHTML = '<div class="page">' + v16nRenderGate('att') + '</div>'; window.currentPage = 'dashboard'; return; }
+          if (mc) { mc.innerHTML = '<div class="page active" id="page-dashboard">' + v16nRenderGate('att') + '</div>'; window.currentPage = 'dashboard'; return; }
         } else if (!v16nHasPlanToday()) {
           const mc = document.getElementById('mainContent');
-          if (mc) { mc.innerHTML = '<div class="page">' + v16nRenderGate('plan') + '</div>'; window.currentPage = 'dashboard'; return; }
+          if (mc) { mc.innerHTML = '<div class="page active" id="page-dashboard">' + v16nRenderGate('plan') + '</div>'; window.currentPage = 'dashboard'; return; }
         }
       }
       return __origNav.apply(this, arguments);
