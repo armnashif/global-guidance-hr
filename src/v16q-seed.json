@@ -1,0 +1,6953 @@
+{
+"thasbiha_admissions": {
+"headers": [
+"Name",
+"Councillor Name",
+"Mobile Number",
+"Office Registration",
+"Documents Status",
+"IELTS",
+"Universities Applied",
+"Course&Intake",
+"Final Status",
+"Offers",
+"To Do",
+"To Apply",
+"Summary",
+"Update",
+"info for me"
+],
+"rows": [
+{
+"Name": "Azam",
+"Councillor Name": "Bevan",
+"Mobile Number": "",
+"Office Registration": "Yes (Bevan)",
+"Documents Status": "Pending",
+"IELTS": "No",
+"Universities Applied": "1. Sunderland University (SP)\n2. Northumbria University (London - CZ)\n3. Coventry University (CZ)\n4. Sunderland University (CZ)\n5. DMUIC (Ox)\n6. UWE (D)",
+"Course&Intake": "1. Business Management and Entrepreneurship BA (Hons) (Top -Up)\n2. BSc (Hons) Business Enterprise and Innovation Management (Top Up)\n3. International Business Top-up BA \n4. Business Management and Entrepreneurship BA (Hons) (Top -Up) May/25\n5. Business Y2 March/25\n6. BA(Hons) International Business Management (Top Up) Sep/25",
+"Final Status": "1. Not eligible for IELTS Waiver\n2. Not meeting entry req\n3. Offer\n4. Application sent for processing \n5. Application Rejected\n6. Application sent for processing ",
+"Offers": "3. CO",
+"To Do": "5. SOP pending from Student",
+"To Apply": "",
+"Summary": "3. Defer to Sep requested on 29.07.25 to process with Zakwana",
+"Update": "",
+"info for me": "",
+"_row": 2
+},
+{
+"Name": "Akeel Hussain",
+"Councillor Name": "Ashfaq",
+"Mobile Number": "",
+"Office Registration": "Yes (Ashfaq)",
+"Documents Status": "Pending",
+"IELTS": "No",
+"Universities Applied": "1. DMU (CZ)\n2. Hertz (CZ)",
+"Course&Intake": "1. MBA (Global) Jan/26\n2. MSc International Business ",
+"Final Status": "1. UCO/Payment",
+"Offers": "1. UCO",
+"To Do": "",
+"To Apply": "",
+"Summary": "1. 1000 GBP paid Nashif\nDefer request made for Jan intake since Funds are not matured, 25.08.25",
+"Update": "",
+"info for me": "",
+"_row": 3
+},
+{
+"Name": "Ajith (Thasbiha)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Agent File (Shree)",
+"Documents Status": "",
+"IELTS": "No",
+"Universities Applied": "1. Coventry University (CZ)\n2. Sunderland University London (SP)\n3. Roehampton University (OX)\n4. London Metropolitan University (CZ)\n5. BCU (Infinity)\n6. DMU (Infinity)\n7. Hertfordshire (CZ)\n8. Wolverhampton (Infinity)",
+"Course&Intake": "1. Business Management and Leadership BA May/25\n2. Business and Management BA (Hons) May/25\n3. Bsc Business Management May/25\n4. Business Management - BA (Hons) May/25\n5. BA (Hons) Business Management Sep/25\n6. Business Management BA (Hons) Sep/25\n7. Business Management BA (Hons) Sep/25\n8. Business Management BA (Hons) Sep/25",
+"Final Status": "1. CO\n2. CO\n3. CO\n4. CO/not eligible for Waiver\n5. CO\n6. CO\n7. CO/Payment/Credibility Failed\n8. Processed",
+"Offers": "1. CO\n2. CO\n3. CO\n4. CO\n5. CO\n6. CO\n7. CO/Payment",
+"To Do": "LOR needed",
+"To Apply": "",
+"Summary": "7. 1000 GBP Paid from Nashif Revolut on 10.05.2025/Failed On credibility, Informed on the group to fill the Refund request form on 23.08.26",
+"Update": "",
+"info for me": "",
+"_row": 4
+},
+{
+"Name": "Kawsiya ",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Yes (Thasbiiha) ",
+"Documents Status": "Pending Requested",
+"IELTS": "",
+"Universities Applied": "1. Coventry (CZ)",
+"Course&Intake": "1. Disaster Management and Resilience MSc Jan/26",
+"Final Status": "1. CO/payment/refund Required",
+"Offers": "1. CO",
+"To Do": "Requested the pending docs,",
+"To Apply": "",
+"Summary": "1. 8000 GBP payment made on 26.06.25 By student/Student not ready with IELTS defer requested for January",
+"Update": "",
+"info for me": "",
+"_row": 5
+},
+{
+"Name": "Thevapriya (Radiograhy)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Agent File (?)",
+"Documents Status": "Pending Requested",
+"IELTS": "",
+"Universities Applied": "1. Worcester (D)\n2. UOG (GUS)",
+"Course&Intake": "1. MRes in International Business and Management Studies Sep/25\n2. Mres MSc by Research International Business Sep/25\n",
+"Final Status": "1. Application Rejected\n2. CO",
+"Offers": "2. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "1. User Code - 25016023",
+"_row": 6
+},
+{
+"Name": "Tharun Kumaran",
+"Councillor Name": "Bevan, Munsif, Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Agent File (Lawyer)",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Sunderland (CZ)\n2. York St John (D)\n3. Wolverhampton (Infinity)\n4. DMU (Infinity)\n5. UWE (D)\n6. BCU (Infinity)\n7. UOG (GUS)\n8. Aston (OC)\n9. Aston (OC)",
+"Course&Intake": "1. Photography, Video and Digital Imaging BA (Hons) Sep/25\n2. BA (Hons) Photography Sep/25\n3. BA (Hons) Photography Sep/25\n4. Photography and Video BA (Hons) Sep/25\n5. BA (Hons) Photography Sep/25\n6. BA (Hons) Photography Sep/25\n7. BA (Hons) Photography Sep/25\n8. Computer Science Foundation Sep/25\n9. Computer Science IY1 Sep/25",
+"Final Status": "1. Dont Process with this, No Elicos\n2. Application sent for processing\n3. CO\n4. processed\n5. Portfolio Requested\n6. Portfolio Requested/Application Withdrawn\n7. CO\n8. Application Closed\n9. CO",
+"Offers": "3. CO\n7. CO\n9. CO",
+"To Do": "1. IHS Form to be filled,, Need SOP from the student/Withdraw this as Lo result O.L was given",
+"To Apply": "UCA - BA (Hons) Photography",
+"Summary": "No updates from the agent/student for all the aps",
+"Update": "",
+"info for me": "",
+"_row": 7
+},
+{
+"Name": "Ayesha Kumari\n(Synexis Edu)",
+"Councillor Name": "Razaan",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Worcester (D)",
+"Course&Intake": "1. MRes in International Business and Management Studies Sep/25",
+"Final Status": "1. Application Unsuccesful",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "1. Application not processed July 23 2025 email received to the student from Harikath",
+"Update": "",
+"info for me": "1. User code: 25014622",
+"_row": 8
+},
+{
+"Name": "Mithurshan",
+"Councillor Name": "Bevan, Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Agent File (Shree)",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. UWE (D)\n2. Sunderland (CZ)",
+"Course&Intake": "1. BA Business Management Sep/25\n2. Bevan Applied, Visa processed, and received a refusal for Oct intake",
+"Final Status": "1. UCO",
+"Offers": "1. UCO",
+"To Do": "SOP and LOR needed",
+"To Apply": "",
+"Summary": "Sunderland application applied by Bevan has been issued the CAS, razan and thasbiha is cordinating on this cas Further for Visa\nrequested for Defer and A new CAS to reapply 25.08.25/New Cas Cannot be Issued, refund Requested",
+"Update": "",
+"info for me": "",
+"_row": 9
+},
+{
+"Name": "Arulthas Casin\n(Platinum Visa)",
+"Councillor Name": "Razaan",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "Pending",
+"IELTS": "",
+"Universities Applied": "1. UCLAN (Edvoy)\n2. UOG (GUS)\n3. Worcester (D)\n4. Wolverhampton (Infinity)\n5. Coventry (CZ)\n6. Hertz (CZ)\n7. Greenwich (CZ)\n8. DMU (CZ)\n9. Hull (CEG)\n10. BCU (Infinity)\n11. UCA (D)",
+"Course&Intake": "1. Mres Management May/25\n2. Mres MSc by Research International Business Sep/25\n3. MRes in International Business and Management Studies Jan/26\n4. Mres in IR Jan/26\n5. International Business Management MSc Jan/26\n6. MSc International Business Jan/26\n7. International Business, MA Jan/26\n8. International Business Management MSc Jan/26\n9. MSc Business Management Jan/26\n10. MSc Management and International Business Jan/26\n11. Global Masters of Business and Management Jan/26",
+"Final Status": "1. Pending Proposal\n2. CO\n3. Offer given Late, couldnt meet deadline\n4. Offer rejected Due to no degree\n5. CO\n6. reject due to management decision CZ, Qualifi\n7. reject due to management decision CZ, Qualifi\n8. reject due to management decision CZ, Qualifi\n9. Application sent for processing\n10. Rejected by Uni, Qualifi\n11. Intake Closed by Uni Suddenly",
+"Offers": "2. CO\n5. CO\n11. UCO",
+"To Do": "SOP and Research Proposal Pending",
+"To Apply": "1. UOG Mres Management Sep 25",
+"Summary": "The profile is not clear (Check the Drive Word doc for more info). I have asked for the info from Razan to get it from the agent to remake the profile with Elicos 29.03.25/ Defer UOG to Jan, ",
+"Update": "",
+"info for me": "SID - 1206926",
+"_row": 10
+},
+{
+"Name": "Sujeewa",
+"Councillor Name": "Munsif, Ashfaq",
+"Mobile Number": "",
+"Office Registration": "Agent File (Lawyer)",
+"Documents Status": "",
+"IELTS": "Student said will do, Pending",
+"Universities Applied": "1. Sunderland (CZ)\n2. Hertfordshire (CZ)\n3. Coventry (CZ)\n4. Greenwich (CZ)\n5. BCU (Infinity)",
+"Course&Intake": "1. Law LLM Sep/25\n2. LLM Master's in Law Sep/25\n3. Law LLM Sep/25\n4. International and Commercial Law, LLM Sep/25\n5. LLM International Law Sep/25",
+"Final Status": "1. CO\n2. CO\n3. CO\n4. CO\n5. CO",
+"Offers": "2. CO\n3. CO\n4. CO\n5. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 11
+},
+{
+"Name": "Milakshan",
+"Councillor Name": "Ashfaq, Thasbiha, Munsif",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Aston (OC)\n2. DMU (CZ)\n3. UOG (GUS)",
+"Course&Intake": "1. Electronic and Electrical Eng Foundation Sep/25\n2. Mechatronics and Robotics BEng (Hons) Sep/25\n3. BEng (Hons) Mechatronics Engineering Sep/25",
+"Final Status": "1. CO\n2. UCO\n3. Uni Not processing for the program/Closed",
+"Offers": "1. CO\n2. UCO",
+"To Do": "",
+"To Apply": "",
+"Summary": "No updates from the Agent/Student for any of the APs",
+"Update": "",
+"info for me": "",
+"_row": 12
+},
+{
+"Name": "Hivindu",
+"Councillor Name": "Bevan",
+"Mobile Number": "",
+"Office Registration": "Yes (Bevan)",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. BCU (CZ)\n2. DMU (CZ)\n3. Aston University (CZ)\n4. Hertfordshire (CZ)",
+"Course&Intake": "1. International Business (Top-Up) - BA (Hons) Sep/25\n2. Business Administration BA (Hons) (Final Year Top up) Sep/25\n3. BSc (Hons) Global Business and Management (Top-up) Sep/25\n4. BA (Hons) International Business Management (Top Up) Sep/25",
+"Final Status": "1. Processed\n2. UCO\n3. Need to apply through UCAS and payment required\n4. Processed",
+"Offers": "2. UCO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 13
+},
+{
+"Name": "Afkhaan",
+"Councillor Name": "Bevan, Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Not Yet",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. York St John (D)\n2. Hertfordshire (CZ)\n3. Sunderland (Infinity)\n4. UWE (D)",
+"Course&Intake": "1. Commercial Law and Practice (LLM) Sep/25\n2. LLM Business Law Sep/25\n3. LL.M Master of Laws Sep/25\n4. LLM International Law and Security Sep/25",
+"Final Status": "1. Not eligible/3rd class degree\n2. CO\n3. UCO\n4. UCO",
+"Offers": "2. CO\n3. CO\n4. UCO",
+"To Do": "",
+"To Apply": "",
+"Summary": "Pending Documents requested, No updates from the student.",
+"Update": "",
+"info for me": "",
+"_row": 14
+},
+{
+"Name": "Mary Rishani\n(Tamil Overseas Edu)",
+"Councillor Name": "Razaan",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. BPP (SP)",
+"Course&Intake": "1. BSc (Hons) Applied Management May/25",
+"Final Status": "1. Application sent for processing",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "?? Should ask razan",
+"Update": "",
+"info for me": "",
+"_row": 15
+},
+{
+"Name": "Sajitha\n(Synexis Education)",
+"Councillor Name": "Razaan",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Worcester (D)",
+"Course&Intake": "1. MRes in International Business and Management Studies Jan/25",
+"Final Status": "1. CO",
+"Offers": "1. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "1. January deffered Offer Received ",
+"Update": "",
+"info for me": "",
+"_row": 16
+},
+{
+"Name": "Ilma Nazim",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "?",
+"Documents Status": "",
+"IELTS": "No",
+"Universities Applied": "1. UOG (GUS)\n2. UWTSD (UniVive)",
+"Course&Intake": "1. Mres MSc by Research International Business Sep/25\n2. Available Mres programs for Business Oct/25",
+"Final Status": "1. CO/Payment\n2. CO for MBA",
+"Offers": "1. CO\n2. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "1. 4000 GBP payment made on 23.06.25 By student",
+"Update": "",
+"info for me": "",
+"_row": 17
+},
+{
+"Name": "Aasif\n(Shree)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "Pending",
+"IELTS": "",
+"Universities Applied": "1. Worcester (D)\n2. Hertfordshire (CZ)\n3. DMU (CZ)\n4. BCU (CZ)",
+"Course&Intake": "1. BA Honours Business Management Top Up Sep/25\n2. BA (Hons) International Business Management (Top Up) Sep/25\n3. Business Administration BA (Hons) (Final Year Top up) Sep/25\n4. International Business (Top-Up) - BA (Hons) Sep/25",
+"Final Status": "1. CO\n2. UCO/Payment\n3. CO\n4. Application sent for processing",
+"Offers": "1. CO\n2. UCO/payment\n3. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "1. 1000 GBP payment made on 05.08.25 from Nashif (LKR)",
+"Update": "",
+"info for me": "",
+"_row": 18
+},
+{
+"Name": "Chameera",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "Pending",
+"IELTS": "",
+"Universities Applied": "1. Worcester (D)\n2. UOG (GUS)",
+"Course&Intake": "1. MRes in International Business and Management Studies Sep/25\n2. Mres MSc by Research International Business Sep/25",
+"Final Status": "1. Application Rejected\n2. CO",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 19
+},
+{
+"Name": "Nirojiny",
+"Councillor Name": "Bevan",
+"Mobile Number": "",
+"Office Registration": "Promotion File",
+"Documents Status": "Pending",
+"IELTS": "No",
+"Universities Applied": "1. UOG (GUS)\n2. Worscester (D)",
+"Course&Intake": "1. Mres MSc by Research International Business Sep/25\n2. MRes in International Business and Management Studies Sep/25",
+"Final Status": "1. CO/rejected\n2. Application Sent for processing",
+"Offers": "1. CO",
+"To Do": "2. SOP and Research proposal",
+"To Apply": "",
+"Summary": "1. Offer was rejected due to low Gpa",
+"Update": "",
+"info for me": "",
+"_row": 20
+},
+{
+"Name": "Miruth (L.Kishanth)",
+"Councillor Name": "Umair",
+"Mobile Number": "",
+"Office Registration": "Not Yet",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. DMU (OX)",
+"Course&Intake": "1. Mechatronics and Robotics IY1 Sep/25",
+"Final Status": "1. UCO",
+"Offers": "1. UCO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "1. Allocated Student ID: 1107413\nReference below: 3016105",
+"_row": 21
+},
+{
+"Name": "Sithumini ",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Yes (Thasbiha)",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Kent (OX)\n2. Aston (OC)\n3. UWE (D)\n4. DMUIC (OX)\n5. DMU L (CZ) \n6. Chester Uni (CZ) \n7. East Anglia (CZ) \n8. Sunderland (CZ)\n9. Asnton London (CEG) \n10. UCA (D)\n",
+"Course&Intake": "1. Computer Science IY1 Sep/25\n2. Computer Science IY1 Sep/25\n3. BSc (Hons) Computer Science Sep/25\n4. BSc (Hons) Computer Science IY1 Sep/25\n5. International Business and Sustainability Management MSc Sep/25\n6. International Business, MSc Sep/25\n7. MSc Business Management Sep/25\n8. Msc Computing Sep/25\n9. MSc Business and Management Sep/25\n10 .Global Master of Business and Management Sep/25",
+"Final Status": "1. withdrawn. Student want Masters\n2. GAP Not Accepted, Check Summary\n3. Processed/withdrawn Student want Masters\n4. CO/Offer withdrawn. Student want Masters\n5. UCO\n6. Application sent for processing\n7. Degree Requierd\n8. Application deadline passed\n9. Rejected\n10. Application Sent for processing",
+"Offers": "4. CO\n5. UCO",
+"To Do": "",
+"To Apply": "",
+"Summary": "2. NARIC does not recognize NVQ L4&5 done by the student, hence the Latest qualification is A.L. and a long Gap is not accepted\n1., 3 & 4. The Student want a master's. Should go with the profile making, Applications withdrawn on 31.05.25 after Thasbiha said the same",
+"Update": "",
+"info for me": "1. Student ID: 1112546\n4. Student ID: 1112546",
+"_row": 22
+},
+{
+"Name": "Sankeethan \n(Shree)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. DMUIC (OX)",
+"Course&Intake": "1. Computer science IY1 Sep/25",
+"Final Status": "1. CO",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 23
+},
+{
+"Name": "Kavithira \n(Shree)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Aston London (D)\n2. York St John (D)\n3. Wolverhampton (Infinity)\n4. BCU (Infinity)\n5. DMU (infinity)\n6. Sunderland (CZ)\n7. East Anglia (CZ)\n8. Greenwich (CZ)",
+"Course&Intake": "1. MSc Business and Management Sep/25\n2. MSc International Business Sep/25\n3. MSc International Business Management Sep/25\n4. MSc Management and International Business Sep/25\n5. International Business and Management MSc Sep/25\n6. MSc Computing Sep/25\n7. MSc Computing Sep/25\n8. Strategic Tourism and Hospitality Management, MSc Sep/25",
+"Final Status": "1. Application Rejected\n2. Application Rejected\n3. CO\n4. Application sent for processing\n5. Application Rejected\n6. Not Meeting Entry Reqs\n7. Application sent for processing\n8. UCO/Payment/Refund required",
+"Offers": "3. CO\n8. UCO/Payment/",
+"To Do": "1. try to check Employment of 3yrs to get an offer from Aston",
+"To Apply": "",
+"Summary": "2 & 4 Application rejected Due to Low GPa\n8. 3000 GBP paid by the student on 14.08.25",
+"Update": "",
+"info for me": "",
+"_row": 24
+},
+{
+"Name": "Rihab",
+"Councillor Name": "Umair",
+"Mobile Number": "",
+"Office Registration": "Nashif",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Nothumbria London (CZ)\n2. Hertfordshire (Infinity)\n3. BCU (Infinity)\n4. DMU (Infinity)\n5. Wolverhampton (Infinity)\n6. Coventry (Infinity)\n7.Staffordshire (Leverage)\n8. Sunderland (Infinite)\n9. Nothumbria London (Leverage)",
+"Course&Intake": "1. BSc (Hons) Computing with Technology Top up Sep/25\n2. BSc (Hons) Information Technology (top-up) Sep/25\n3. BSc (Hons) Computing (Top - up) Sep/25\n4. Business Administration and Management (Top-up) Sep/25\n5. BA (Hons) Business Management (Top up) Sep/25\n6. Informatics (Top up) BSc Jan/26\n7. BSc (Hons) Computer Science (top-up) Jan/26\n8. BSc (Hons) Computer Systems Engineering Top Up Jan/26\n9. BSc (Hons) in Computing with Information Technology Management Jan/26",
+"Final Status": "1. Mistake Application, Elicos Not put. Do Not proceed\n2. Application sent for processing\n3. Application Rejected\n4. Application sent for processing\n5. CO\n6. Application sent for processing\n7. CO\n8. CO\n9. Processing",
+"Offers": "5. CO\n7. CO\n8. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "3. BCU not accepting Qualifi",
+"Update": "",
+"info for me": "",
+"_row": 25
+},
+{
+"Name": "Dilakshini \n(Edu Globe)",
+"Councillor Name": "Razaan",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "Got the CV still didnt apply, Agnet wanted Worcester but not eligible for Waiver get confirmation",
+"Course&Intake": "",
+"Final Status": "",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 26
+},
+{
+"Name": "Karthikan (applied)\n(Shree)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. DMU (CZ)\n2. BCU (Infinity)\n3. Chester Uni (CZ)\n4. Hertfordshire (CZ)",
+"Course&Intake": "1. Business Administration BA (Hons) (Final Year Top up) Sep/25\n2. BA (Hons) International Business (Top - up) Sep/25\n3. Business Management and Administration (Top-Up) Sep/25\n4. BA (Hons) Business Administration (top-up) Jan/26",
+"Final Status": "1. CO/Payment\n2. Application sent for processing\n3. Application sent for processing\n4. CO",
+"Offers": "1. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "1. 1000 GBP paid on 19.08.25",
+"Update": "",
+"info for me": "",
+"_row": 27
+},
+{
+"Name": "Dhanusiya (Re-apply)\n(Shree)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Hertfordshire (Infinity)\n2. DMU (Infinity)\n3. East Anglia (Infinity)\n4. BCU (Infinity)",
+"Course&Intake": "1. BA (Hons) Business Management Sep/25\n2. Business Management BA (Hons) Sep/25 \n3. BA Business Management Sep/25 \n4. BA (Hons) Business Management Sep/25",
+"Final Status": "1. CO\n2. Application sent for processing\n3. Intake Closed\n4. CO",
+"Offers": "1. CO\n4. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 28
+},
+{
+"Name": "Ishani",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Direct, get update",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Worcester (D)",
+"Course&Intake": "1. MRes in International Business and Management Studies Jan/25\n",
+"Final Status": "1. Application sent for processing",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "student had requested for Jan 2025 after we applied for Sep/25",
+"Update": "",
+"info for me": "",
+"_row": 29
+},
+{
+"Name": "Aruni \n(Shree)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Sunderland London (Infinity)\n2. BCU (Infinity)\n3. Brunel University London (CZ)\n4. Wolverhampton (Infinity)\n5. East London (Infinity)\n6. UCLAN (CZ)\n7. UCA (D)\n8. Machester Met (Edvoy)\n9. Leeds Beckett University (CZ)\n10. Coventry (CZ)\n11. ULAW (Gus)\n12. Bolton (CZ)",
+"Course&Intake": "1. MSc International Business Management Sep 25\n2. MSc Management and International Business Sep 25\n3. International Business MSc Sep 25\n4. MSc International Business Management Sep/25\n5. MSc International Business Management Sep/25\n6. MSc International Business and Management Jan/25\n7. MBM Global Master of Business & Management Sep/25\n8. Msc Management Jan/26\n9. MSc Management and International Business FT Jan/26\n10. Accounting and Financial Management MSc Jan/26\n11, MSc Strategic Business Management Feb./26",
+"Final Status": "1. Application sent for processing\n2. Application Rejected \n3. Application Rejected\n4. Application Rejected\n5. Application Withdrawn since the student not going\n6. CZ said not meeting Entry Req\n7. CO\n8. Application Not succesfull\n9. Unable to process due to high Gap\n10. CO\n11. Application sent for processing",
+"Offers": "7. CO\n10. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "2. BCU is not accepting Qualifi\n3. Not meetings entry req\n6. Application Deffered from Sep/25 to jan/26",
+"Update": "",
+"info for me": "",
+"_row": 30
+},
+{
+"Name": "Sanjai\n(Shree)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. UGIC (OX)\n2. DMUIC (OX)\n3. UOG (GUS) \n4. RCL (D)\n5. Sunderland (CZ)\n6. Greenwich (CZ)\n7. UCA (D)\n8. Hertz (CZ)",
+"Course&Intake": "1. Business Management (Marketing) IY1 Sep/25 \n2. Business Management IY1 Sep/25\n3. BA (Hons) Business Management and Strategy (Level 6) Sep/25\n4. BSc (Hons) Business Management Top up Sep/25\n5. Stage 3 BA (Hons) Business and Management Sep/25\n6. Business Management BA Hons (Top-Up) Sep/25\n7. Business Innovation & Management (top-up) BA (Hons) Sep/25\n8. BA (Hons) International Business Management (Top Up) Jan/26",
+"Final Status": "1. CO/Withdrawn\n2. CO/Withdrawn\n3. CO\n4. Application sent for processing\n5. Application sent for processing \n6. Application sent for Processing\n7. CO \n8. CO",
+"Offers": "1. CO\n2. CO\n3. CO \n7. CO \n8. CO\n",
+"To Do": "",
+"To Apply": "",
+"Summary": "1&2 applications were requested to withdraw on 21.06.25/because after the offer was issued, Thasbiha mentioned that the student needs a top-up and does profile making",
+"Update": "",
+"info for me": "ID number: 1129107",
+"_row": 31
+},
+{
+"Name": "Nazeeha \n(Edu Care Int)",
+"Councillor Name": "Razaan",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "Not yet Applied, UOG is closed for Mres not showing in portal, Application not eligible  for Waiver as well",
+"Course&Intake": "Gave options to razaan to check, A.L Fail so cant apply through main portals",
+"Final Status": "",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 32
+},
+{
+"Name": "Pathmasoruban \n(Shree)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. UCA (D)\n2. Coventry (CZ)",
+"Course&Intake": "1. MBM Global Master of Business & Management Sep/25\n2. International Business Management Msc Nov/25",
+"Final Status": "1. Application Sent for processing\n2. CO",
+"Offers": "2. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 33
+},
+{
+"Name": "Ifaz ",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. DMU (CZ)\n2. UCB (CZ)\n3. Coventry (CZ)\n4. Sunderland L (CZ)",
+"Course&Intake": "1. Business Management BA (Hons) Sep/25\n2. Business Enterprise BA (Hons) Top-up Sep/25\n3. International Business Top-up BA Sep/25\n4. Business Management and Entrepreneurship (Stage 3) BA (Hons) Sep/25",
+"Final Status": "1. Waiting for Deferred offer\n2. CO\n3. Waiting for Deferred offer\n4. CO",
+"Offers": "2. CO\n4. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 34
+},
+{
+"Name": "Sathya",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "Agent File",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Greenwich (CZ)\n2. UCA (D)",
+"Course&Intake": "1. International Business, MA Sep/25\n2. MBM Global Master of Business & Management Sep/25",
+"Final Status": "1. Application sent for processing'\n2. CO",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 35
+},
+{
+"Name": "Sivakajan",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "?",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. UWE (CZ)\n2. Sunderland (CZ)\n3. RCL (D)\n4. Anglia Ruskin (CZ)\n5. Greenwich (CZ)",
+"Course&Intake": "1. Business and Management BA (Hons) Sep/25\n2. BA (Hons) Business and Management Sep/25\n3. BSc (Hons) Business Management Sep/25\n4. BSc (Hons) Business Management Sep/25\n5. Business Management, BA (Hons) Sep/25",
+"Final Status": "1. Application sent for processing\n2. Application sent for processing\n3. Application sent for processing\n4. Not accepting aps before 2023\n5. Long gap",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 36
+},
+{
+"Name": "kanistan ",
+"Councillor Name": "Munsif, Thasbiha",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Greenwich (CZ)\n2. Coventry (CZ)\n3. DMUIC (Ox)",
+"Course&Intake": "1. Electrical and Electronic Engineering, MSc Sep/25\n2. Electrical and Electronic Engineering, MSc Sep/25\n3. Electronic Engineering pre Masters Nov/25",
+"Final Status": "1. Not meeting Entry Req'\n2. Application sent for processing.\n3. CO",
+"Offers": "3. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "3. ID number: 1156647",
+"_row": 37
+},
+{
+"Name": "Farshan\n(Front-office)",
+"Councillor Name": "Thasbiha, Shukaina",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "",
+"Course&Intake": "Want masters in Qualitity Assuarence, Check the docs and Apply with waivers, email, \nThasbiha Said dont apply because student not responding 22.07.25",
+"Final Status": "",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 38
+},
+{
+"Name": "Uthayanthi\n(Thasbiha Email)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "",
+"Course&Intake": "Mres with Waiver Email case, check and update\nStill dont have the passport, needs wolverhampton",
+"Final Status": "",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 39
+},
+{
+"Name": "Shiham \n(Nashif)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "*******",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Anglia Ruskin University (CZ)\n2. DMU London (CZ)\n3. Chester (D)\n4. Aston L (CEG)\n5. Coventry (CZ)",
+"Course&Intake": "1. MSc International Business Jan/26\n2. International Business and Sustainability Management MSc Jan/26\n3. International Business, MSc Jan/26\n4. MSc Business and Management Jan/26\n5. International Business Management MSc Jan/26",
+"Final Status": "1. Not Meeting Entry Req\n2. UCO\n3. Application Will not be Processed\n4. Application Sent for processing\n5. CO",
+"Offers": "2. UCO\n5. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "OAI662503 - Chester ",
+"_row": 40
+},
+{
+"Name": "Thinupa \n(Front Office)",
+"Councillor Name": "Shukaina",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "Missing Docs, mail shared to Frontoffice",
+"Course&Intake": "polital science or IR Mres, DOING IELTS, Masters Certificate missing, 11.08",
+"Final Status": "",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 41
+},
+{
+"Name": "Vargitha \n(Shree)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "*******",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "need edited CV",
+"Course&Intake": "Uca and others for masters, and reply thasbiha in email",
+"Final Status": "",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 42
+},
+{
+"Name": "Niranchitha\n(Front-Office)",
+"Councillor Name": "Thasbiha, Shukaina",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "Pending Docs",
+"Course&Intake": "Masters in her own feild, Pending Docs, Specs - No Passport and Degree",
+"Final Status": "",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 43
+},
+{
+"Name": "Sadini \n(Front-Office)",
+"Councillor Name": "Thasbiha, Shukaina",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "Pending Docs",
+"Course&Intake": "Still didnt get an update on the File",
+"Final Status": "",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 44
+},
+{
+"Name": "Zakwana \n(Azam Spouse)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Coventry (CZ)\n2. DMU (CZ)\n3. Hertfordshire (CZ)\n4. Derby (CZ)\n5. UWE (D)",
+"Course&Intake": "1. Childhood, Youth and Education Studies BA Sep/25\n2. Education Studies BA (Hons) Sep/25\n3. BA (Hons) Education Sep/25\n4. Bachelor of Education in Primary Education Sep/25\n5. BA(Hons) Primary Education Sep/25",
+"Final Status": "1. Application Sent for processing\n2. Application Sent for processing\n3. Application Sent for processing\n4. Application Sent for processing\n5. Application Sent for processing",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 45
+},
+{
+"Name": "Anushan\n(Front Office)",
+"Councillor Name": "Thasbiha, Shukaina",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "O.L and A.l Down, Btec pending Needs masters",
+"IELTS": "",
+"Universities Applied": "1. DMU (CZ)\n2. Sunderland (CZ)\n3. Aston London (CEG)\n4. Hertz (CZ)\n5. Coventry (CZ)",
+"Course&Intake": "1. International Business Management with Sustainable Management MSc Jan/26\n2. MSc International Business Management Jan/26\n3. MSc Business and Management Jan/26\n4. MSc Management Jan/26\n5. International Business Management MSc Jan/26",
+"Final Status": "1. Application sent for processing\n2. Application sent for processing\n3. CO\n4. CO\n5. CO",
+"Offers": "3. CO",
+"To Do": "Get elicos from Razaan\n",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 46
+},
+{
+"Name": "Dilakshan \n(Thasbiha_Munsif)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Hertz (CZ)\n2. DMU (CZ)\n3. Sunderland (CZ)\n4. Swansea (CZ)",
+"Course&Intake": "1. BA (hons) Business Management Sep/25\n2. Business Management BA Sep/25\n3. \n4. Business Management, BSc (Hons) Jan/26",
+"Final Status": "1. Application sent for processing\n2. CO\n3. Application sent for processing\n4. Application sent for processing",
+"Offers": "2. CO",
+"To Do": "CV needs to be edited Given razaan 23.08, Requested LOR - Thasbiha 25.08",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 47
+},
+{
+"Name": "Munthasir \n(Nashif)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Northumbria London (CZ)\n2. UCB (CZ)\n3. Sunderland (CZ)\n4. Coventry (CZ)",
+"Course&Intake": "1. BSc (Hons) Computing with Information Technology Management Top up Jan/26\n2. Computer Science BSc (Hons) Top-up Jan/26\n3. BSc (Hons) Computer Systems Engineering Top Up Jan/26\n4. Computering Science (Top up) BSc Jan/26",
+"Final Status": "1. CO\n2. Application sent for Processing\n3. Not meeting Entry reqs\n4. CO",
+"Offers": "1. CO/Payment\n2. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 48
+},
+{
+"Name": "Sarani Chamathka \n(KEDGE Paris OC)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "*******",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "Pending Docs informed Thasbiha",
+"Course&Intake": "",
+"Final Status": "",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 49
+},
+{
+"Name": "Thamilnilavan ",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. UCA (D)\n2. Coventry (CZ)\n3. London Met (CZ)\n4. Hertz (CZ)",
+"Course&Intake": "1. Business Innovation & Management (top-up) BA (Hons) Sep/25\n2. Business Management and Leadership BA (top-up) Jan/26\n3. Business Management (Top-up) Jan/26\n4. BA (Hons) International Business Management (Top Up) Jan/26",
+"Final Status": "1. CO\n2. Application sent for processing\n3. CO - Not eligible for Waiver\n4. UCO/CAS",
+"Offers": "1. CO\n3. CO\n4. CO/Payment",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 50
+},
+{
+"Name": "Kabinath",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Coventry (CZ)\n2. Northumbria University London (CZ)\n3. Hertfordshire (CZ)",
+"Course&Intake": "1. Global Business (top up) BA - 3rd Year Entry Jan/26\n2. Bsc (Hons) Global Business Management Top up jan/26\n3. BA (Hons) International Business Management (Top Up) Jan/26",
+"Final Status": "1. CO/Payment/CAS\n2. Application sent for Processing\n3. Co",
+"Offers": "1. CO\n3. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "1. 8000 GBP payment Made for covnetry ",
+"Update": "",
+"info for me": "",
+"_row": 51
+},
+{
+"Name": "Vaithehi \n(front Office)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "Incomplete",
+"IELTS": "",
+"Universities Applied": "1. Aston (OC)\n2. Hull (OC)\n3. Sunderland (OC)\n4. UCA (D)\n5. DMUIC (OX)\n6. UGIC (OX)\n7. Coventry (CZ)",
+"Course&Intake": "1. Pre masters ICAS - Progression to Accounting Msc Apr/26\n2. Pre Masters - progression to masters Jan/26\n3. Pre Masters - progression to masters Jan/26\n4. Global Master of Business & Management MBM with Pre Masters Jan/26\n5. Pre Masters - International Business Management MSc Jan/26\n6. Pre Masters - MA International Business Jan/26\n7. Accounting and Finance for International Business (Top up) BSc Jan/26",
+"Final Status": "1. Application Sent for processing\n2. Application Sent for processing\n3. Application Sent for processing\n4. Application Sent for processing\n5. CO\n6. CO\n7. Application Sent for processing",
+"Offers": "5. CO\n6. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "ID number: 1182275 (OX)",
+"_row": 52
+},
+{
+"Name": "vithushan",
+"Councillor Name": "",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "Incomplete",
+"IELTS": "",
+"Universities Applied": "1. Aston (OC)\n2. UGIC (OX)\n3. DMUIC (OX)\n4. UWE (D)\n5. BCU (Infinity)\n6. DMU (CZ)",
+"Course&Intake": "1. IY1 International Business Jan/26\n2. IY1 International Business BA (Hons) Jan/26\n3. IY1 BA (Hons) Business Management Jan/26\n4. BA(Hons) Business and Management Jan/26\n5. BA (Hons) Business Management Jan/26\n6. Business Management BA (Hons) Jan/26",
+"Final Status": "1. Application Sent for processing\n2. CO\n3. CO\n4. Application Sent for processing\n5. Application Sent for processing",
+"Offers": "2. CO\n3. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "ID number: 1180316 (OX)",
+"_row": 53
+},
+{
+"Name": "Hari (D)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "Incomplete",
+"IELTS": "",
+"Universities Applied": "1. UGIC (OX)\n2. DMUIC (OX)\n3. Greenwich (CZ)",
+"Course&Intake": "1. IY1 Business Management BA (Hons) Jan/26\n2. IY1 BA (Hons) Business Management Jan/26\n3. BA (Hons) Business Management Jan/26",
+"Final Status": "1. CO\n2. CO\n3. UCO",
+"Offers": "1. CO\n2. CO\n3. UCO/Payment",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "ID number: 1181663 (OX)",
+"_row": 54
+},
+{
+"Name": "Mufeed (D)",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. UWE (D)\n2. UCA (D)\n3. ULAW (GUS)\n4. Worcester (D)",
+"Course&Intake": "1. MSc Business Management Jan/26\n2. Global Master of Business & Management MBM Jan/26\n3. MSc Strategic Business Management Feb/26\n4. MSc International Management Jan/26",
+"Final Status": "1. Application Sent for processing\n2. Application Sent for processing\n3. CO\n4. Application Sent for processing",
+"Offers": "3. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "2. UCA - 2600391",
+"_row": 55
+},
+{
+"Name": "Hansani \n(Acheive way)",
+"Councillor Name": "Razaan",
+"Mobile Number": "Should request for foundation",
+"Office Registration": "",
+"Documents Status": "Incomplete",
+"IELTS": "",
+"Universities Applied": "1. Sheffield Hallam University (CZ)",
+"Course&Intake": "1. BSc (Honours) Biomedical Science Sep/26 ",
+"Final Status": "1. Application Sent for processing",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 56
+},
+{
+"Name": "Akeel Ameer",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. Aston L (CEG)\n2. York St John (D)\n3. DMU (CZ)\n4. UCB (CZ)",
+"Course&Intake": "1. BSc (Hons) Global Business and Management (Top-up) Jan/26\n2. BA (hons) Global Business Management (Top-up) Jan/26\n3. Business Management (Level 6 Top Up) BA (Hons) Jan/26\n4. Business Enterprise BA (Hons) Top-up 3rd Year Jan/26",
+"Final Status": "1. Offer\n2. Qualifi Not accepted\n3. CO/Payment\n4.  Application sent to university for processing\n",
+"Offers": "1. CO\n3. UCO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 57
+},
+{
+"Name": "Kabilan",
+"Councillor Name": "",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. UWE (D)\n2. East London (Infinity)",
+"Course&Intake": "1. Bio Med Bsc Sep/26\n2. BEng (Hons) Biomedical Engineering Jan/26",
+"Final Status": "1. Application Sent for Processing ",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 58
+},
+{
+"Name": "parithasan \n(Razan)",
+"Councillor Name": "Razaan",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. UCA (D)\n2. Greenwich (CZ)\n3. DMUIC (D)",
+"Course&Intake": "1. Global Master of Business & Management MBM Jan/26\n2. International Business MA Jan/26\n3. ",
+"Final Status": "1. Intake withdrawn by the student for all students \n2. Application closed - Low GPA\n3. CO",
+"Offers": "1. CO",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "ID number: 1208383",
+"_row": 59
+},
+{
+"Name": "M I M Inshaf",
+"Councillor Name": "Nashif",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "1. NAPS (D)",
+"Course&Intake": "1. MBA March/26",
+"Final Status": "1. Application Sent for Processing ",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "Offer reference ID: 9085",
+"_row": 60
+},
+{
+"Name": "John Aaron \n(BMICH NZ)",
+"Councillor Name": "",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "",
+"Course&Intake": "",
+"Final Status": "",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 61
+},
+{
+"Name": "Japhaction",
+"Councillor Name": "Thasbiha",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "",
+"Course&Intake": "",
+"Final Status": "",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 62
+},
+{
+"Name": "Luxshika\n(Germany)",
+"Councillor Name": "",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "",
+"Course&Intake": "",
+"Final Status": "",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 63
+},
+{
+"Name": "Thuwaraga\n(Germany)",
+"Councillor Name": "",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "",
+"Course&Intake": "",
+"Final Status": "",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 64
+},
+{
+"Name": "Sachindu \n(....)",
+"Councillor Name": "Razaan",
+"Mobile Number": "",
+"Office Registration": "",
+"Documents Status": "",
+"IELTS": "",
+"Universities Applied": "",
+"Course&Intake": "",
+"Final Status": "",
+"Offers": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Update": "",
+"info for me": "",
+"_row": 65
+},
+{
+"Name": "Priya Sharma",
+"Councillor Name": "Razaan",
+"Mobile Number": "+44 7700 123456",
+"Office Registration": "Yes",
+"Documents Status": "Pending",
+"IELTS": "No",
+"Universities Applied": "Manchester Metropolitan (CZ), Northampton (CZ)",
+"Course&Intake": "MSc International Business Management - Jan/26",
+"Final Status": "Application sent for processing",
+"Offers": "",
+"To Do": "IELTS booking required, Submit academic transcripts, Complete financial documents",
+"To Apply": "Manchester Metropolitan, Northampton",
+"Summary": "New application. Student seeking Jan/26 intake. IELTS test scheduled for 25/01/2026. Transcripts requested from university. Financial sponsor: Parents.",
+"Update": "10/01/2026 - Initial consultation completed. Application documents being prepared.",
+"info for me": "Priority: IELTS preparation",
+"_row": 66
+}
+],
+"source": "GG Admission (3).xlsx \u2192 Admissions sheet"
+},
+"thasbiha_visa": {
+"headers": [
+"Student Name",
+"Councillor Name",
+"Mobile Number",
+"Visa payment",
+"Documents Status",
+"IELTS",
+"Universities Applied",
+"Summary",
+"Final Status",
+"To Do",
+"Course&Intake",
+"Update",
+"Pending Documents"
+],
+"rows": [
+{
+"Student Name": "Dhanusiya",
+"Councillor Name": "Bevan",
+"Mobile Number": "",
+"Visa payment": "Agent File",
+"Documents Status": "Pending",
+"IELTS": "No",
+"Universities Applied": "1. Coventry University (CZ)",
+"Summary": "CAS Received on 31.01.25/Visa to be applied by the agent/Visa is to be applied by Us/ Visa applied on 14.02.25 and Vfs is on 19.02.25/Vfs Changed to 21.02.25/Visa interview on 04.03.25/Refusal Email recived on the 04.03.25/ Refund Requested from the university on 20.03.25/Refund Received 09.05.25",
+"Final Status": "1. Visa Refused (Interview)",
+"To Do": "",
+"Course&Intake": "2025-01-25",
+"Update": "",
+"Pending Documents": "None",
+"_row": 2
+},
+{
+"Student Name": "Kishara",
+"Councillor Name": "Umair",
+"Mobile Number": "",
+"Visa payment": "Yes (Umair)",
+"Documents Status": "Complete",
+"IELTS": "No",
+"Universities Applied": "1. Coventry University (CZ)",
+"Summary": "CAS Received on 01.02.25/Vfs Of 06.02.25/Visa withdrawn, New CAS Received on 21.02.25,Waiting to re apply visa after IHS Refund/IHS Refunded on 06.04.25 to the Student/Waiting on Update from the student to reapply the visa/Reapplied Visa, VFS on 15.05.25/Visa Granted on 19.05.25",
+"Final Status": "1. \nVisa Granted",
+"To Do": "",
+"Course&Intake": "2025-05-25",
+"Update": "",
+"Pending Documents": "None",
+"_row": 3
+},
+{
+"Student Name": "Hivindu",
+"Councillor Name": "Bevan",
+"Mobile Number": "",
+"Visa payment": "Not yet",
+"Documents Status": "Complete",
+"IELTS": "No",
+"Universities Applied": "1. Coventry University (CZ)",
+"Summary": "Thasbiha Said to make the CAS request whether the Student goes for Superpriority or Not, /Visa applied, 14.02.25, Vfs on 17.02.25/Visa interview on 20.02.25/ Visa refusal mail received on 25.02.25/ Refund Requested from the university on 04.03.25/Refund Pending But applied for other universities/ Refund received, but dont know the date it was refunded (24.06.25)",
+"Final Status": "1. Visa Refused (Interview)\nReapplying to another university ",
+"To Do": "",
+"Course&Intake": "2025-01-25",
+"Update": "",
+"Pending Documents": "",
+"_row": 4
+},
+{
+"Student Name": "Kemdiya",
+"Councillor Name": "Umair",
+"Mobile Number": "",
+"Visa payment": "Agent File",
+"Documents Status": "Complete",
+"IELTS": "No",
+"Universities Applied": "1. Sunderland (SP)",
+"Summary": "CAS Received on 21.02.25, Informed Thasbiha to notify the agent to proceed further/Visa applied on 27.02.25/ VFS on 03.03.25/Visa succesful Mail received on 07.03.25/Student went to the UK, But didnt enrol at the UNI",
+"Final Status": "1. \nVisa Granted",
+"To Do": "",
+"Course&Intake": "1. MSc International Business Management March/25",
+"Update": "DID NOT ENROLL",
+"Pending Documents": "None",
+"_row": 5
+},
+{
+"Student Name": "Vijay Kamalakaran",
+"Councillor Name": "Ashfaq, Thasbiha",
+"Mobile Number": "",
+"Visa payment": "Agent File",
+"Documents Status": "Pending",
+"IELTS": "No",
+"Universities Applied": "1. Greenwich (CZ)",
+"Summary": "1. CAS Received on 07.04.25/Have requested for the document Still pending as at 08.04.25/Razaan Has Applied for the visa,/UKVI interview done, waiting for decision/Student Failed the interview",
+"Final Status": "1. Visa Refused (Interview)",
+"To Do": "",
+"Course&Intake": "",
+"Update": "",
+"Pending Documents": "",
+"_row": 6
+},
+{
+"Student Name": "Shaheem",
+"Councillor Name": "Umair",
+"Mobile Number": "",
+"Visa payment": "Yes (Umair)",
+"Documents Status": "",
+"IELTS": "No",
+"Universities Applied": "4. Nothumbria London (CZ)",
+"Summary": "CAS Received on 18.04.25, Inform the student to arrange the funds and then process for the payment / Visa applied on 22.04.25, Vfs on 25.04.25/Payment HNB Umair/Visa interview on 08.05.25, Visa granted on 09.05.25",
+"Final Status": "4. \nVisa Granted",
+"To Do": "",
+"Course&Intake": "2025-05-25",
+"Update": "DID NOT ENROLL",
+"Pending Documents": "None",
+"_row": 7
+},
+{
+"Student Name": "Murthaja",
+"Councillor Name": "Umair",
+"Mobile Number": "",
+"Visa payment": "Nashif Will Sort",
+"Documents Status": "Complete",
+"IELTS": "No",
+"Universities Applied": "3. Aston London (CEG) ",
+"Summary": "CAS Received on 08.05.25/Waiting to Apply for Visa, Mushad is not responsive/Visa Applied on 20.05.25 (Mushad)/Vfs on 27/05/25/, UKVI interview on 29/05/25, Visa Refused on 10/06/25 Due to interview not passed",
+"Final Status": "3. Visa Applied",
+"To Do": "",
+"Course&Intake": "3. MSc Global Business July/25",
+"Update": "",
+"Pending Documents": "",
+"_row": 8
+},
+{
+"Student Name": "Mohanthas",
+"Councillor Name": "Munsif",
+"Mobile Number": "",
+"Visa payment": "Agent File (..)",
+"Documents Status": "",
+"IELTS": "Yes (6.0)",
+"Universities Applied": "6. Aston London (CEG)",
+"Summary": "5790 GBP Paid on 26.03.2025/CAS Received on 22.05.25/Visa applied by Razan on 30.05.25, Munsif coordinated, VFS on 05/06/25, visa granted on the 07/06/25, Email received on 09/06/25\n",
+"Final Status": "6. \nVisa Granted",
+"To Do": "",
+"Course&Intake": "6. MSc Global Business April/25",
+"Update": "",
+"Pending Documents": "",
+"_row": 9
+},
+{
+"Student Name": "Malith",
+"Councillor Name": "Umair",
+"Mobile Number": "",
+"Visa payment": "Yes (Umair)",
+"Documents Status": "Pending",
+"IELTS": "No",
+"Universities Applied": "4. Aston London (CEG)",
+"Summary": "CAS Received on 08.06.25/Still waiting on Finance documents and Payment/ Visa applied on 07.07.25, vfs on 10.07.25/Visa granted on 14.07.25",
+"Final Status": "4. \nVisa Granted",
+"To Do": "",
+"Course&Intake": "4. MSc Global Business July/25",
+"Update": "",
+"Pending Documents": "",
+"_row": 10
+}
+],
+"source": "GG Admission Visa"
+},
+"razan_visa_2026": {
+"headers": [
+"#",
+"Student / Client",
+"Country",
+"Category",
+"VISA STATUS",
+"START DATE",
+"VFS DATE",
+"Agent / Direct",
+"ASSIGNEE",
+"DESCRIPTION",
+"Documents"
+],
+"rows": [
+{
+"#": "",
+"Student / Client": "Visas to lodge",
+"Country": "",
+"Category": "",
+"VISA STATUS": "",
+"START DATE": "",
+"VFS DATE": "",
+"Agent / Direct": "",
+"ASSIGNEE": "",
+"DESCRIPTION": "",
+"Documents": "",
+"_row": 5
+},
+{
+"#": 1,
+"Student / Client": "Anushan Amarasivam",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "In Progress",
+"START DATE": "2026-01-07",
+"VFS DATE": "",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Waiting for CAS",
+"Documents": "Drive Link",
+"_row": 7
+},
+{
+"#": "",
+"Student / Client": "Lodged Visas",
+"Country": "",
+"Category": "",
+"VISA STATUS": "",
+"START DATE": "",
+"VFS DATE": "",
+"Agent / Direct": "",
+"ASSIGNEE": "",
+"DESCRIPTION": "",
+"Documents": "",
+"_row": 8
+},
+{
+"#": "#",
+"Student / Client": "Student / Client",
+"Country": "Country",
+"Category": "Category",
+"VISA STATUS": "VISA STATUS",
+"START DATE": "START DATE",
+"VFS DATE": "VFS DATE",
+"Agent / Direct": "Agent / Direct",
+"ASSIGNEE": "ASSIGNEE",
+"DESCRIPTION": "DESCRIPTION",
+"Documents": "Documents",
+"_row": 10
+},
+{
+"#": 1,
+"Student / Client": "Hari - Sreesureharippillai",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Refused",
+"START DATE": "2026-01-15",
+"VFS DATE": "2026-01-23",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Refused",
+"Documents": "Drive Link",
+"_row": 11
+},
+{
+"#": 2,
+"Student / Client": "Sithumini Sankalpani",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Refused",
+"START DATE": "2026-01-20",
+"VFS DATE": "2026-01-28",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Withdrawn",
+"Documents": "Drive Link",
+"_row": 12
+},
+{
+"#": 3,
+"Student / Client": "Aasif Nafeer",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Refused",
+"START DATE": "2026-01-21",
+"VFS DATE": "2026-01-28",
+"Agent / Direct": "Agent",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Refused due to Bank documents not verified",
+"Documents": "Drive Link",
+"_row": 13
+},
+{
+"#": 4,
+"Student / Client": "Rihab Kamil",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2026-01-07",
+"VFS DATE": "2026-01-26",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Waiting for Visa decision",
+"Documents": "Drive Link",
+"_row": 14
+},
+{
+"#": 5,
+"Student / Client": "Sanjay",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Refused",
+"START DATE": "2026-01-16",
+"VFS DATE": "2026-01-21",
+"Agent / Direct": "Agent",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Waiting for Visa decision",
+"Documents": "Drive Link",
+"_row": 15
+},
+{
+"#": 6,
+"Student / Client": "Akeel Hussain",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2026-01-07",
+"VFS DATE": "2026-01-16",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Visa Granted",
+"Documents": "Drive Link",
+"_row": 16
+}
+],
+"source": "Visa Applications Status (3).xlsx"
+},
+"razan_visa_2025": {
+"headers": [
+"#",
+"Student / Client",
+"Country",
+"Category",
+"VISA STATUS",
+"START DATE",
+"VFS DATE",
+"Agent / Direct",
+"ASSIGNEE",
+"DESCRIPTION",
+"Documents"
+],
+"rows": [
+{
+"#": "",
+"Student / Client": "Visas to lodge",
+"Country": "",
+"Category": "",
+"VISA STATUS": "",
+"START DATE": "",
+"VFS DATE": "",
+"Agent / Direct": "",
+"ASSIGNEE": "",
+"DESCRIPTION": "",
+"Documents": "",
+"_row": 5
+},
+{
+"#": 1,
+"Student / Client": "Rihab Kamil",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2026-01-07",
+"VFS DATE": "2026-01-26",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Waiting for Visa docs",
+"Documents": "Drive Link",
+"_row": 7
+},
+{
+"#": 2,
+"Student / Client": "Anushan Amarasivam",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "In Progress",
+"START DATE": "2026-01-07",
+"VFS DATE": "",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Waiting for CAS",
+"Documents": "Drive Link",
+"_row": 8
+},
+{
+"#": 3,
+"Student / Client": "Hari - Sreesureharippillai",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "In Progress",
+"START DATE": "2026-01-15",
+"VFS DATE": "",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Waiting for Visa docs",
+"Documents": "Drive Link",
+"_row": 9
+},
+{
+"#": 4,
+"Student / Client": "Sithumini Sankalpani",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "In Progress",
+"START DATE": "2026-01-20",
+"VFS DATE": "",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Waiting for Visa docs",
+"Documents": "Drive Link",
+"_row": 10
+},
+{
+"#": 5,
+"Student / Client": "Aasif Nafeer",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "In Progress",
+"START DATE": "2026-01-21",
+"VFS DATE": "",
+"Agent / Direct": "Agent",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Waiting for Visa docs",
+"Documents": "Drive Link",
+"_row": 11
+},
+{
+"#": "",
+"Student / Client": "Lodged Visas",
+"Country": "",
+"Category": "",
+"VISA STATUS": "",
+"START DATE": "",
+"VFS DATE": "",
+"Agent / Direct": "",
+"ASSIGNEE": "",
+"DESCRIPTION": "",
+"Documents": "",
+"_row": 12
+},
+{
+"#": "#",
+"Student / Client": "Student / Client",
+"Country": "Country",
+"Category": "Category",
+"VISA STATUS": "VISA STATUS",
+"START DATE": "START DATE",
+"VFS DATE": "VFS DATE",
+"Agent / Direct": "Agent / Direct",
+"ASSIGNEE": "ASSIGNEE",
+"DESCRIPTION": "DESCRIPTION",
+"Documents": "Documents",
+"_row": 14
+},
+{
+"#": 1,
+"Student / Client": "Rihab Kamil",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "In Progress",
+"START DATE": "2026-01-07",
+"VFS DATE": "2026-01-26",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Waiting for Visa docs",
+"Documents": "Drive Link",
+"_row": 15
+},
+{
+"#": 2,
+"Student / Client": "Sanjay",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "In Progress",
+"START DATE": "2026-01-16",
+"VFS DATE": "2026-01-21",
+"Agent / Direct": "Agent",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Waiting for Biometrics",
+"Documents": "Drive Link",
+"_row": 16
+},
+{
+"#": 3,
+"Student / Client": "Akeel Hussain",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2026-01-07",
+"VFS DATE": "2026-01-16",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Waiting for Visa decision",
+"Documents": "Drive Link",
+"_row": 17
+},
+{
+"#": 4,
+"Student / Client": "Sitthi Sakeena",
+"Country": "UK",
+"Category": "Visitor",
+"VISA STATUS": "On Hold",
+"START DATE": "2025-08-10",
+"VFS DATE": "",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Withdrawn and have to refund visa fee",
+"Documents": "Drive Link",
+"_row": 18
+},
+{
+"#": 5,
+"Student / Client": "Miruthbavan",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2025-12-02",
+"VFS DATE": "",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Waiting for Visa docs",
+"Documents": "Drive Link",
+"_row": 19
+},
+{
+"#": 6,
+"Student / Client": "Munthasir",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2025-11-24",
+"VFS DATE": "2025-12-03",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Waiting for Biometrics",
+"Documents": "Drive Link",
+"_row": 20
+},
+{
+"#": 7,
+"Student / Client": "Shihaab",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2025-09-03",
+"VFS DATE": "2025-10-06",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Visa granted",
+"Documents": "Drive Link",
+"_row": 21
+},
+{
+"#": 8,
+"Student / Client": "Amhar Rukash",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2025-09-03",
+"VFS DATE": "2025-10-01",
+"Agent / Direct": "Agent",
+"ASSIGNEE": "UTC / Thasbiha",
+"DESCRIPTION": "Visa granted",
+"Documents": "Drive Link",
+"_row": 22
+},
+{
+"#": 9,
+"Student / Client": "Nelson ",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2025-09-25",
+"VFS DATE": "2025-09-30",
+"Agent / Direct": "Agent",
+"ASSIGNEE": "Sri / Thasbiha",
+"DESCRIPTION": "Visa granted",
+"Documents": "Drive Link",
+"_row": 23
+},
+{
+"#": 10,
+"Student / Client": "Imdad",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2025-09-19",
+"VFS DATE": "2025-09-29",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Visa granted",
+"Documents": "Drive Link",
+"_row": 24
+},
+{
+"#": 11,
+"Student / Client": "Kajeepan",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2025-09-19",
+"VFS DATE": "2025-09-22",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Visa granted",
+"Documents": "Drive Link",
+"_row": 25
+},
+{
+"#": 12,
+"Student / Client": "Zacky Ahamed",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2025-08-10",
+"VFS DATE": "2025-09-19",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Visa granted",
+"Documents": "Drive Link",
+"_row": 26
+},
+{
+"#": 9,
+"Student / Client": "Vijayaletchumy",
+"Country": "UK",
+"Category": "Visitor",
+"VISA STATUS": "Refused",
+"START DATE": "2025-07-30",
+"VFS DATE": "2025-09-16",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Visa refused",
+"Documents": "Drive Link",
+"_row": 27
+},
+{
+"#": 10,
+"Student / Client": "Masuhudu",
+"Country": "UK",
+"Category": "Visitor",
+"VISA STATUS": "Refused",
+"START DATE": "2025-09-04",
+"VFS DATE": "2025-09-15",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Visa refused",
+"Documents": "Drive Link",
+"_row": 28
+},
+{
+"#": 11,
+"Student / Client": "Rameesa",
+"Country": "UK",
+"Category": "Visitor",
+"VISA STATUS": "Refused",
+"START DATE": "2025-09-04",
+"VFS DATE": "2025-09-15",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Visa refused",
+"Documents": "Drive Link",
+"_row": 29
+},
+{
+"#": 13,
+"Student / Client": "Kaleichelvan",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2025-08-09",
+"VFS DATE": "2025-09-02",
+"Agent / Direct": "Agent",
+"ASSIGNEE": "Sri/Thasbiha",
+"DESCRIPTION": "Visa granted",
+"Documents": "Drive Link",
+"_row": 30
+},
+{
+"#": 14,
+"Student / Client": "Chamath",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2025-08-10",
+"VFS DATE": "2025-08-29",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Visa granted",
+"Documents": "Drive Link",
+"_row": 31
+},
+{
+"#": 15,
+"Student / Client": "Hannan",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2025-08-10",
+"VFS DATE": "2025-08-27",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Visa granted",
+"Documents": "Drive Link",
+"_row": 32
+},
+{
+"#": 16,
+"Student / Client": "Kamshika",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2025-08-13",
+"VFS DATE": "2025-07-18",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Visa granted",
+"Documents": "Drive Link",
+"_row": 33
+},
+{
+"#": 17,
+"Student / Client": "Mithurshan",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Refused",
+"START DATE": "2025-06-20",
+"VFS DATE": "2025-07-17",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Sri/Thasbiha",
+"DESCRIPTION": "Interview failed",
+"Documents": "Drive Link",
+"_row": 34
+},
+{
+"#": 17,
+"Student / Client": "Vijayaletchumy",
+"Country": "UK",
+"Category": "Visit",
+"VISA STATUS": "Refused",
+"START DATE": "2025-07-30",
+"VFS DATE": "2025-08-08",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Visa refused",
+"Documents": "Drive Link",
+"_row": 35
+},
+{
+"#": 18,
+"Student / Client": "Malith Kosgolla",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2025-07-03",
+"VFS DATE": "2025-07-10",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Hafeel",
+"DESCRIPTION": "Visa granted",
+"Documents": "Drive Link",
+"_row": 36
+},
+{
+"#": 19,
+"Student / Client": "Rumaiz Zahir",
+"Country": "Japan",
+"Category": "Visit",
+"VISA STATUS": "Refused",
+"START DATE": "2025-07-01",
+"VFS DATE": "2025-07-04",
+"Agent / Direct": "Direct",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Visa refused",
+"Documents": "Drive Link",
+"_row": 37
+},
+{
+"#": 19,
+"Student / Client": "Mohanthas",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Granted",
+"START DATE": "2025-07-03",
+"VFS DATE": "2025-07-05",
+"Agent / Direct": "Agent",
+"ASSIGNEE": "Munsif",
+"DESCRIPTION": "Visa granted",
+"Documents": "Drive Link",
+"_row": 38
+},
+{
+"#": 20,
+"Student / Client": "Gilakshan Selvaraja",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Refused",
+"START DATE": "2025-07-04",
+"VFS DATE": "2025-07-06",
+"Agent / Direct": "Agent",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Finance issue",
+"Documents": "Drive Link",
+"_row": 39
+},
+{
+"#": 21,
+"Student / Client": "Kamalakaran Vijay",
+"Country": "UK",
+"Category": "Student",
+"VISA STATUS": "Refused",
+"START DATE": "2025-07-04",
+"VFS DATE": "2025-07-06",
+"Agent / Direct": "Agent",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Interview failed",
+"Documents": "Drive Link",
+"_row": 40
+},
+{
+"#": 23,
+"Student / Client": "Selvarajah",
+"Country": "UK",
+"Category": "Visit",
+"VISA STATUS": "Granted",
+"START DATE": "2025-07-04",
+"VFS DATE": "2025-07-06",
+"Agent / Direct": "Agent",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Visa granted",
+"Documents": "Drive Link",
+"_row": 41
+},
+{
+"#": 24,
+"Student / Client": "Suthakaran",
+"Country": "UK",
+"Category": "Visit",
+"VISA STATUS": "Refused",
+"START DATE": "2025-07-04",
+"VFS DATE": "2025-07-06",
+"Agent / Direct": "Agent",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Details of task here",
+"Documents": "Drive Link",
+"_row": 42
+},
+{
+"#": 25,
+"Student / Client": "Thanujan ",
+"Country": "UK",
+"Category": "Visit",
+"VISA STATUS": "Refused",
+"START DATE": "2025-07-04",
+"VFS DATE": "2025-07-06",
+"Agent / Direct": "Agent",
+"ASSIGNEE": "Thasbiha",
+"DESCRIPTION": "Details of task here",
+"Documents": "Drive Link",
+"_row": 43
+}
+],
+"source": "Visa Applications Status 2025"
+},
+"razan_admissions": {
+"headers": [
+"Name",
+"Direct/ Agent",
+"Counselor Name",
+"Mobile Number",
+"Client Email Created",
+"Office Registration",
+"Zones / Flags",
+"Application Received Date",
+"Universities Applied",
+"Course",
+"Intake",
+"Applied with",
+"Application Submit Date",
+"Final Status",
+"Offers",
+"English Waiver",
+"Language Tests",
+"To Do",
+"To Apply",
+"Summary",
+"Lead Source",
+"Portal Reply Date",
+"Portal Reply Status",
+"Expected Response Days",
+"Days Since Application",
+"Communication Log",
+"info for me CEO / Management"
+],
+"rows": [
+{
+"Name": "Mohamed Afras",
+"Direct/ Agent": "Direct",
+"Counselor Name": "Thasbiha",
+"Mobile Number": 760242008,
+"Client Email Created": "msmafras210@gmail.com",
+"Office Registration": "",
+"Zones / Flags": "Green",
+"Application Received Date": "2026-03-23",
+"Universities Applied": "1. Brunel London\n2. Northumbria London\n3. Worcester\n4. UWE Bristol\n5. University of Westminster\n6. University of Leicester",
+"Course": "1. Computer Science BSc\n2. BSc (Hons) Computing with IT Management\n3. BSc (Hons) Computer Science\n4. BSc (Hons) Computer Science\n5. BSc (Hons) Computer Science\n6. Computer Science BSc",
+"Intake": "1. Sep 26\n2. \n3. Sep 26\n4. Sep 26\n5. Sep 26\n6. Sep 26",
+"Applied with": "1. Study Reach\n2. Crizac\n3. Direct-Portal\n4. Direct-Portal\n5. Edvoy\n6. Crizac",
+"Application Submit Date": "1. 23.05.2026\n2. 23.03.2026\n3. 23.03.2026\n4. 16.04.2026\n5. 24.03.2026\n6. 07.04.2026",
+"Final Status": "1. Waiting for decision\n2. Not meet entry requirements, No AL\n3. Int Foundation Certificate and L4 Transcript required\n4. UCO received\n5. Pay application fee GBP 28.5\n6. App submitted",
+"Offers": "1. \n2. \n3. \n4. UCO - 27 Apr\n5. \n6. ",
+"English Waiver": "",
+"Language Tests": "N/A",
+"To Do": "",
+"To Apply": "",
+"Summary": "agreed to proceed with a 3-year degree, Int Foundation Certificate and L4 Transcript requested 30.03",
+"Lead Source": "Nashif",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 2
+},
+{
+"Name": "Miflan Yakoob",
+"Direct/ Agent": "Direct",
+"Counselor Name": "Thasbiha",
+"Mobile Number": 766001888,
+"Client Email Created": "miflanyakoob990@gmail.com",
+"Office Registration": "2025-12-16",
+"Zones / Flags": "Green",
+"Application Received Date": "2025-09-02",
+"Universities Applied": "1. University of Sunderland\n2. Aston London CEG\n3. ",
+"Course": "1. BA (Hons) Business Management and Entrepreneurship (Top-Up)\n2. BSc (Hons) Global Business and Management (Top-up)\n3. ",
+"Intake": "1. Oct 26\n2. Sep 26\n3. ",
+"Applied with": "1. GeeBee\n2. CEG\n3. ",
+"Application Submit Date": "1. 26.03.2026\n2. \n3. ",
+"Final Status": "1. Tuition deposit pending\n2. \n3. ",
+"Offers": "1. CO\n2. \n3. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "Revised offer received from Sunderland and have to pay 50% deposit",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 3
+},
+{
+"Name": "Arulthas Casin",
+"Direct/ Agent": "Direct",
+"Counselor Name": "Razaan",
+"Mobile Number": "",
+"Client Email Created": "casinarulthas777@gmail.com\n\ncasinarulthas09@gmail.com",
+"Office Registration": "",
+"Zones / Flags": "Red",
+"Application Received Date": "",
+"Universities Applied": "1. UCLAN\n2. UOG\n3. Worcester \n4. Wolverhampton\n5. Coventry\n6. Hertz\n7. Greenwich\n8. DMU\n9. Hull \n10. BCU\n11. UCA\n12. NU London\n13. ASton\n14. DMU\n15. Ravensbourne\n16. BPP\n17. Roehampton\n18. Aston London\n19. Wolvehampton",
+"Course": "1. Mres Management - May/25\n2. Mres MSc by Research International Business - Sep/25\n3. MRes in International Business and Management Studies - Jan/26\n4. Mres in IR - Jan/26\n5. International Business Management MSc - Jan/26\n6. MSc International Business - Jan/26\n7. International Business, MA - Jan/26\n8. International Business Management MSc - Jan/26\n9. MSc Business Management - Jan/26\n10. MSc Management and International Business - Jan/26\n11. Global Masters of Business and Management\n12. Msc Business with Entreprenurship - May/26\n13. MSc Business and Management\n14. MSc International Business Management\n15. MBA - Jan/26\n16. Msc Management - May/26\n17. Project Management - April/26\n18. MSc Business Management\n19. MSc Business Management",
+"Intake": "1. May 25\n2. Sep 25\n3. Jan 26\n4. Jan 26\n5. Jan 26\n6. Jan 26\n7. Jan 26\n8. Jan 26\n9. Jan 26\n10. Jan 26\n11. Jan 26\n12. May 26\n13. \n14. \n15. Jan 26\n16. May 26\n17. Apr 26\n18. June 26\n19. May",
+"Applied with": "1. Edvoy\n2. GUS\n3. Direct\n4. Infinite\n5. Crizac\n6. Crizac\n7. Crizac\n8. Crizac\n9. CEG\n10. Infinite\n11. Direct\n12. EduBird\n13. Edvoy\n14. Edvoy\n15. OIEG\n16. Edvoy\n17. Edvoy\n18. Direct\n19. Edvoy",
+"Application Submit Date": "1.\n\n\n\n\n15. 03/03/2026\n16. 03/03/2026\n17. 03/03/2026\n18. 02/04/2026\n19. 03/04/2026",
+"Final Status": "1. Pending Proposal\n2. CO\n3. Offer given Late, UC Offer delayed, deadline passed\n4. Offer rejected Due to no degree\n5. CO\n6. reject due to management decision CZ, Qualifi\n7. reject due to management decision CZ, Qualifi\n8. reject due to management decision CZ, Qualifi\n9. CO - 14 May\n10. Rejected by Uni, Qualifi\n11. CAS received, visa documents collecting\n12. AL Doc issue, no responce from uni\n13. Rejected by Uni\n14. Intake Closed by Uni \n15. CO, English required\n16. Application Sent for processing\n17. Rejected by Uni\n18. CO received\n19. UCO received and filling CAS Shield",
+"Offers": "1.\n2. CO\n3. \n4. \n5. CO\n6. \n7. \n8. \n9. CO - 14 May\n10.\n11. UCO\n12. CO\n13. \n14. \n15. CO\n16. \n17. \n18. CO\n19. UCO",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 4
+},
+{
+"Name": "Haris Thawfy",
+"Direct/ Agent": "Direct",
+"Counselor Name": "Thasbiha",
+"Mobile Number": 773858916,
+"Client Email Created": "moh2haris@gmail.com",
+"Office Registration": "",
+"Zones / Flags": "Green",
+"Application Received Date": "2026-03-27",
+"Universities Applied": "1. Regent College, London\n2. \n3. ",
+"Course": "1. \n2. \n3. ",
+"Intake": "1. \n2. \n3. ",
+"Applied with": "1. \n2. \n3. ",
+"Application Submit Date": "1. \n2. \n3. ",
+"Final Status": "1. \n2. \n3. ",
+"Offers": "1. \n2. \n3. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "",
+"To Apply": "Uni Law",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 5
+},
+{
+"Name": "Osura",
+"Direct/ Agent": "Direct",
+"Counselor Name": "Thasbiha",
+"Mobile Number": 770075229,
+"Client Email Created": "pereraosura5@gmail.com",
+"Office Registration": "",
+"Zones / Flags": "",
+"Application Received Date": "",
+"Universities Applied": "1. UCA",
+"Course": "1. BA (Hons) Business and Management (Top Up)",
+"Intake": "2026-09-01",
+"Applied with": "1. Direct",
+"Application Submit Date": 1,
+"Final Status": "1. Waiting for visa decision",
+"Offers": "1. UCO",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 6
+},
+{
+"Name": "Sanshi Satheenthiran",
+"Direct/ Agent": "Agent",
+"Counselor Name": "Thasbiha",
+"Mobile Number": "",
+"Client Email Created": "sanshisatheenthiran@gmail.com",
+"Office Registration": "",
+"Zones / Flags": "",
+"Application Received Date": "2026-05-12",
+"Universities Applied": "1. OC Aston\n2. OC Uclan\n3. ",
+"Course": "1. Foundation BSc (Hons) Business and Management\n2. Foundation BSc (Hons) Business and Management\n3. ",
+"Intake": "1. Sep 26\n2. \n3. ",
+"Applied with": "1. Direct\n2. Direct\n3. ",
+"Application Submit Date": "1. 12/5/2026\n2. 12/5/2026\n3. ",
+"Final Status": "1. Rejected due to gaps\n2. Rejected due to gaps\n3. ",
+"Offers": "1. \n2. \n3. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 7
+},
+{
+"Name": "Aashik Nazardeen",
+"Direct/ Agent": "Direct",
+"Counselor Name": "Thasbiha",
+"Mobile Number": "",
+"Client Email Created": "aashiknazardeen@gmail.com",
+"Office Registration": "",
+"Zones / Flags": "",
+"Application Received Date": "2026-05-12",
+"Universities Applied": "1. Schiller-Germany\n2. \n3. ",
+"Course": "1. BSc (Hons) Business Management\n2. \n3. ",
+"Intake": "1. Sep 26\n2. \n3. ",
+"Applied with": "1. Direct\n2. \n3. ",
+"Application Submit Date": "1. 12/5/2026\n2. \n3. ",
+"Final Status": "1. Offer to be submitted\n2. \n3. ",
+"Offers": "1. CO\n2. \n3. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "Submit the offer and get the registrattion",
+"To Apply": "",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 8
+},
+{
+"Name": "Pinushanth",
+"Direct/ Agent": "Direct",
+"Counselor Name": "Thasbiha",
+"Mobile Number": 766781996,
+"Client Email Created": "pinushanthsuvikaran@gmail.com",
+"Office Registration": "",
+"Zones / Flags": "",
+"Application Received Date": "",
+"Universities Applied": "1. BIL London\n2. NU London\n3. Coventry\n4. Arden University\n5. Worcester",
+"Course": "1. Business Management Top up\n2. BSc (Hons) Buss Enterprise and Innovation Management (Top-Up)\n3. Internation Business Top up\n4. BA (Hons) Business Management (Top-Up)\n5. BA (Hons) Business Management (Top-Up)",
+"Intake": "1. Mar 26\n2. May 26\n3. Sep 26\n4. Apr 26\n5. Sep 26",
+"Applied with": "1. Direct\n2. Edu Bird\n3. Edu Bird\n4. Edvoy\n5. Direct",
+"Application Submit Date": "1. 2/16/2026\n2. 2/13/2026\n3. ?\n4. 03/03/2026\n5. 24/04/2026",
+"Final Status": "1. Not accepting Qualifi\n2. Application Sent for processing\n3. CO, Deposit pending, will pay on month end Jun\n4. Application Sent for processing\n5. Application Sent for processing",
+"Offers": "1. \n2. CO\n3. CO\n4. \n5. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 9
+},
+{
+"Name": "Thulasihan",
+"Direct/ Agent": "Direct",
+"Counselor Name": "Thasbiha",
+"Mobile Number": "",
+"Client Email Created": "thulasihantharmasoruban@gmail.com",
+"Office Registration": "",
+"Zones / Flags": "",
+"Application Received Date": "",
+"Universities Applied": "1. University of Bristol\n2. University of Birmingham\n3. ",
+"Course": "1. BEng Electrical and Electronic Engineering - CAMS 1432749\n2. BEng Electronic and Electrical Engineering - CAMS 1432761\n3. ",
+"Intake": "1. Sep 26\n2. Sep 26\n3. ",
+"Applied with": "1. Crizac\n2. Crizac\n3. ",
+"Application Submit Date": "1. 27/05/2026\n2. 27/05/2026\n3. ",
+"Final Status": "1. Hv to pay 28 GBP for UCAS\n2. Hv to pay 28 GBP for UCAS\n3. ",
+"Offers": "1. \n2. \n3. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "Suggested other uni options and waiting for an update",
+"To Apply": "",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 10
+},
+{
+"Name": "Oshan ",
+"Direct/ Agent": "Direct",
+"Counselor Name": "Thasbiha",
+"Mobile Number": "",
+"Client Email Created": "oshankanishka84@gmail.com",
+"Office Registration": "",
+"Zones / Flags": "",
+"Application Received Date": "",
+"Universities Applied": "1. Schiller University\n2. \n3. ",
+"Course": "1. Master of Science in Data Science\n2. \n3. ",
+"Intake": "1. Sep 26\n2. \n3. ",
+"Applied with": "1. GBS\n2. \n3. ",
+"Application Submit Date": "1. 23/05/2026\n2. \n3. ",
+"Final Status": "1. CO\n2. \n3. ",
+"Offers": "1. CO\n2. \n3. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "Waiting for his decision",
+"To Apply": "",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 11
+},
+{
+"Name": "Ilham ",
+"Direct/ Agent": "Direct",
+"Counselor Name": "Thasbiha",
+"Mobile Number": "",
+"Client Email Created": "ilhamnazar836@gmail.com",
+"Office Registration": "2026-05-14",
+"Zones / Flags": "",
+"Application Received Date": "2026-05-14",
+"Universities Applied": "1. \n2. \n3. ",
+"Course": "1. \n2. \n3. ",
+"Intake": "1. \n2. \n3. ",
+"Applied with": "1. \n2. \n3. ",
+"Application Submit Date": "1. \n2. \n3. ",
+"Final Status": "1. \n2. \n3. ",
+"Offers": "1. \n2. \n3. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 12
+},
+{
+"Name": "Jajinthar ",
+"Direct/ Agent": "Direct",
+"Counselor Name": "Thasbiha",
+"Mobile Number": "",
+"Client Email Created": "rasenthiranjajinthar@gmail.com",
+"Office Registration": "2026-04-02",
+"Zones / Flags": "",
+"Application Received Date": "2026-05-25",
+"Universities Applied": "1. University of Dundee\n2. Abertay University\n3. University of Worcester",
+"Course": "1. MSc International Business\n2. \n3. MSc International Management",
+"Intake": "1. Sep 26\n2. Sep 26\n3. Sep 26",
+"Applied with": "1. Crizac\n2. \n3. Direct",
+"Application Submit Date": "1. 05/06/2026 \n2.\n3. 21/06/2026",
+"Final Status": "1. Applied\n2. \n3. ",
+"Offers": "1. \n2. \n3. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 13
+},
+{
+"Name": "Shakithyan",
+"Direct/ Agent": "Agent",
+"Counselor Name": "Thasbiha",
+"Mobile Number": "",
+"Client Email Created": "",
+"Office Registration": "-",
+"Zones / Flags": "",
+"Application Received Date": "",
+"Universities Applied": "1. \n2. \n3. ",
+"Course": "1. \n2. \n3. ",
+"Intake": "1. \n2. \n3. ",
+"Applied with": "1. \n2. \n3. ",
+"Application Submit Date": "1. \n2. \n3. ",
+"Final Status": "1. \n2. \n3. ",
+"Offers": "1. \n2. \n3. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 14
+},
+{
+"Name": "Ashen Iwantha",
+"Direct/ Agent": "Agent-Sky Gate",
+"Counselor Name": "Razaan",
+"Mobile Number": "",
+"Client Email Created": "asheniwantha85@gmail.com\n",
+"Office Registration": "-",
+"Zones / Flags": "",
+"Application Received Date": "2026-06-17",
+"Universities Applied": "1. University of Hull\n2. \n3. ",
+"Course": "1. MSc Digital Marketing and Advertising\n2. \n3. ",
+"Intake": "1. Sep 26\n2. \n3. ",
+"Applied with": "1. Direct\n2. \n3. ",
+"Application Submit Date": "1. 17/06/2026\n2. \n3. ",
+"Final Status": "1. Applied\n2. \n3. ",
+"Offers": "1. CO\n2. \n3. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 15
+},
+{
+"Name": "Fathima Safiha",
+"Direct/ Agent": "Agent-Glox Edu",
+"Counselor Name": "Razaan",
+"Mobile Number": "",
+"Client Email Created": "safihaparif@gmail.com",
+"Office Registration": "-",
+"Zones / Flags": "",
+"Application Received Date": "2026-06-17",
+"Universities Applied": "1. OC-Sunderland\n2. \n3. ",
+"Course": "1. Iy1 with BSc (Hons) Business Management\n2. \n3. ",
+"Intake": "1. Sep 26\n2. \n3. ",
+"Applied with": "1. Direct\n2. \n3. ",
+"Application Submit Date": "1. 17/06/2026\n2. \n3. ",
+"Final Status": "1. Applied\n2. \n3. ",
+"Offers": "1. CO\n2. \n3. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "CO 22/6/26",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 16
+},
+{
+"Name": "Danushan Ravindran",
+"Direct/ Agent": "Agent-Try Migration",
+"Counselor Name": "Razaan",
+"Mobile Number": "",
+"Client Email Created": "danushanravindran006@gmail.com",
+"Office Registration": "-",
+"Zones / Flags": "",
+"Application Received Date": "2026-06-13",
+"Universities Applied": "1. Coventry University\n2. University of Worcester\n3. University of Law",
+"Course": "1. MSc Computer Science\n2. MSc Computer Science\n3. MSc Artificial Intelligence for Business",
+"Intake": "1. Sep 26\n2. Sep 26\n3. Sep 26",
+"Applied with": "1. Crizac\n2. Direct\n3. Direct",
+"Application Submit Date": "1. 22/06/2025\n2. 22/06/2025\n3. 22/06/2025",
+"Final Status": "1. Applied\n2. Applied\n3. Applied",
+"Offers": "1. \n2. \n3. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 17
+},
+{
+"Name": "Abdul Sabith",
+"Direct/ Agent": "Agent-Achievers Int",
+"Counselor Name": "Razaan",
+"Mobile Number": "",
+"Client Email Created": "abdulsabith430@gmail.com",
+"Office Registration": "-",
+"Zones / Flags": "",
+"Application Received Date": "2026-06-20",
+"Universities Applied": "1. Aston London\n2. \n3. ",
+"Course": "1. BSc (Hons) Global Business and Management (Top-up)\n2. \n3. ",
+"Intake": "1. Sep 26\n2. \n3. ",
+"Applied with": "1. Direct\n2. \n3. ",
+"Application Submit Date": "1. 22/06/2026\n2. \n3. ",
+"Final Status": "1. Applied\n2. \n3. ",
+"Offers": "1. \n2. \n3. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 18
+},
+{
+"Name": "Jevikanth Selvakkumar",
+"Direct/ Agent": "Agent-Achievers Int",
+"Counselor Name": "Razaan",
+"Mobile Number": "",
+"Client Email Created": "jevikanths@gmail.com",
+"Office Registration": "-",
+"Zones / Flags": "",
+"Application Received Date": "2026-06-20",
+"Universities Applied": "1. Aston London\n2. \n3. ",
+"Course": "1. BSc (Hons) Global Business and Management (Top-up)\n2. \n3. ",
+"Intake": "1. Sep 26\n2. \n3. ",
+"Applied with": "1. Direct\n2. \n3. ",
+"Application Submit Date": "1. 22/06/2026\n2. \n3. ",
+"Final Status": "1. Applied\n2. \n3. ",
+"Offers": "1. \n2. \n3. ",
+"English Waiver": "",
+"Language Tests": "",
+"To Do": "",
+"To Apply": "",
+"Summary": "",
+"Lead Source": "",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 19
+}
+],
+"source": "Razan GG Applications - Admissions"
+},
+"razan_invoices": {
+"headers": [
+"Invoice No",
+"Name",
+"Counsellor",
+"Amount",
+"Inv Date",
+"Pay Date",
+"Paid (Paid/No)",
+"Source"
+],
+"rows": [
+{
+"Invoice No": "GGEC-INV-064",
+"Name": "Sivananthan Laxsigan",
+"Counsellor": "Shukaina",
+"Amount": 50000,
+"Inv Date": "2026-01-01",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "FB Leads",
+"_row": 2
+},
+{
+"Invoice No": "GGEC-INV-065",
+"Name": "Akeel Ameen Hussain",
+"Counsellor": "Thasbiha",
+"Amount": 50000,
+"Inv Date": "2026-01-17",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Visa payment",
+"_row": 3
+},
+{
+"Invoice No": "GGEC-INV-066",
+"Name": "Sreesureharippillai Sureshkumar",
+"Counsellor": "Thasbiha",
+"Amount": 50000,
+"Inv Date": "2026-01-17",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Visa payment",
+"_row": 4
+},
+{
+"Invoice No": "GGEC-INV-067",
+"Name": "Mohamed Jabir Humaidh",
+"Counsellor": "Thasbiha",
+"Amount": 50000,
+"Inv Date": "2026-01-21",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Leads",
+"_row": 5
+},
+{
+"Invoice No": "GGEC-INV-068",
+"Name": "Mohamed Sahran",
+"Counsellor": "Thasbiha",
+"Amount": 50000,
+"Inv Date": "2026-01-21",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Leads",
+"_row": 6
+},
+{
+"Invoice No": "GGEC-INV-069",
+"Name": "Amila Gunarathne",
+"Counsellor": "Shukaina",
+"Amount": 50000,
+"Inv Date": "2026-01-23",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "BMICH Event Jan",
+"_row": 7
+},
+{
+"Invoice No": "GGEC-INV-070",
+"Name": "Sithumini Sankalpani",
+"Counsellor": "Shukaina",
+"Amount": 50000,
+"Inv Date": "2026-01-28",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "",
+"_row": 8
+},
+{
+"Invoice No": "GGEC-INV-071",
+"Name": "Shani Shehara Thrisa",
+"Counsellor": "Shukaina",
+"Amount": 50000,
+"Inv Date": "2026-02-06",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Meta leads",
+"_row": 9
+},
+{
+"Invoice No": "GGEC-INV-072",
+"Name": "M N M Abdhullah",
+"Counsellor": "Shukaina",
+"Amount": 50000,
+"Inv Date": "2026-02-23",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Meta leads",
+"_row": 10
+},
+{
+"Invoice No": "GGEC-INV-073",
+"Name": "Rajenthiram Jajinthar",
+"Counsellor": "Shukaina",
+"Amount": 50000,
+"Inv Date": "2026-02-24",
+"Pay Date": "2026-04-02",
+"Paid (Paid/No)": "Paid",
+"Source": "Referral",
+"_row": 11
+},
+{
+"Invoice No": "GGEC-INV-074",
+"Name": "Jeyasril Perushjan",
+"Counsellor": "Thasbiha",
+"Amount": 50000,
+"Inv Date": "2026-02-28",
+"Pay Date": "2026-03-11",
+"Paid (Paid/No)": "Paid",
+"Source": "Referral",
+"_row": 12
+},
+{
+"Invoice No": "GGEC-INV-075",
+"Name": "Mohamed Afras",
+"Counsellor": "Thasbiha",
+"Amount": 50000,
+"Inv Date": "2026-03-16",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Referral - Nashif",
+"_row": 13
+},
+{
+"Invoice No": "GGEC-INV-076",
+"Name": "Mohammad Nazam",
+"Counsellor": "Thasbiha",
+"Amount": 50000,
+"Inv Date": "2026-03-16",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Walk in",
+"_row": 14
+},
+{
+"Invoice No": "GGEC-INV-077",
+"Name": "Zahrin Rizwan",
+"Counsellor": "Thasbiha",
+"Amount": 50000,
+"Inv Date": "2026-04-04",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Meta - Whatsapp",
+"_row": 15
+},
+{
+"Invoice No": "GGEC-INV-078",
+"Name": "Arsadh Roshan",
+"Counsellor": "Thasbiha",
+"Amount": 50000,
+"Inv Date": "2026-08-04",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Referral - Nashif",
+"_row": 16
+},
+{
+"Invoice No": "GGEC-INV-079",
+"Name": "Umar Sharaf",
+"Counsellor": "Thasbiha",
+"Amount": 50000,
+"Inv Date": "2026-04-30",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Europe Open Day",
+"_row": 17
+},
+{
+"Invoice No": "GGEC-INV-080",
+"Name": "Hamni Faisal",
+"Counsellor": "Thasbiha",
+"Amount": 50000,
+"Inv Date": "2026-04-30",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Europe Open Day",
+"_row": 18
+},
+{
+"Invoice No": "GGEC-INV-081",
+"Name": "Mohamed Ilham",
+"Counsellor": "Thasbiha",
+"Amount": 50000,
+"Inv Date": "2026-05-01",
+"Pay Date": "14/05/2026",
+"Paid (Paid/No)": "Paid",
+"Source": "Europe Open Day",
+"_row": 19
+},
+{
+"Invoice No": "GGEC-INV-082",
+"Name": "Dhanodya Kariyapperuma",
+"Counsellor": "Thasbiha",
+"Amount": 250000,
+"Inv Date": "2026-05-07",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Referral - Yasasri",
+"_row": 20
+},
+{
+"Invoice No": "GGEC-INV-083",
+"Name": "Aashik Nazardeen",
+"Counsellor": "Nashif",
+"Amount": 50000,
+"Inv Date": "2026-05-15",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Referral - Nashif",
+"_row": 21
+},
+{
+"Invoice No": "GGEC-INV-084",
+"Name": "Oshan Siriwardena",
+"Counsellor": "Nashif",
+"Amount": 50000,
+"Inv Date": "2026-05-17",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Walk in",
+"_row": 22
+},
+{
+"Invoice No": "GGEC-INV-085",
+"Name": "Kalindu Kuruppu",
+"Counsellor": "Thasbiha",
+"Amount": 50000,
+"Inv Date": "2026-06-05",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Walk in",
+"_row": 23
+},
+{
+"Invoice No": "GGEC-INV-086",
+"Name": "Dhananjaya Bandara",
+"Counsellor": "Razan",
+"Amount": 50000,
+"Inv Date": "2026-06-09",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Europe Open day",
+"_row": 24
+},
+{
+"Invoice No": "GGEC-INV-087",
+"Name": "Casin Arulthas",
+"Counsellor": "Razan",
+"Amount": 50000,
+"Inv Date": "2026-06-16",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "Europe Open day",
+"_row": 25
+},
+{
+"Invoice No": "GGEC-INV-088",
+"Name": "",
+"Counsellor": "Razan",
+"Amount": "",
+"Inv Date": "2026-06-17",
+"Pay Date": "",
+"Paid (Paid/No)": "Pending",
+"Source": "",
+"_row": 26
+}
+],
+"source": "Razan GG Applications - Invoices 26"
+},
+"razan_registered": {
+"headers": [
+"Name",
+"RF",
+"Reg Fee Date",
+"VF",
+"Visa Fee Date",
+"Status"
+],
+"rows": [
+{
+"Name": "Jeyasril Perushjan",
+"RF": "Yes",
+"Reg Fee Date": "2026-03-11",
+"VF": "No",
+"Visa Fee Date": "",
+"Status": "",
+"_row": 2
+},
+{
+"Name": "Rajenthiram Jajinthar",
+"RF": "Yes",
+"Reg Fee Date": "2026-04-02",
+"VF": "No",
+"Visa Fee Date": "",
+"Status": "",
+"_row": 3
+},
+{
+"Name": "Mohamed Ilham",
+"RF": "Yes",
+"Reg Fee Date": "14/05/2026",
+"VF": "No",
+"Visa Fee Date": "",
+"Status": "Documents collecting",
+"_row": 4
+},
+{
+"Name": "Osura",
+"RF": "No",
+"Reg Fee Date": "",
+"VF": "Yes",
+"Visa Fee Date": "16/05/2026",
+"Status": "Waiting for visa decision",
+"_row": 5
+}
+],
+"source": "Razan GG Applications - Registered 26"
+},
+"razan_client_gmails": {
+"headers": [
+"Name",
+"Created on",
+"Email",
+"Password"
+],
+"rows": [
+{
+"Name": "Vijay Kamalakaran",
+"Created on": "In Umair Laptop",
+"Email": "vijaykamalakaran@gmail.com",
+"Password": "Global@123",
+"_row": 2
+},
+{
+"Name": "Amhar Rukash (Bevan)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "amharrukash35@gmail.com",
+"Password": "Global@123",
+"_row": 3
+},
+{
+"Name": "Nisadi Udayangani (Razaan)",
+"Created on": "Bevan",
+"Email": "nisadiudayangani93@gmail.com",
+"Password": "Synexis@9873",
+"_row": 4
+},
+{
+"Name": "Joseph Apistan (Razaan)",
+"Created on": "Xiaomi Phone Umairx",
+"Email": "Apistanjoseph03@gmail.com",
+"Password": "Global@123",
+"_row": 5
+},
+{
+"Name": "sowmiya (Razaan)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "sowmiyaampihaiphakan@gmail.com",
+"Password": "Global@123",
+"_row": 6
+},
+{
+"Name": "Mary Rihani (Razaan)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "maryrishani28@gmail.com",
+"Password": "Global@123",
+"_row": 7
+},
+{
+"Name": "Mali Upekha (Razaan)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "upekha789@gmail.com",
+"Password": "Global@123",
+"_row": 8
+},
+{
+"Name": "Casin (Razaan)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "casinarulthas777@gmail.com",
+"Password": "Global@123",
+"_row": 9
+},
+{
+"Name": "Ayesha Kumari (Razaan)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "ayeshakumari633@gmail.com",
+"Password": "Global@123",
+"_row": 10
+},
+{
+"Name": "Piratheepan (Thasbiha)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "piratheepansivakumaran70@gmail.com",
+"Password": "Global@124",
+"_row": 11
+},
+{
+"Name": "Haseena (Thasbiha)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "haseenahakeem50@gmail.com",
+"Password": "Global@123",
+"_row": 12
+},
+{
+"Name": "Melani Maheshika (Razaan)",
+"Created on": "Bevan",
+"Email": "melanimaheshika08@gmail.com",
+"Password": "Global@123",
+"_row": 13
+},
+{
+"Name": "Pavan Nilambara (Razaan)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "pavannilambara90@gmail.com",
+"Password": "Global@123",
+"_row": 14
+},
+{
+"Name": "Ajith (Thasbiha)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "ajithparimelalakan003@gmail.com",
+"Password": "Ajith@123",
+"_row": 15
+},
+{
+"Name": "Chamath kalhara (Bevan)",
+"Created on": "Bevan",
+"Email": "chamathkalhara236@gmail.com",
+"Password": "Global@123",
+"_row": 16
+},
+{
+"Name": "Keerthana (Umair)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "keerthanavaratharasa46@gmail.com",
+"Password": "Global@123",
+"_row": 17
+},
+{
+"Name": "Aathimagan (Btec CEO Munsif)",
+"Created on": "No Location",
+"Email": "aathimagan660@gmail.com",
+"Password": "Aathmagan.gg@123",
+"_row": 18
+},
+{
+"Name": "Mohanthas (Munsif)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "mohanthas546@gmail.com",
+"Password": "Global@123",
+"_row": 19
+},
+{
+"Name": "Kishara (Munsif)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "samalikishara111@gmail.com",
+"Password": "Global@123",
+"_row": 20
+},
+{
+"Name": "Pirunthapan (Rukeshan / Me)",
+"Created on": "In Umair Laptop",
+"Email": "pirunthapan861@gmail.com",
+"Password": "Global@123",
+"_row": 21
+},
+{
+"Name": "Shaheem (Me)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "shaheemm217@gmail.com",
+"Password": "Shaheem.gg@123",
+"_row": 22
+},
+{
+"Name": "Wasana",
+"Created on": "No location",
+"Email": "wasana.backoffice.gg@gmail.com",
+"Password": "Global@123",
+"_row": 23
+},
+{
+"Name": "Kokilan (Munsif)",
+"Created on": "No location",
+"Email": "kokilan359@gmail.com",
+"Password": "Global@123",
+"_row": 24
+},
+{
+"Name": "Rijas (Munsif)",
+"Created on": "In Umair Laptop",
+"Email": "rijasmohammed33@gmail.com",
+"Password": "Global@123",
+"_row": 25
+},
+{
+"Name": "Murthaja (Thasbiha)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "murthajamohamed63@gmail.com",
+"Password": "Global@123",
+"_row": 26
+},
+{
+"Name": "Murthaja (Thasbiha)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "murthajacader222@gmail.com",
+"Password": "Carder@gg123",
+"_row": 27
+},
+{
+"Name": "Sajitha Lanka Adhikari (Razaan)",
+"Created on": "Bevan",
+"Email": "sajithalanka69@gmail.com",
+"Password": "Global@123",
+"_row": 28
+},
+{
+"Name": "Ihsaan Inzamam (Thasbiha)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "ihsaaninzamam003@gmail.com",
+"Password": "Global@123",
+"_row": 29
+},
+{
+"Name": "Thevapriya (Thasbiha)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "thevapriya990@gmail.com",
+"Password": "Global@123",
+"_row": 30
+},
+{
+"Name": "Tharun (Thasbiha)",
+"Created on": "Bevan",
+"Email": "kumarantharun202@gmail.com",
+"Password": "Global@123",
+"_row": 31
+},
+{
+"Name": "Aasif (Thasbiha)",
+"Created on": "Bevan",
+"Email": "aasifmohamed841@gmail.com",
+"Password": "Global@123",
+"_row": 32
+},
+{
+"Name": "Milakshan (Thasbiha - OC)",
+"Created on": "In Umair Laptop",
+"Email": "milakshan57@gmail.com",
+"Password": "Global@123",
+"_row": 33
+},
+{
+"Name": "Vijay (Thasbiha)",
+"Created on": "In Umair Laptop",
+"Email": "vijaykamalakaran@gmail.com",
+"Password": "Global@123",
+"_row": 34
+},
+{
+"Name": "Chameera (Razaan)",
+"Created on": "Bevan",
+"Email": "chameeranuwan30@gmail.com",
+"Password": "Global@123",
+"_row": 35
+},
+{
+"Name": "Malith (Hafeel)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "malithkosgolla7@gmail.com",
+"Password": "Global@123",
+"_row": 36
+},
+{
+"Name": "Nirojiny Mres (Bevan)",
+"Created on": "Bevan",
+"Email": "nirojinynavarathnam@gmail.com",
+"Password": "Global@123",
+"_row": 37
+},
+{
+"Name": "Haseef (Short Course Applied",
+"Created on": "Xiaomi Phone Umair",
+"Email": "haseefmohamed21@gmail.com",
+"Password": "Global@123",
+"_row": 38
+},
+{
+"Name": "Afkhan (Thasbiha)",
+"Created on": "Bevan",
+"Email": "afkhanmohamed75@gmail.com",
+"Password": "Global@123",
+"_row": 39
+},
+{
+"Name": "Waishanavi (Bevan - Promotion)",
+"Created on": "Bevan",
+"Email": "manivannanwaishnavi15@gmail.com",
+"Password": "Global@123",
+"_row": 40
+},
+{
+"Name": "Melani (Razan - Umairdecion)",
+"Created on": "In Umair Laptop",
+"Email": "melanimaheshika08@gmail.com",
+"Password": "Global@123",
+"_row": 41
+},
+{
+"Name": "Suntharalingam (Razan - Edu Globe)",
+"Created on": "With Razan",
+"Email": "karunakaran9463@gmail.com",
+"Password": "Global@123",
+"_row": 42
+},
+{
+"Name": "Kavithira (Thasbiha - Shree)",
+"Created on": "With Razan",
+"Email": "kavithirak4794@gmail.com",
+"Password": "Global@123",
+"_row": 43
+},
+{
+"Name": "Nelson (Thasbiha Agent)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "nelsonthev234@gmail.com",
+"Password": "Global@123",
+"_row": 44
+},
+{
+"Name": "Karthikan Maheswaran (Thasbiha Agent)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "karthikanmaheswaran5@gmail.com",
+"Password": "Global@123",
+"_row": 45
+},
+{
+"Name": "Sanjai Sivagumar (Thasbiha Agent)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "sanjaisivagumar888@gmail.com",
+"Password": "Global@123",
+"_row": 46
+},
+{
+"Name": "Aruni Kanthi (Thasbiha Agent)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "arunikanthi17@gmail.com",
+"Password": "Global@123",
+"_row": 47
+},
+{
+"Name": "Zacky Ahamed (Sakee) (Bevan)",
+"Created on": "In Umair Laptop",
+"Email": "ahamedzacky507@gmail.com",
+"Password": "Global@123",
+"_row": 48
+},
+{
+"Name": "Sivakajan (Thasbiha Agent)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "sivakajanravi9@gmail.com",
+"Password": "Global@123",
+"_row": 49
+},
+{
+"Name": "Sahya (Thasbiha Agent)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "sathyasoundarajan690@gmail.com",
+"Password": "Global@123",
+"_row": 50
+},
+{
+"Name": "Dilakshan (Thasbiha_Munsif)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "suthakarandilakshan250@gmail.com",
+"Password": "Global@123",
+"_row": 51
+},
+{
+"Name": "Munthasir (Nashif_Shaheem)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "muhammadmunthasir987@gmail.com",
+"Password": "Global@123",
+"_row": 52
+},
+{
+"Name": "Munthasir (Nashif_Shaheem)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "muhmunthasir2@gmail.com",
+"Password": "Global@123",
+"_row": 53
+},
+{
+"Name": "Aruni Kanthi",
+"Created on": "Xiaomi Phone Umair",
+"Email": "akanthi945@gmail.com",
+"Password": "Global@123",
+"_row": 54
+},
+{
+"Name": "Amarasivan Anushan (Thasbiha - Front office)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "anushanamarasivan@gmail.com\n",
+"Password": "Global@123",
+"_row": 55
+},
+{
+"Name": "Siham (Thasbiha - Nashif)",
+"Created on": "Razaan",
+"Email": "shiham740@gmail.com",
+"Password": "Global@123",
+"_row": 56
+},
+{
+"Name": "Kabinath (Thasbiha)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "Kabinath112@gmail.com",
+"Password": "Global@123",
+"_row": 57
+},
+{
+"Name": "Hansani Samudika (Razan - Achieve Way)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "hansanisamudika205@gmail.com",
+"Password": "Global@123",
+"_row": 58
+},
+{
+"Name": "Munthasir (Shaheem)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "muhmunthasir2@gmail.com",
+"Password": "Global@123",
+"_row": 59
+},
+{
+"Name": "Inshaf Iqbal (Nashif Naps)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "iqbalinshaf444@gmail.com",
+"Password": "Global@123",
+"_row": 60
+},
+{
+"Name": "Akeel Hussain (DMU PG)",
+"Created on": "",
+"Email": "hussainakeel137@gmail.com",
+"Password": "Global@1234",
+"_row": 61
+},
+{
+"Name": "Hari (Thasbiha - D)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "sureshkumarharipillei@gmail.com",
+"Password": "Global@25",
+"_row": 62
+},
+{
+"Name": "Fahama MBBS (Thasbiha - UTC)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "fahamafirna07@gmail.com",
+"Password": "Global@2123",
+"_row": 63
+},
+{
+"Name": "Thamilnilavan (Thasbiha)",
+"Created on": "Umair Laptop",
+"Email": "thamilnilavan307@gmail.com",
+"Password": "Global@2123",
+"_row": 64
+},
+{
+"Name": "Aron John (Umair - BMICH)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "johnaron7289@gmail.com",
+"Password": "Global@123",
+"_row": 65
+},
+{
+"Name": "Niradya (Razan - Agent)",
+"Created on": "Shiran (Samsung)",
+"Email": "niradya205@gmail.com",
+"Password": "Global@123",
+"_row": 66
+},
+{
+"Name": "Dharani Dharan (Razan - Agent)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "dharanidharan6611@gmail.com",
+"Password": "Global@123",
+"_row": 67
+},
+{
+"Name": "Vaksala (Thasbiha - Front Office D)",
+"Created on": "Umair Laptop",
+"Email": "vaksalathanaraj223@gmail.com",
+"Password": "Global@123",
+"_row": 68
+},
+{
+"Name": "Akeel Ameer",
+"Created on": "Xiaomi Phone Umair",
+"Email": "akeelameer597@gmail.com",
+"Password": "Global@123",
+"_row": 69
+},
+{
+"Name": "Janani (Razan - World key)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "thennakoonjanani3@gmail.com",
+"Password": "Global@123",
+"_row": 70
+},
+{
+"Name": "Osura (Thasbiha)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "pereraosura5@gmail.com",
+"Password": "Global@123",
+"_row": 71
+},
+{
+"Name": "Perushjan (Thasbiha)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "perushjanjeyasril33@gmail.com",
+"Password": "Global@123",
+"_row": 72
+},
+{
+"Name": "Umesha Gayangi (Razan - Achieve Ed)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "umeshagayangi77@gmail.com",
+"Password": "Global@123",
+"_row": 73
+},
+{
+"Name": "Shakithyan (Thasbiha - UTC)",
+"Created on": "Xiaomi Phone Umair",
+"Email": "rasenthiramshakithyan@gmail.com",
+"Password": "Global@123",
+"_row": 74
+},
+{
+"Name": "Haris ULAW (Nashif)",
+"Created on": "Umair Laptop",
+"Email": "moh2haris@gmail.com",
+"Password": "Global@123",
+"_row": 75
+},
+{
+"Name": "Sanshi Satheenthiran",
+"Created on": "Motorola",
+"Email": "sanshisatheenthiran@gmail.com",
+"Password": "Global@1020",
+"_row": 76
+},
+{
+"Name": "Aashik Nazardeen",
+"Created on": "Motorola",
+"Email": "aashiknazardeen@gmail.com",
+"Password": "Global@1020",
+"_row": 77
+},
+{
+"Name": "Thulasihan Tharmasoruban",
+"Created on": "Redmi A3",
+"Email": "thulasihantharmasoruban@gmail.com",
+"Password": "Global@1020",
+"_row": 78
+},
+{
+"Name": "Oshan Kanishka",
+"Created on": "Galaxy A04s",
+"Email": "oshankanishka84@gmail.com",
+"Password": "Global@1020",
+"_row": 79
+},
+{
+"Name": "Ilham Nazar",
+"Created on": "Motorola",
+"Email": "ilhamnazar836@gmail.com",
+"Password": "Global@1020",
+"_row": 80
+},
+{
+"Name": "Jajinthar Rasenthiran",
+"Created on": "A04s",
+"Email": "rasenthiranjajinthar@gmail.com",
+"Password": "Global@1020",
+"_row": 81
+},
+{
+"Name": "Kalindu Kuruppu",
+"Created on": "A05s",
+"Email": "kalindukuruppu9@gmail.com",
+"Password": "Global@1020",
+"_row": 82
+},
+{
+"Name": "Danushan Ravindran",
+"Created on": "Redmi A3",
+"Email": "danushanravindran006@gmail.com",
+"Password": "Global@1020",
+"_row": 83
+},
+{
+"Name": "Abdul Sabith",
+"Created on": "Motorola red",
+"Email": "abdulsabith430@gmail.com",
+"Password": "Global@1020",
+"_row": 84
+},
+{
+"Name": "Jevikanth Selvakumar",
+"Created on": "Redmi A3",
+"Email": "jevikanths@gmail.com",
+"Password": "Global@1020",
+"_row": 85
+}
+],
+"source": "Razan GG Applications - Client Gmails"
+},
+"razan_himaaus_admissions": {
+"headers": [
+"Name",
+"Direct/ Agent",
+"Counselor Name",
+"Mobile Number",
+"Client Email Created",
+"Office Registration",
+"Zones / Flags",
+"Application Received Date",
+"Universities Applied",
+"Course",
+"Intake",
+"Applied with",
+"Application Submit Date",
+"Final Status",
+"Offers",
+"English Waiver",
+"Language Tests",
+"To Do",
+"To Apply",
+"Summary",
+"Lead Source",
+"Portal Reply Date",
+"Portal Reply Status",
+"Expected Response Days",
+"Days Since Application",
+"Communication Log",
+"info for me CEO / Management"
+],
+"rows": [
+{
+"Name": "Mohamed Afras",
+"Direct/ Agent": "Direct",
+"Counselor Name": "Thasbiha",
+"Mobile Number": 760242008,
+"Client Email Created": "msmafras210@gmail.com",
+"Office Registration": "",
+"Zones / Flags": "Green",
+"Application Received Date": "2026-03-23",
+"Universities Applied": "1. Brunel London\n2. Northumbria London\n3. Worcester\n4. UWE Bristol\n5. University of Westminster\n6. University of Leicester",
+"Course": "1. Computer Science BSc\n2. BSc (Hons) Computing with IT Management\n3. BSc (Hons) Computer Science\n4. BSc (Hons) Computer Science\n5. BSc (Hons) Computer Science\n6. Computer Science BSc",
+"Intake": "1. Sep 26\n2. \n3. Sep 26\n4. Sep 26\n5. Sep 26\n6. Sep 26",
+"Applied with": "1. Study Reach\n2. Crizac\n3. Direct-Portal\n4. Direct-Portal\n5. Edvoy\n6. Crizac",
+"Application Submit Date": "1. 23.05.2026\n2. 23.03.2026\n3. 23.03.2026\n4. 16.04.2026\n5. 24.03.2026\n6. 07.04.2026",
+"Final Status": "1. Waiting for decision\n2. Not meet entry requirements, No AL\n3. Int Foundation Certificate and L4 Transcript required\n4. UCO received\n5. Pay application fee GBP 28.5\n6. App submitted",
+"Offers": "1. \n2. \n3. \n4. UCO - 27 Apr\n5. \n6. ",
+"English Waiver": "",
+"Language Tests": "N/A",
+"To Do": "",
+"To Apply": "",
+"Summary": "agreed to proceed with a 3-year degree, Int Foundation Certificate and L4 Transcript requested 30.03",
+"Lead Source": "Nashif",
+"Portal Reply Date": "",
+"Portal Reply Status": "",
+"Expected Response Days": "",
+"Days Since Application": "",
+"Communication Log": "",
+"info for me CEO / Management": "",
+"_row": 2
+}
+],
+"source": "HimaAus Applications - Admissions"
+},
+"razan_himaaus_invoices": {
+"headers": [
+"Invoice No",
+"Name",
+"Counsellor",
+"Amount",
+"Inv Date",
+"Pay Date",
+"Receipt",
+"Paid (Paid/No)",
+"Source"
+],
+"rows": [
+{
+"Invoice No": "HA-INV-0111",
+"Name": "Srikanth Risikanth",
+"Counsellor": "Thasbiha",
+"Amount": 350000,
+"Inv Date": "2026-04-06",
+"Pay Date": "2026-04-16",
+"Receipt": "Payment-HA-INV-0111-Srikanth.pdf",
+"Paid (Paid/No)": "Paid",
+"Source": "Walk in",
+"_row": 2
+},
+{
+"Invoice No": "HA-INV-0112",
+"Name": "Arsadh Roshan",
+"Counsellor": "Thasbiha",
+"Amount": 150000,
+"Inv Date": "2026-05-05",
+"Pay Date": "2026-05-14",
+"Receipt": "Payment-HA-INV-0112-Arsadh.pdf",
+"Paid (Paid/No)": "Paid",
+"Source": "",
+"_row": 3
+},
+{
+"Invoice No": "HA-INV-0113",
+"Name": "Fathima Riskana",
+"Counsellor": "Thasbiha",
+"Amount": 150000,
+"Inv Date": "2026-05-07",
+"Pay Date": "2026-05-20",
+"Receipt": "",
+"Paid (Paid/No)": "Paid",
+"Source": "",
+"_row": 4
+}
+],
+"source": "HimaAus Applications - Invoices 26"
+},
+"razan_amana_expenses": {
+"rows": [
+{
+"TR": "001",
+"Date": "2026-06-04",
+"Description": "Utility bills payment 1 to Razan BOC",
+"Category": "Other",
+"Amount": 0
+},
+{
+"TR": "002",
+"Date": "2026-06-04",
+"Description": "Dialog Bill Razan & Thasbiha",
+"Category": "Dialog Bill",
+"Amount": 9630
+},
+{
+"TR": "003",
+"Date": "2026-06-04",
+"Description": "CEB Bill - Mar 26 - 3017",
+"Category": "CEB Bill",
+"Amount": 29520
+},
+{
+"TR": "004",
+"Date": "2026-06-04",
+"Description": "CEB Bill - Mar 26 - 2223",
+"Category": "CEB Bill",
+"Amount": 28320
+},
+{
+"TR": "005",
+"Date": "2026-06-05",
+"Description": "Dialog Bill Shakya & Jilukshiya",
+"Category": "Dialog Bill",
+"Amount": 6400
+},
+{
+"TR": "006",
+"Date": "2026-06-08",
+"Description": "Salary-Shiran-May 26",
+"Category": "Salary",
+"Amount": 33500
+},
+{
+"TR": "007",
+"Date": "2026-06-08",
+"Description": "Salary-Shakya-May 26",
+"Category": "Salary",
+"Amount": 26250
+},
+{
+"TR": "008",
+"Date": "2026-06-08",
+"Description": "Salary-Jinukshiya-May 26",
+"Category": "Salary",
+"Amount": 25000
+},
+{
+"TR": "009",
+"Date": "2026-06-08",
+"Description": "Salary-Thasbiha-May 26",
+"Category": "Salary",
+"Amount": 94000
+},
+{
+"TR": "010",
+"Date": "2026-06-08",
+"Description": "Salary-Razan-May 26",
+"Category": "Salary",
+"Amount": 88250
+},
+{
+"TR": "011",
+"Date": "2026-06-08",
+"Description": "Payment-Naleer  IELTS-May 26",
+"Category": "Salary",
+"Amount": 30000
+},
+{
+"TR": "012",
+"Date": "2026-06-08",
+"Description": "Petty Cash Reimbursement",
+"Category": "Petty Cash",
+"Amount": 40000
+},
+{
+"TR": "013",
+"Date": "2026-06-08",
+"Description": "Marketing budget 1",
+"Category": "Marketing",
+"Amount": 20000
+},
+{
+"TR": "014",
+"Date": "2026-06-09",
+"Description": "Office Rent May 26",
+"Category": "Office Rent",
+"Amount": 425000
+},
+{
+"TR": "015",
+"Date": "2026-06-09",
+"Description": "Vehicle Lease Payment: Apr 26",
+"Category": "Vehicle Lease",
+"Amount": 120000
+},
+{
+"TR": "016",
+"Date": "2026-06-09",
+"Description": "Salary-Nafees-May 26",
+"Category": "Salary",
+"Amount": 100000
+},
+{
+"TR": "017",
+"Date": "2026-06-10",
+"Description": "Utility bills payment 2 to Razan BOC",
+"Category": "Other",
+"Amount": 0
+},
+{
+"TR": "018",
+"Date": "2026-06-10",
+"Description": "Dialog Bill payment COO Apr,May",
+"Category": "SLT Bill",
+"Amount": 35460
+},
+{
+"TR": "019",
+"Date": "2026-06-10",
+"Description": "SLT Bill payment Apr, May",
+"Category": "Dialog Bill",
+"Amount": 5820
+},
+{
+"TR": "020",
+"Date": "2026-06-10",
+"Description": "Kurunegala-Blue Sky hotel Advance payment",
+"Category": "CEG Event",
+"Amount": 21150
+},
+{
+"TR": "021",
+"Date": "2026-06-10",
+"Description": "Kandy Suisse Hotel advance payment",
+"Category": "CEG Event",
+"Amount": 50000
+},
+{
+"TR": "022",
+"Date": "2026-06-10",
+"Description": "Colombo Mandarina advance payment",
+"Category": "CEG Event",
+"Amount": 30000
+},
+{
+"TR": "023",
+"Date": "2026-06-10",
+"Description": "Jaffna Valampuri advance payment",
+"Category": "CEG Event",
+"Amount": 30000
+},
+{
+"TR": "024",
+"Date": "2026-06-12",
+"Description": "CEG Leaflets print-Printmart",
+"Category": "CEG Event",
+"Amount": 24000
+},
+{
+"TR": "",
+"Date": "2026-06-01",
+"Description": "Transfer fee x 19",
+"Category": "Bank charges",
+"Amount": 475
+}
+],
+"source": "Amana - Transactions Expenses"
+},
+"razan_amana_incomes": {
+"rows": [
+{
+"Date": "2026-06-01",
+"Description": "From Nashif",
+"Category": "From Nashif",
+"Amount": 50000
+},
+{
+"Date": "2026-06-05",
+"Description": "From Nashif",
+"Category": "From Nashif",
+"Amount": 100000
+},
+{
+"Date": "2026-06-08",
+"Description": "From GG Comm Bank",
+"Category": "GG Comm Bank",
+"Amount": 300000
+},
+{
+"Date": "2026-06-09",
+"Description": "From GG Comm Bank",
+"Category": "GG Comm Bank",
+"Amount": 500000
+},
+{
+"Date": "2026-06-09",
+"Description": "From GG Comm Bank",
+"Category": "GG Comm Bank",
+"Amount": 250000
+},
+{
+"Date": "2026-06-12",
+"Description": "From GG Comm Bank",
+"Category": "GG Comm Bank",
+"Amount": 25000
+}
+],
+"source": "Amana - Transactions Incomes"
+},
+"razan_petty_cash": {
+"headers": [
+"Date",
+"Ref",
+"Description",
+"Income",
+"Expenses",
+"Overall Balance"
+],
+"rows": [
+{
+"Date": "2026-06-01",
+"Ref": 0,
+"Description": "May 2026 Starting Balance",
+"Income": 0,
+"Expenses": "-",
+"Overall Balance": 3035,
+"_row": 2
+},
+{
+"Date": "2026-06-02",
+"Ref": 1065,
+"Description": "Refreshment for uni reps.",
+"Income": 0,
+"Expenses": 2400,
+"Overall Balance": 635,
+"_row": 3
+},
+{
+"Date": "2026-06-03",
+"Ref": 1066,
+"Description": "Cleaning( 2 days)",
+"Income": 0,
+"Expenses": 5000,
+"Overall Balance": -4365,
+"_row": 4
+},
+{
+"Date": "2026-06-05",
+"Ref": 1067,
+"Description": "Cleaning",
+"Income": 0,
+"Expenses": 2500,
+"Overall Balance": -6865,
+"_row": 5
+},
+{
+"Date": "2026-06-08",
+"Ref": 1068,
+"Description": "Cleaning",
+"Income": 0,
+"Expenses": 2500,
+"Overall Balance": -9365,
+"_row": 6
+},
+{
+"Date": "2026-06-09",
+"Ref": 1069,
+"Description": "Milk Powder,Tea",
+"Income": 0,
+"Expenses": 3540,
+"Overall Balance": -12905,
+"_row": 7
+},
+{
+"Date": "2026-06-09",
+"Ref": 0,
+"Description": "Petty Cash reimbursement",
+"Income": 40000,
+"Expenses": "",
+"Overall Balance": 27095,
+"_row": 8
+},
+{
+"Date": "2026-06-11",
+"Ref": 1070,
+"Description": "Garbage Bags (30x100)",
+"Income": 0,
+"Expenses": 3000,
+"Overall Balance": 24095,
+"_row": 9
+}
+],
+"source": "Amana - Petty Cash"
+},
+"razan_glsa_pipeline": {
+"headers": [
+"CLIENT NAME",
+"NIC / PASSPORT",
+"PHONE",
+"COUNSELOR",
+"ENQUIRY DATE",
+"PACKAGE",
+"DESTINATION",
+"LEVEL",
+"PARTNER INSTITUTION",
+"QUOTED (LKR)",
+"STAGE 1\nRegistration",
+"STAGE 1\nDate Paid",
+"STAGE 2\nQualif. Fee",
+"STAGE 2\nDate Paid",
+"STAGE 3\nTuition Fee",
+"STAGE 3\nDate Paid",
+"STAGE 4\nDocs & Visa",
+"STAGE 4\nDate Paid",
+"STAGE 5\nPost-Visa",
+"STAGE 5\nDate Paid",
+"TOTAL RECEIVED\n(LKR)",
+"BALANCE DUE\n(LKR)",
+"CASE STATUS"
+],
+"rows": [
+{
+"CLIENT NAME": "Abi's Brother",
+"NIC / PASSPORT": "",
+"PHONE": "",
+"COUNSELOR": "Thasbiha",
+"ENQUIRY DATE": "2026-01-10",
+"PACKAGE": "Package D",
+"DESTINATION": "United Kingdom",
+"LEVEL": "Level 5",
+"PARTNER INSTITUTION": "Pearson BTEC / QLS",
+"QUOTED (LKR)": 8000000,
+"STAGE 1\nRegistration": 350000,
+"STAGE 1\nDate Paid": "2026-01-12",
+"STAGE 2\nQualif. Fee": 2000000,
+"STAGE 2\nDate Paid": "2026-01-20",
+"STAGE 3\nTuition Fee": "",
+"STAGE 3\nDate Paid": "",
+"STAGE 4\nDocs & Visa": "",
+"STAGE 4\nDate Paid": "",
+"STAGE 5\nPost-Visa": "",
+"STAGE 5\nDate Paid": "",
+"TOTAL RECEIVED\n(LKR)": 2350000,
+"BALANCE DUE\n(LKR)": 5650000,
+"CASE STATUS": "",
+"_row": 5
+},
+{
+"CLIENT NAME": "Arshad",
+"NIC / PASSPORT": "",
+"PHONE": "",
+"COUNSELOR": "Thasbiha",
+"ENQUIRY DATE": "2026-01-15",
+"PACKAGE": "Package C",
+"DESTINATION": "United Kingdom",
+"LEVEL": "Level 4",
+"PARTNER INSTITUTION": "Qualifi / ATHE",
+"QUOTED (LKR)": 8000000,
+"STAGE 1\nRegistration": 350000,
+"STAGE 1\nDate Paid": "2026-01-18",
+"STAGE 2\nQualif. Fee": 2000000,
+"STAGE 2\nDate Paid": "2026-01-28",
+"STAGE 3\nTuition Fee": 3500000,
+"STAGE 3\nDate Paid": "2026-02-10",
+"STAGE 4\nDocs & Visa": "",
+"STAGE 4\nDate Paid": "",
+"STAGE 5\nPost-Visa": "",
+"STAGE 5\nDate Paid": "",
+"TOTAL RECEIVED\n(LKR)": 5850000,
+"BALANCE DUE\n(LKR)": 2150000,
+"CASE STATUS": "",
+"_row": 6
+},
+{
+"CLIENT NAME": "STATUS LEGEND",
+"NIC / PASSPORT": "",
+"PHONE": "",
+"COUNSELOR": "",
+"ENQUIRY DATE": "",
+"PACKAGE": "",
+"DESTINATION": "",
+"LEVEL": "",
+"PARTNER INSTITUTION": "",
+"QUOTED (LKR)": "",
+"STAGE 1\nRegistration": "",
+"STAGE 1\nDate Paid": "",
+"STAGE 2\nQualif. Fee": "",
+"STAGE 2\nDate Paid": "",
+"STAGE 3\nTuition Fee": "",
+"STAGE 3\nDate Paid": "",
+"STAGE 4\nDocs & Visa": "",
+"STAGE 4\nDate Paid": "",
+"STAGE 5\nPost-Visa": "",
+"STAGE 5\nDate Paid": "",
+"TOTAL RECEIVED\n(LKR)": "",
+"BALANCE DUE\n(LKR)": "",
+"CASE STATUS": "",
+"_row": 17
+},
+{
+"CLIENT NAME": "  Enquiry",
+"NIC / PASSPORT": "",
+"PHONE": "",
+"COUNSELOR": "",
+"ENQUIRY DATE": "",
+"PACKAGE": "",
+"DESTINATION": "",
+"LEVEL": "",
+"PARTNER INSTITUTION": "",
+"QUOTED (LKR)": "",
+"STAGE 1\nRegistration": "",
+"STAGE 1\nDate Paid": "",
+"STAGE 2\nQualif. Fee": "",
+"STAGE 2\nDate Paid": "",
+"STAGE 3\nTuition Fee": "",
+"STAGE 3\nDate Paid": "",
+"STAGE 4\nDocs & Visa": "",
+"STAGE 4\nDate Paid": "",
+"STAGE 5\nPost-Visa": "",
+"STAGE 5\nDate Paid": "",
+"TOTAL RECEIVED\n(LKR)": "",
+"BALANCE DUE\n(LKR)": "",
+"CASE STATUS": "",
+"_row": 18
+},
+{
+"CLIENT NAME": "  Assessment",
+"NIC / PASSPORT": "",
+"PHONE": "",
+"COUNSELOR": "",
+"ENQUIRY DATE": "",
+"PACKAGE": "",
+"DESTINATION": "",
+"LEVEL": "",
+"PARTNER INSTITUTION": "",
+"QUOTED (LKR)": "",
+"STAGE 1\nRegistration": "",
+"STAGE 1\nDate Paid": "",
+"STAGE 2\nQualif. Fee": "",
+"STAGE 2\nDate Paid": "",
+"STAGE 3\nTuition Fee": "",
+"STAGE 3\nDate Paid": "",
+"STAGE 4\nDocs & Visa": "",
+"STAGE 4\nDate Paid": "",
+"STAGE 5\nPost-Visa": "",
+"STAGE 5\nDate Paid": "",
+"TOTAL RECEIVED\n(LKR)": "",
+"BALANCE DUE\n(LKR)": "",
+"CASE STATUS": "",
+"_row": 19
+},
+{
+"CLIENT NAME": "  Level Enrolled",
+"NIC / PASSPORT": "",
+"PHONE": "",
+"COUNSELOR": "",
+"ENQUIRY DATE": "",
+"PACKAGE": "",
+"DESTINATION": "",
+"LEVEL": "",
+"PARTNER INSTITUTION": "",
+"QUOTED (LKR)": "",
+"STAGE 1\nRegistration": "",
+"STAGE 1\nDate Paid": "",
+"STAGE 2\nQualif. Fee": "",
+"STAGE 2\nDate Paid": "",
+"STAGE 3\nTuition Fee": "",
+"STAGE 3\nDate Paid": "",
+"STAGE 4\nDocs & Visa": "",
+"STAGE 4\nDate Paid": "",
+"STAGE 5\nPost-Visa": "",
+"STAGE 5\nDate Paid": "",
+"TOTAL RECEIVED\n(LKR)": "",
+"BALANCE DUE\n(LKR)": "",
+"CASE STATUS": "",
+"_row": 20
+},
+{
+"CLIENT NAME": "  In Training",
+"NIC / PASSPORT": "",
+"PHONE": "",
+"COUNSELOR": "",
+"ENQUIRY DATE": "",
+"PACKAGE": "",
+"DESTINATION": "",
+"LEVEL": "",
+"PARTNER INSTITUTION": "",
+"QUOTED (LKR)": "",
+"STAGE 1\nRegistration": "",
+"STAGE 1\nDate Paid": "",
+"STAGE 2\nQualif. Fee": "",
+"STAGE 2\nDate Paid": "",
+"STAGE 3\nTuition Fee": "",
+"STAGE 3\nDate Paid": "",
+"STAGE 4\nDocs & Visa": "",
+"STAGE 4\nDate Paid": "",
+"STAGE 5\nPost-Visa": "",
+"STAGE 5\nDate Paid": "",
+"TOTAL RECEIVED\n(LKR)": "",
+"BALANCE DUE\n(LKR)": "",
+"CASE STATUS": "",
+"_row": 21
+},
+{
+"CLIENT NAME": "  Offer Received",
+"NIC / PASSPORT": "",
+"PHONE": "",
+"COUNSELOR": "",
+"ENQUIRY DATE": "",
+"PACKAGE": "",
+"DESTINATION": "",
+"LEVEL": "",
+"PARTNER INSTITUTION": "",
+"QUOTED (LKR)": "",
+"STAGE 1\nRegistration": "",
+"STAGE 1\nDate Paid": "",
+"STAGE 2\nQualif. Fee": "",
+"STAGE 2\nDate Paid": "",
+"STAGE 3\nTuition Fee": "",
+"STAGE 3\nDate Paid": "",
+"STAGE 4\nDocs & Visa": "",
+"STAGE 4\nDate Paid": "",
+"STAGE 5\nPost-Visa": "",
+"STAGE 5\nDate Paid": "",
+"TOTAL RECEIVED\n(LKR)": "",
+"BALANCE DUE\n(LKR)": "",
+"CASE STATUS": "",
+"_row": 22
+},
+{
+"CLIENT NAME": "  Tuition Paid",
+"NIC / PASSPORT": "",
+"PHONE": "",
+"COUNSELOR": "",
+"ENQUIRY DATE": "",
+"PACKAGE": "",
+"DESTINATION": "",
+"LEVEL": "",
+"PARTNER INSTITUTION": "",
+"QUOTED (LKR)": "",
+"STAGE 1\nRegistration": "",
+"STAGE 1\nDate Paid": "",
+"STAGE 2\nQualif. Fee": "",
+"STAGE 2\nDate Paid": "",
+"STAGE 3\nTuition Fee": "",
+"STAGE 3\nDate Paid": "",
+"STAGE 4\nDocs & Visa": "",
+"STAGE 4\nDate Paid": "",
+"STAGE 5\nPost-Visa": "",
+"STAGE 5\nDate Paid": "",
+"TOTAL RECEIVED\n(LKR)": "",
+"BALANCE DUE\n(LKR)": "",
+"CASE STATUS": "",
+"_row": 23
+},
+{
+"CLIENT NAME": "  Visa Applied",
+"NIC / PASSPORT": "",
+"PHONE": "",
+"COUNSELOR": "",
+"ENQUIRY DATE": "",
+"PACKAGE": "",
+"DESTINATION": "",
+"LEVEL": "",
+"PARTNER INSTITUTION": "",
+"QUOTED (LKR)": "",
+"STAGE 1\nRegistration": "",
+"STAGE 1\nDate Paid": "",
+"STAGE 2\nQualif. Fee": "",
+"STAGE 2\nDate Paid": "",
+"STAGE 3\nTuition Fee": "",
+"STAGE 3\nDate Paid": "",
+"STAGE 4\nDocs & Visa": "",
+"STAGE 4\nDate Paid": "",
+"STAGE 5\nPost-Visa": "",
+"STAGE 5\nDate Paid": "",
+"TOTAL RECEIVED\n(LKR)": "",
+"BALANCE DUE\n(LKR)": "",
+"CASE STATUS": "",
+"_row": 24
+},
+{
+"CLIENT NAME": "  Visa Granted \u2713",
+"NIC / PASSPORT": "",
+"PHONE": "",
+"COUNSELOR": "",
+"ENQUIRY DATE": "",
+"PACKAGE": "",
+"DESTINATION": "",
+"LEVEL": "",
+"PARTNER INSTITUTION": "",
+"QUOTED (LKR)": "",
+"STAGE 1\nRegistration": "",
+"STAGE 1\nDate Paid": "",
+"STAGE 2\nQualif. Fee": "",
+"STAGE 2\nDate Paid": "",
+"STAGE 3\nTuition Fee": "",
+"STAGE 3\nDate Paid": "",
+"STAGE 4\nDocs & Visa": "",
+"STAGE 4\nDate Paid": "",
+"STAGE 5\nPost-Visa": "",
+"STAGE 5\nDate Paid": "",
+"TOTAL RECEIVED\n(LKR)": "",
+"BALANCE DUE\n(LKR)": "",
+"CASE STATUS": "",
+"_row": 25
+},
+{
+"CLIENT NAME": "  Visa Refused \u2717",
+"NIC / PASSPORT": "",
+"PHONE": "",
+"COUNSELOR": "",
+"ENQUIRY DATE": "",
+"PACKAGE": "",
+"DESTINATION": "",
+"LEVEL": "",
+"PARTNER INSTITUTION": "",
+"QUOTED (LKR)": "",
+"STAGE 1\nRegistration": "",
+"STAGE 1\nDate Paid": "",
+"STAGE 2\nQualif. Fee": "",
+"STAGE 2\nDate Paid": "",
+"STAGE 3\nTuition Fee": "",
+"STAGE 3\nDate Paid": "",
+"STAGE 4\nDocs & Visa": "",
+"STAGE 4\nDate Paid": "",
+"STAGE 5\nPost-Visa": "",
+"STAGE 5\nDate Paid": "",
+"TOTAL RECEIVED\n(LKR)": "",
+"BALANCE DUE\n(LKR)": "",
+"CASE STATUS": "",
+"_row": 26
+}
+],
+"source": "GLSA Client Pipeline"
+},
+"razan_glsa_payments": {
+"headers": [
+"DATE RECEIVED",
+"CLIENT NAME",
+"STAGE",
+"DESCRIPTION",
+"AMOUNT (LKR)",
+"PAYMENT METHOD",
+"RECEIPT / REF #",
+"RECEIVED BY",
+"NOTES"
+],
+"rows": [
+{
+"DATE RECEIVED": "2026-01-12",
+"CLIENT NAME": "Abi's Brother",
+"STAGE": "01",
+"DESCRIPTION": "Registration & Assessment Fee",
+"AMOUNT (LKR)": 350000,
+"PAYMENT METHOD": "Bank Transfer",
+"RECEIPT / REF #": "REF-001",
+"RECEIVED BY": "Thasbiha",
+"NOTES": "",
+"_row": 5
+},
+{
+"DATE RECEIVED": "2026-01-18",
+"CLIENT NAME": "Arshad",
+"STAGE": 1,
+"DESCRIPTION": "Registration & Assessment Fee",
+"AMOUNT (LKR)": 150000,
+"PAYMENT METHOD": "Bank Transfer",
+"RECEIPT / REF #": "REF-002",
+"RECEIVED BY": "Thasbiha",
+"NOTES": "",
+"_row": 6
+},
+{
+"DATE RECEIVED": "2026-01-20",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 7
+},
+{
+"DATE RECEIVED": "2026-01-25",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 8
+},
+{
+"DATE RECEIVED": "2026-01-28",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 9
+},
+{
+"DATE RECEIVED": "2026-02-03",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 10
+},
+{
+"DATE RECEIVED": "2026-02-10",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 11
+},
+{
+"DATE RECEIVED": "2026-02-12",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 12
+},
+{
+"DATE RECEIVED": "2026-02-12",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 13
+},
+{
+"DATE RECEIVED": "2026-02-20",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 14
+},
+{
+"DATE RECEIVED": "2026-02-28",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 15
+},
+{
+"DATE RECEIVED": "2026-03-01",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 16
+},
+{
+"DATE RECEIVED": "2026-03-03",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 17
+},
+{
+"DATE RECEIVED": "2026-03-07",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 18
+},
+{
+"DATE RECEIVED": "2026-03-10",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 19
+},
+{
+"DATE RECEIVED": "2026-03-12",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 20
+},
+{
+"DATE RECEIVED": "2026-03-15",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 21
+},
+{
+"DATE RECEIVED": "2026-03-18",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 22
+},
+{
+"DATE RECEIVED": "2026-03-25",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 23
+},
+{
+"DATE RECEIVED": "2026-03-28",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 24
+},
+{
+"DATE RECEIVED": "2026-04-05",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 25
+},
+{
+"DATE RECEIVED": "2026-04-20",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": "",
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 26
+},
+{
+"DATE RECEIVED": "TOTAL RECEIVED TO DATE",
+"CLIENT NAME": "",
+"STAGE": "",
+"DESCRIPTION": "",
+"AMOUNT (LKR)": 500000,
+"PAYMENT METHOD": "",
+"RECEIPT / REF #": "",
+"RECEIVED BY": "",
+"NOTES": "",
+"_row": 27
+}
+],
+"source": "GLSA Payment Ledger"
+},
+"razan_glsa_qualifications": {
+"headers": [
+"CLIENT NAME",
+"LEVEL",
+"INSTITUTION",
+"COURSE / PROGRAMME",
+"ENROLMENT DATE",
+"EXPECTED COMPLETION",
+"ACTUAL COMPLETION",
+"COST TO GLSA (LKR)",
+"CHARGED TO STUDENT",
+"MARGIN (LKR)",
+"CERTIFICATE ISSUED?",
+"PROGRESS STATUS"
+],
+"rows": [
+{
+"CLIENT NAME": "Abi's Brother",
+"LEVEL": "Level 5",
+"INSTITUTION": "Pearson BTEC",
+"COURSE / PROGRAMME": "HND Business Management",
+"ENROLMENT DATE": "2026-01-20",
+"EXPECTED COMPLETION": "2026-10-20",
+"ACTUAL COMPLETION": "",
+"COST TO GLSA (LKR)": 900000,
+"CHARGED TO STUDENT": 2000000,
+"MARGIN (LKR)": 1100000,
+"CERTIFICATE ISSUED?": "No",
+"PROGRESS STATUS": "In Progress",
+"_row": 5
+},
+{
+"CLIENT NAME": "Arshad",
+"LEVEL": "Level 4",
+"INSTITUTION": "Qualifi",
+"COURSE / PROGRAMME": "Level 4 Business & Management",
+"ENROLMENT DATE": "2026-01-28",
+"EXPECTED COMPLETION": "2026-07-28",
+"ACTUAL COMPLETION": "",
+"COST TO GLSA (LKR)": 700000,
+"CHARGED TO STUDENT": 2000000,
+"MARGIN (LKR)": 1300000,
+"CERTIFICATE ISSUED?": "No",
+"PROGRESS STATUS": "In Progress",
+"_row": 6
+}
+],
+"source": "GLSA Qualification Tracker"
+},
+"shiran_flyers": {
+"rows": [
+{
+"month": "June",
+"flyer_type": "UK - ONCAMPUS - Aston",
+"date": "2026-05-04",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "The local system said 'No' because of your Z-score, but we have international universities just said 'Yes'.",
+"date": "2026-05-04",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in Dubai - GBS",
+"date": "2026-05-05",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "France - Aura International",
+"date": "2026-05-05",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Canada - Study in IBU",
+"date": "2026-05-06",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "UK - Worcester Uni",
+"date": "2026-05-06",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Your A-Level results are a global currency. Stop trying to spend them only in Sri Lanka.",
+"date": "2026-05-07",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "UK - UWE ",
+"date": "2026-05-07",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Singapore- Sinhala",
+"date": "2026-05-08",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "What if I told you that 3 'S' passes could get you into a plenty of universities in UK",
+"date": "2026-05-08",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "UK - Study without IELTS",
+"date": "2026-05-08",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Don't let your district decide your future. 3 'B' passes might not get you into the university because of your Z-score. but we have plenty of plenty of universities in UK",
+"date": "2026-05-09",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in Europe",
+"date": "2026-05-09",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "UK - Bloomsberry",
+"date": "2026-05-10",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in UK without IELTS (Sinhala)",
+"date": "2026-05-10",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in  Malaysia (Sinhala)",
+"date": "2026-05-11",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in Malaysia ",
+"date": "2026-05-11",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in New Zealand",
+"date": "2026-05-12",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "In Sri Lanka: 3 'B' passes + The Wrong District = No University. In Europe: 3 'B' passes = A World-Class Degree.  If the local system doesn't have a seat for you, the world does. ",
+"date": "2026-05-12",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in Malta - GBS",
+"date": "2026-05-13",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in JMC Academy",
+"date": "2026-05-13",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Thinking of doing a 'Second Shy' just to beat the Z-score?  Wait! Before you spend another year studying the same books, realize that your current 3 'B' passes are already enough to get you into top u",
+"date": "2026-05-14",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in Australia",
+"date": "2026-05-14",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in Germany - Schiller University",
+"date": "2026-05-15",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Canada - Study in IBU",
+"date": "2026-05-15",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "UK - ONCAMPUS Aston - Study in uk after AL, Without IELTS",
+"date": "2026-05-16",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Hungary - Wekerle Business School",
+"date": "2026-05-16",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in New Zealand",
+"date": "2026-05-17",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Want to study abroad? (Sinhala)",
+"date": "2026-05-17",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Netherland - University of Europe",
+"date": "2026-05-18",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Want to study abroad? (Tamil)",
+"date": "2026-05-18",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "UK - ONCAMPUS Sunderland- Study in uk after AL, Without IELTS",
+"date": "2026-05-19",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in Dubai ",
+"date": "2026-05-19",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in Singapore (Sinhala)",
+"date": "2026-05-20",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "New Zealnd - Do you know the age 35-30 is the best age to migrate to",
+"date": "2026-05-20",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "UK - Study in University of LAW",
+"date": "2026-05-21",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Canada - Centennial",
+"date": "2026-05-22",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in Korea",
+"date": "2026-05-22",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in Australia",
+"date": "2026-05-23",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Study in Dubai (Pathway to Germany) - University of Europe",
+"date": "2026-05-23",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "UK - UWE ",
+"date": "2026-05-24",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "General - GG",
+"date": "2026-05-25",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Australia - General",
+"date": "2026-05-25",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "UK  - London Metropolitian University",
+"date": "2026-05-26",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Canada - North Island College",
+"date": "2026-05-26",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "France - Kedge Business School",
+"date": "2026-05-27",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "UK - How to Increase Your Visa Approval Chances",
+"date": "2026-05-28",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Hajj Festival",
+"date": "2026-05-28",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Canada - Centennial",
+"date": "2026-05-29",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Australia - NAPS",
+"date": "2026-05-29",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "UK - ONCAMPUS",
+"date": "2026-05-30",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Vesak Poya",
+"date": "2026-05-30",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "Canada -  University of Niagara Falls ",
+"date": "2026-05-31",
+"designed": false,
+"posted": false
+},
+{
+"month": "June",
+"flyer_type": "General - GG Sinhala",
+"date": "2026-05-31",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "UK - ONCAMPUS - Aston",
+"date": "2026-05-04",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "The local system said 'No' because of your Z-score, but we have international universities just said 'Yes'.",
+"date": "2026-05-04",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "Study in Dubai - GBS",
+"date": "2026-05-05",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "France - Aura International",
+"date": "2026-05-05",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "Canada - Study in IBU",
+"date": "2026-05-06",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "UK - Worcester Uni",
+"date": "2026-05-06",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "Your A-Level results are a global currency. Stop trying to spend them only in Sri Lanka.",
+"date": "2026-05-07",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "UK - UWE ",
+"date": "2026-05-07",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "Singapore- Sinhala",
+"date": "2026-05-08",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "What if I told you that 3 'S' passes could get you into a plenty of universities in UK",
+"date": "2026-05-08",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "UK - Study without IELTS",
+"date": "2026-05-08",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "Don't let your district decide your future. 3 'B' passes might not get you into the university because of your Z-score. but we have plenty of plenty of universities in UK",
+"date": "2026-05-09",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "Study in Europe",
+"date": "2026-05-09",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "UK - Bloomsberry",
+"date": "2026-05-10",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "Study in UK without IELTS (Sinhala)",
+"date": "2026-05-10",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "Study in  Malaysia (Sinhala)",
+"date": "2026-05-11",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Study in Malaysia ",
+"date": "2026-05-11",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Study in New Zealand",
+"date": "2026-05-12",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "In Sri Lanka: 3 'B' passes + The Wrong District = No University. In Europe: 3 'B' passes = A World-Class Degree.  If the local system doesn't have a seat for you, the world does. ",
+"date": "2026-05-12",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Study in Malta - GBS",
+"date": "2026-05-13",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Study in JMC Academy",
+"date": "2026-05-13",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Thinking of doing a 'Second Shy' just to beat the Z-score?  Wait! Before you spend another year studying the same books, realize that your current 3 'B' passes are already enough to get you into top u",
+"date": "2026-05-14",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Study in Australia",
+"date": "2026-05-14",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Study in Germany - Schiller University",
+"date": "2026-05-15",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Canada - Study in IBU",
+"date": "2026-05-15",
+"designed": true,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "UK - ONCAMPUS Aston - Study in uk after AL, Without IELTS",
+"date": "2026-05-16",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Hungary - Wekerle Business School",
+"date": "2026-05-16",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Study in New Zealand",
+"date": "2026-05-17",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Want to study abroad? (Sinhala)",
+"date": "2026-05-17",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Netherland - University of Europe",
+"date": "2026-05-18",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Want to study abroad? (Tamil)",
+"date": "2026-05-18",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "UK - ONCAMPUS Sunderland- Study in uk after AL, Without IELTS",
+"date": "2026-05-19",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Study in Dubai ",
+"date": "2026-05-19",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Study in Singapore (Sinhala)",
+"date": "2026-05-20",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "New Zealnd - Do you know the age 35-30 is the best age to migrate to",
+"date": "2026-05-20",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "UK - Study in University of LAW",
+"date": "2026-05-21",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Canada - Centennial",
+"date": "2026-05-22",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Study in Korea",
+"date": "2026-05-22",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Study in Australia",
+"date": "2026-05-23",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Study in Dubai (Pathway to Germany) - University of Europe",
+"date": "2026-05-23",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "UK - UWE ",
+"date": "2026-05-24",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "General - GG",
+"date": "2026-05-25",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Australia - General",
+"date": "2026-05-25",
+"designed": true,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "UK  - London Metropolitian University",
+"date": "2026-05-26",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Canada - North Island College",
+"date": "2026-05-26",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "France - Kedge Business School",
+"date": "2026-05-27",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "UK - How to Increase Your Visa Approval Chances",
+"date": "2026-05-28",
+"designed": true,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "Hajj Festival",
+"date": "2026-05-28",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Canada - Centennial",
+"date": "2026-05-29",
+"designed": false,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "Australia - NAPS",
+"date": "2026-05-29",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "UK - ONCAMPUS",
+"date": "2026-05-30",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Vesak Poya",
+"date": "2026-05-30",
+"designed": true,
+"posted": true
+},
+{
+"month": "May",
+"flyer_type": "Canada -  University of Niagara Falls ",
+"date": "2026-05-31",
+"designed": true,
+"posted": false
+},
+{
+"month": "May",
+"flyer_type": "General - GG Sinhala",
+"date": "2026-05-31",
+"designed": true,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Study in Malta - GBS - Muneera",
+"date": "2026-04-01",
+"designed": true,
+"posted": true
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Get a Free 15-Minute Scholarship Eligibility Assessment for Europe ",
+"date": "2026-04-04",
+"designed": true,
+"posted": true
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "The #1 reason student visas get rejected isn't bank balances\u2014it's document errors. We are doing Live Document Audits on April 18th. Bring yours.",
+"date": "2026-04-04",
+"designed": true,
+"posted": true
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Free On-the-Spot Pre-Screening for European Universities.",
+"date": "2026-04-05",
+"designed": true,
+"posted": true
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Think your grades aren't high enough for Europe? We have a list of universities in Poland and Latvia that prioritize your Statement of Purpose over your GPA. Get the list at our Open Day.",
+"date": "2026-04-06",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "From choosing a course to landing in Europe, there are exactly 13 stages you need to clear. We\u2019re handing out the Full 13-Stage list. Get the list at our Open Day.",
+"date": "2026-04-07",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Can't decide between the affordability of Germany, Malta, Finland or the PR prospects of Europe? We\u2019ve built a Comparison Matrix (Cost, Work Rights, Visa Speed) to help you decide in 5 minutes. Get th",
+"date": "2026-04-08",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "How to get a European student visa without a mountain of paperwork. Free On-the-Spot Pre-Screening for European Universities.",
+"date": "2026-04-08",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Stop waiting for the Z-score cutoff. Your A-Level passes are already enough for Europe.",
+"date": "2026-04-08",
+"designed": true,
+"posted": true
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Don't waste a year on a 'Second Shy.' Start your International Degree this year.",
+"date": "2026-04-09",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "The local system said 'No' because of your Z-score, but we have international universities just said 'Yes'.",
+"date": "2026-04-09",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Your A-Level results are a global currency. Stop trying to spend them only in Sri Lanka.",
+"date": "2026-04-10",
+"designed": true,
+"posted": true
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "What if I told you that 3 'S' passes could get you into a plenty of universities in Malaysia, Singapore or Europe?",
+"date": "2026-04-10",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Don't let your district decide your future. 3 'B' passes might not get you into the university because of your Z-score. but we have plenty of plenty of universities in Europe, Singapore and Malaysia t",
+"date": "2026-04-11",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "In Sri Lanka: 3 'B' passes + The Wrong District = No University. In Europe: 3 'B' passes = A World-Class Degree.  If the local system doesn't have a seat for you, the world does. Bring your results to",
+"date": "2026-04-11",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Thinking of doing a 'Second Shy' just to beat the Z-score?  Wait! Before you spend another year studying the same books, realize that your current 3 'B' passes are already enough to get you into top u",
+"date": "2026-04-12",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "UK - ONCAMPUS - Aston",
+"date": "2026-04-19",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Canada - Fleming",
+"date": "2026-04-19",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Study in Dubai - GBS",
+"date": "2026-04-20",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "France - Aura International",
+"date": "2026-04-20",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Canada - Study in IBU",
+"date": "2026-04-21",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "UK - Worcester Uni",
+"date": "2026-04-21",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Italy - NABA University",
+"date": "2026-04-22",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "UK - UWE ",
+"date": "2026-04-22",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Singapore- Sinhala",
+"date": "2026-04-23",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "General - GG",
+"date": "2026-04-23",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "UK - Study without IELTS",
+"date": "2026-04-24",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "General - GG",
+"date": "2026-04-24",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Study in Europe",
+"date": "2026-04-25",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "UK - Bloomsberry",
+"date": "2026-04-25",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Study in UK without IELTS (Sinhala)",
+"date": "2026-04-26",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Study in  Malaysia (Sinhala)",
+"date": "2026-04-26",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Study in Malaysia ",
+"date": "2026-04-27",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Study in New Zealand",
+"date": "2026-04-27",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "General - GG",
+"date": "2026-04-28",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Study in Malta - GBS",
+"date": "2026-04-28",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Study in JMC Academy",
+"date": "2026-04-29",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Study in Australia",
+"date": "2026-04-29",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Study in Germany - Schiller University",
+"date": "2026-04-30",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Canada - Study in IBU",
+"date": "2026-04-30",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "UK - ONCAMPUS Aston - Study in uk after AL, Without IELTS",
+"date": "31 Apr",
+"designed": false,
+"posted": false
+},
+{
+"month": "Apr 26 Planner",
+"flyer_type": "Hungary - Wekerle Business School",
+"date": "31 Apr",
+"designed": false,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "General - GG (Carousel)",
+"date": "2026-03-01",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Germany - University of Europe",
+"date": "2026-03-01",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "General - GG (Sinhala)",
+"date": "2026-03-02",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Dubai - University of Europe",
+"date": "2026-03-02",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Malaysia - Sinhala",
+"date": "2026-03-03",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Kedge Business School",
+"date": "2026-03-03",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in New Zealand",
+"date": "2026-03-04",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Want to study abroad? (Sinhala)",
+"date": "2026-03-04",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Netherland - University of Europe",
+"date": "2026-03-05",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Want to study abroad? (Tamil)",
+"date": "2026-03-05",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK - ONCAMPUS Sunderland- Study in uk after AL, Without IELTS",
+"date": "2026-03-06",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in Dubai ",
+"date": "2026-03-06",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in Singapore (Sinhala)",
+"date": "2026-03-07",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "New Zealnd - Do you know the age 35-30 is the best age to migrate to",
+"date": "2026-03-07",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "International Women's Day",
+"date": "2026-03-08",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK - General  (Carousel) ",
+"date": "2026-03-08",
+"designed": true,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK - Study in University of LAW",
+"date": "2026-03-08",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Canada - Centennial",
+"date": "2026-03-09",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in Korea",
+"date": "2026-03-09",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in Australia",
+"date": "2026-03-10",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in Dubai (Pathway to Germany) - University of Europe",
+"date": "2026-03-10",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK - UWE ",
+"date": "2026-03-11",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "General - GG",
+"date": "2026-03-11",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Australia - General",
+"date": "2026-03-12",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK  - London Metropolitian University",
+"date": "2026-03-12",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Canada - North Island College",
+"date": "2026-03-13",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "France - Kedge Business School",
+"date": "2026-03-13",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK - Aston University  (Carousel)",
+"date": "2026-03-14",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK - How to Increase Your Visa Approval Chances",
+"date": "2026-03-14",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "New Zealand - Why Nz",
+"date": "2026-03-15",
+"designed": true,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Canada - Study in IBU",
+"date": "2026-03-15",
+"designed": true,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Australia - NAPS",
+"date": "2026-03-16",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK - ONCAMPUS",
+"date": "2026-03-16",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK - May 2036 intake is now open.",
+"date": "2026-03-17",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Canada -  University of Niagara Falls for April 26",
+"date": "2026-03-17",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "General - GG",
+"date": "2026-03-18",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in Singapore (Sinhala)",
+"date": "2026-03-18",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK - ONCAMPUS - Aston",
+"date": "2026-03-19",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Canada - Fleming",
+"date": "2026-03-19",
+"designed": true,
+"posted": true
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in Dubai - GBS",
+"date": "2026-03-20",
+"designed": false,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "France - Aura International",
+"date": "2026-03-20",
+"designed": false,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Canada - Study in IBU",
+"date": "2026-03-21",
+"designed": false,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK - Worcester Uni",
+"date": "2026-03-21",
+"designed": false,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Italy - NABA University",
+"date": "2026-03-22",
+"designed": false,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK - UWE ",
+"date": "2026-03-22",
+"designed": false,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Singapore- Sinhala",
+"date": "2026-03-23",
+"designed": false,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "General - GG",
+"date": "2026-03-23",
+"designed": false,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK - Study without IELTS",
+"date": "2026-03-24",
+"designed": false,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "General - GG",
+"date": "2026-03-24",
+"designed": false,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in Europe",
+"date": "2026-03-25",
+"designed": false,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK - Bloomsberry",
+"date": "2026-03-25",
+"designed": false,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in UK without IELTS (Sinhala)",
+"date": "2026-03-26",
+"designed": true,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in  Malaysia (Sinhala)",
+"date": "2026-03-26",
+"designed": true,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in Malaysia ",
+"date": "2026-03-27",
+"designed": true,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in New Zealand",
+"date": "2026-03-27",
+"designed": true,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "General - GG",
+"date": "2026-03-28",
+"designed": true,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in Malta - GBS",
+"date": "2026-03-28",
+"designed": true,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in JMC Academy",
+"date": "2026-03-29",
+"designed": true,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in Australia",
+"date": "2026-03-29",
+"designed": true,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Study in Germany - Schiller University",
+"date": "2026-03-30",
+"designed": false,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Canada - Study in IBU",
+"date": "2026-03-30",
+"designed": true,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "UK - ONCAMPUS Aston - Study in uk after AL, Without IELTS",
+"date": "2026-03-31",
+"designed": true,
+"posted": false
+},
+{
+"month": "Mar 26 Planner",
+"flyer_type": "Hungary - Wekerle Business School",
+"date": "2026-03-31",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK - UCA",
+"date": "2026-02-01",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Germany - University of Europe",
+"date": "2026-02-01",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "General - GG (Carousel)",
+"date": "2026-02-02",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Hungary - Wekerle Business School",
+"date": "2026-02-02",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Malaysia - Sinhala",
+"date": "2026-02-03",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Kedge Business School",
+"date": "2026-02-03",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Study in New Zealand",
+"date": "2026-02-04",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Want to study abroad? (Sinhala)",
+"date": "2026-02-04",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Study in Europe",
+"date": "2026-02-05",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Want to study abroad? (Tamil)",
+"date": "2026-02-05",
+"designed": true,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK - ONCAMPUS Sunderland- Study in uk after AL, Without IELTS",
+"date": "2026-02-06",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Study in Dubai ",
+"date": "2026-02-06",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Study in Singapore (Sinhala)",
+"date": "2026-02-07",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "New Zealnd - Do you know the age 25-30 is the best age to migrate to",
+"date": "2026-02-07",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK - General  (Carousel) ",
+"date": "2026-02-08",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK - Study in University of LAW",
+"date": "2026-02-08",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Canada - Centannial",
+"date": "2026-02-09",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Study in Korea",
+"date": "2026-02-09",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Study in Australia",
+"date": "2026-02-10",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Want to study abroad? (Sinhala)",
+"date": "2026-02-10",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK - University of Chester",
+"date": "2026-02-11",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "General - GG",
+"date": "2026-02-11",
+"designed": false,
+"posted": false
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Australia - General",
+"date": "2026-02-12",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK  - London Metropolitian University",
+"date": "2026-02-12",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Canada - North Island College",
+"date": "2026-02-13",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "France - Kedge Business School",
+"date": "2026-02-13",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK - Aston University  (Carousel)",
+"date": "2026-02-14",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK - How to Increase Your Visa Approval Chances",
+"date": "2026-02-14",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "New Zealand - Why Nz",
+"date": "2026-02-15",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Canada - Study in IBU",
+"date": "2026-02-15",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Australia - NAPS",
+"date": "2026-02-16",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK - ONCAMPUS",
+"date": "2026-02-16",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK - May 2026 intake is now open.",
+"date": "2026-02-17",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Canada -  University of Niagara Falls for April 26",
+"date": "2026-02-17",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "General - GG",
+"date": "2026-02-18",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Study in Dubai",
+"date": "2026-02-18",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK - ONCAMPUS - Aston",
+"date": "2026-02-19",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Canada - Fleming",
+"date": "2026-02-19",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Study in Malta - GBS",
+"date": "2026-02-20",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "France - Aura International",
+"date": "2026-02-20",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Canada - UNFC",
+"date": "2026-02-21",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK - Worcester Uni",
+"date": "2026-02-21",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Italy - NABA University",
+"date": "2026-02-22",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK - UWE ",
+"date": "2026-02-22",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Singapore- Sinhala",
+"date": "2026-02-23",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "General - GG",
+"date": "2026-02-23",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK - Study without IELTS",
+"date": "2026-02-24",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Study in Canada",
+"date": "2026-02-24",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Study in Europe",
+"date": "2026-02-25",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "UK - Bloomsberry",
+"date": "2026-02-25",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Study in UK without IELTS (Sinhala)",
+"date": "2026-02-26",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Study in  Malaysia",
+"date": "2026-02-26",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Malaysia - Sinhala",
+"date": "2026-02-27",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Study in New Zealand",
+"date": "2026-02-27",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "General - GG",
+"date": "2026-02-28",
+"designed": true,
+"posted": true
+},
+{
+"month": "Feb 26 Planner",
+"flyer_type": "Study in Malta - GBS",
+"date": "2026-02-28",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "New Year wish",
+"date": "2026-01-01",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK Visa Granted - Munthasir",
+"date": "2026-01-04",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK Visa Grant - Miruthbavan",
+"date": "2026-01-05",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "8 Benefits Of Study Abroad",
+"date": "2026-01-07",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Malaysia",
+"date": "2026-01-08",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Kedge Business School",
+"date": "2026-01-09",
+"designed": true,
+"posted": false
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Study in New Zealand",
+"date": "2026-01-10",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Want to study abroad? (Sinhala)",
+"date": "2026-01-11",
+"designed": false,
+"posted": false
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Study in Europe",
+"date": "2026-01-12",
+"designed": false,
+"posted": false
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Want to study abroad? (Tamil)",
+"date": "2026-01-13",
+"designed": false,
+"posted": false
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Canada - Study in Centennial College",
+"date": "2026-01-14",
+"designed": false,
+"posted": false
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Study in Dubai",
+"date": "2026-01-15",
+"designed": false,
+"posted": false
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Study in Singapore (Sinhala)",
+"date": "2026-01-16",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "New Zealnd - Do you know the age 25-30 is the best age to migrate to",
+"date": "2026-01-16",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK - English is a barrier?",
+"date": "2026-01-17",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK - Study in University of LAW",
+"date": "2026-01-17",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Canada - University of Niagara Falls for April 26",
+"date": "2026-01-18",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Study in Korea",
+"date": "2026-01-18",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Study in Australia",
+"date": "2026-01-19",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK - University of Hull",
+"date": "2026-01-19",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK - University of Chester",
+"date": "2026-01-20",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "General - GG",
+"date": "2026-01-20",
+"designed": true,
+"posted": false
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Australia - General",
+"date": "2026-01-21",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK  - London Metropolitian University",
+"date": "2026-01-21",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Canada - North Island College",
+"date": "2026-01-22",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "France - Kedge Business School",
+"date": "2026-01-22",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK - Aston University",
+"date": "2026-01-23",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK - How to Increase Your Visa Approval Chances",
+"date": "2026-01-23",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "New Zealand - Why Nz",
+"date": "2026-01-24",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Canada - Study in IBU",
+"date": "2026-01-24",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Australia - NAPS",
+"date": "2026-01-25",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK - ONCAMPUS - Aston",
+"date": "2026-01-25",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK - May 2026 intake is now open.",
+"date": "2026-01-26",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Canada - UCW",
+"date": "2026-01-26",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "General - GG",
+"date": "2026-01-27",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Study in Dubai",
+"date": "2026-01-27",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK - ONCAMPUS",
+"date": "2026-01-28",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Canada - Fleming",
+"date": "2026-01-28",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Study in Malta - GBS",
+"date": "2026-01-29",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "France - Aura International",
+"date": "2026-01-29",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Canada - UNFC",
+"date": "2026-01-30",
+"designed": true,
+"posted": false
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK - Worcester Uni",
+"date": "2026-01-30",
+"designed": true,
+"posted": false
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Germany - University of Europe",
+"date": "2026-01-31",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK - UCA",
+"date": "2026-01-31",
+"designed": true,
+"posted": true
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Italy - NABA University",
+"date": "",
+"designed": false,
+"posted": false
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Hungary - Wekerle Business School",
+"date": "",
+"designed": false,
+"posted": false
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Malaysia - INTI International University",
+"date": "",
+"designed": false,
+"posted": false
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "UK - Worcester Uni",
+"date": "",
+"designed": false,
+"posted": false
+},
+{
+"month": "Jan 26 Planner",
+"flyer_type": "Germany - University of Europe",
+"date": "",
+"designed": false,
+"posted": false
+}
+],
+"source": "Meta Promotions Gantt - All Months"
+},
+"shiran_budgets": {
+"rows": [
+{
+"month": "June",
+"planned": 300,
+"actual": 0,
+"balance": 300,
+"start": "2026-05-04",
+"end": "2026-05-31"
+},
+{
+"month": "May",
+"planned": 300,
+"actual": 0,
+"balance": 300,
+"start": "2026-05-04",
+"end": "2026-05-31"
+},
+{
+"month": "Apr 26",
+"planned": 300,
+"actual": 0,
+"balance": 300,
+"start": "2026-04-01",
+"end": "2026-02-28"
+},
+{
+"month": "Mar 26",
+"planned": 300,
+"actual": 0,
+"balance": 300,
+"start": "2026-03-01",
+"end": "2026-02-28"
+},
+{
+"month": "Feb 26",
+"planned": 300,
+"actual": 226,
+"balance": 74,
+"start": "2026-02-01",
+"end": "2026-02-28"
+},
+{
+"month": "Jan 26",
+"planned": 300,
+"actual": 0,
+"balance": 300,
+"start": "2025-11-01",
+"end": "2025-11-30"
+}
+],
+"source": "Meta Promotions monthly budget"
+}
+}

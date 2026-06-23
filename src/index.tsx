@@ -7873,6 +7873,131 @@ app.put('/api/v16g/ws-locks', async (c) => {
     }
 });
 
+// ============================================================
+// v16q — Per-user workspace data (Mirror of Excel sheets)
+// Seeded from xlsx files uploaded 2026-06-23, persisted in KV.
+// ============================================================
+import V16Q_SEED from './v16q-seed.json';
+
+const V16Q_DATASETS = [
+    'thasbiha_admissions','thasbiha_visa',
+    'razan_visa_2026','razan_visa_2025',
+    'razan_admissions','razan_invoices','razan_registered','razan_client_gmails',
+    'razan_himaaus_admissions','razan_himaaus_invoices',
+    'razan_amana_expenses','razan_amana_incomes','razan_petty_cash',
+    'razan_glsa_pipeline','razan_glsa_payments','razan_glsa_qualifications',
+    'shiran_flyers','shiran_budgets'
+] as const;
+type V16QKey = typeof V16Q_DATASETS[number];
+
+async function v16qGet(c: any, key: V16QKey): Promise<{headers: string[], rows: any[]}> {
+    const kvKey = 'v16q:' + key;
+    try {
+        const kv = (c.env as any)?.COMMS;
+        if (kv) {
+            const raw = await kv.get(kvKey);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed && Array.isArray(parsed.rows)) return parsed;
+            }
+        }
+    } catch {}
+    const seed: any = (V16Q_SEED as any)[key];
+    if (!seed) return { headers: [], rows: [] };
+    let headers: string[] = Array.isArray(seed.headers) ? seed.headers.slice() : [];
+    const rows: any[] = Array.isArray(seed.rows) ? seed.rows : [];
+    // Derive headers from row keys if seed didn't ship them
+    if (headers.length === 0 && rows.length > 0) {
+        const seen = new Set<string>();
+        for (const r of rows) {
+            if (r && typeof r === 'object') {
+                for (const k of Object.keys(r)) {
+                    if (k !== '_row' && !seen.has(k)) { seen.add(k); headers.push(k); }
+                }
+            }
+        }
+    }
+    return { headers, rows };
+}
+
+async function v16qSet(c: any, key: V16QKey, payload: {headers?: string[], rows: any[]}): Promise<boolean> {
+    try {
+        const kv = (c.env as any)?.COMMS;
+        if (!kv) return false;
+        await kv.put('v16q:' + key, JSON.stringify(payload));
+        return true;
+    } catch { return false; }
+}
+
+// Single generic GET route — `dataset` is one of the keys above
+app.get('/api/v16q/:dataset', async (c) => {
+    const ds = c.req.param('dataset') as V16QKey;
+    if (!V16Q_DATASETS.includes(ds)) {
+        return c.json({ success: false, error: 'Unknown dataset', allowed: V16Q_DATASETS }, 400);
+    }
+    const data = await v16qGet(c, ds);
+    return c.json({ success: true, dataset: ds, count: data.rows.length, headers: data.headers, rows: data.rows });
+});
+
+// Single row upsert (replaces row at _row key, or appends if missing)
+app.post('/api/v16q/:dataset/row', async (c) => {
+    const ds = c.req.param('dataset') as V16QKey;
+    if (!V16Q_DATASETS.includes(ds)) return c.json({ success: false, error: 'Unknown dataset' }, 400);
+    try {
+        const body: any = await c.req.json();
+        const row = body.row;
+        if (!row || typeof row !== 'object') return c.json({ success: false, error: 'Missing row' }, 400);
+        const data = await v16qGet(c, ds);
+        const rows = data.rows.slice();
+        if (row._row != null) {
+            const idx = rows.findIndex((r: any) => r._row === row._row);
+            if (idx >= 0) rows[idx] = row;
+            else rows.push(row);
+        } else {
+            row._row = Date.now();
+            rows.push(row);
+        }
+        const ok = await v16qSet(c, ds, { headers: data.headers, rows });
+        return c.json({ success: ok, dataset: ds, count: rows.length });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+
+// Bulk update (replace whole array)
+app.post('/api/v16q/:dataset', async (c) => {
+    const ds = c.req.param('dataset') as V16QKey;
+    if (!V16Q_DATASETS.includes(ds)) return c.json({ success: false, error: 'Unknown dataset' }, 400);
+    try {
+        const body: any = await c.req.json();
+        if (!Array.isArray(body.rows)) return c.json({ success: false, error: 'Missing rows array' }, 400);
+        const ok = await v16qSet(c, ds, { headers: body.headers || [], rows: body.rows });
+        return c.json({ success: ok, dataset: ds, count: body.rows.length });
+    } catch (e: any) {
+        return c.json({ success: false, error: e?.message || String(e) }, 500);
+    }
+});
+
+// Aggregated workspace endpoint — returns all data for a given user in one shot
+app.get('/api/v16q/workspace/:user', async (c) => {
+    const user = (c.req.param('user') || '').toLowerCase();
+    const map: Record<string, V16QKey[]> = {
+        'thasbiha':    ['thasbiha_admissions', 'thasbiha_visa'],
+        'thasbiha.s':  ['thasbiha_admissions', 'thasbiha_visa'],
+        'razan':       ['razan_visa_2026','razan_visa_2025','razan_admissions','razan_invoices','razan_registered','razan_client_gmails','razan_himaaus_admissions','razan_himaaus_invoices','razan_amana_expenses','razan_amana_incomes','razan_petty_cash','razan_glsa_pipeline','razan_glsa_payments','razan_glsa_qualifications'],
+        'razan.thawus':['razan_visa_2026','razan_visa_2025','razan_admissions','razan_invoices','razan_registered','razan_client_gmails','razan_himaaus_admissions','razan_himaaus_invoices','razan_amana_expenses','razan_amana_incomes','razan_petty_cash','razan_glsa_pipeline','razan_glsa_payments','razan_glsa_qualifications'],
+        'shiran':      ['shiran_flyers', 'shiran_budgets'],
+        'shiran.r':    ['shiran_flyers', 'shiran_budgets']
+    };
+    const keys = map[user] || [];
+    if (!keys.length) return c.json({ success: false, error: 'Unknown user', user }, 404);
+    const result: any = { success: true, user };
+    for (const k of keys) {
+        const d = await v16qGet(c, k);
+        result[k] = { count: d.rows.length, headers: d.headers, rows: d.rows };
+    }
+    return c.json(result);
+});
 // 404 Not Found page (must be the LAST route registered)
 app.get('*', (c) => {
   return c.html(`
@@ -7909,5 +8034,6 @@ app.get('*', (c) => {
     </html>
   `, 404)
 })
+
 
 export default app

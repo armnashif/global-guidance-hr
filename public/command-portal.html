@@ -27008,6 +27008,728 @@ else _tbBoot();
   console.log('[v16p] Attendance page polish + GPS robustness (permissions API + fallback + cleaner UI) loaded.');
 })();
 </script>
+<script>
+/* ============================================================================
+   v16q — Per-user workspace data (Mirror of Excel sheets)
+   
+   Backend: /api/v16q/{dataset} GET + /api/v16q/workspace/:user
+   Strategy: Wrap switchRoleTab to intercept Thasbiha/Razan/Shiran tabs and
+   render real sheet data inline. Legacy tab logic untouched for other users.
+   ============================================================================ */
+(function(){
+  'use strict';
+
+  // ---- in-memory cache so we don't re-fetch on every tab switch ----
+  window.V16Q = window.V16Q || { data: null, user: null, loadedAt: 0, loading: false };
+
+  function v16qUserKey(){
+    const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+    return (u.username || '').toLowerCase();
+  }
+
+  function v16qEsc(s){
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // Determine which workspace bundle a user belongs to
+  function v16qWorkspaceKey(){
+    const u = v16qUserKey();
+    if (u === 'thasbiha.s' || u === 'thasbiha') return 'thasbiha';
+    if (u === 'razan.thawus' || u === 'razan') return 'razan';
+    if (u === 'shiran' || u === 'shiran.r')    return 'shiran';
+    return null;
+  }
+
+  async function v16qLoad(force){
+    const key = v16qWorkspaceKey();
+    if (!key) return null;
+    if (!force && window.V16Q.data && window.V16Q.user === key && (Date.now() - window.V16Q.loadedAt) < 60000) {
+      return window.V16Q.data;
+    }
+    if (window.V16Q.loading) {
+      // Wait for the in-flight request
+      for (let i=0; i<40 && window.V16Q.loading; i++) await new Promise(r=>setTimeout(r,100));
+      return window.V16Q.data;
+    }
+    window.V16Q.loading = true;
+    try {
+      const r = await fetch('/api/v16q/workspace/' + encodeURIComponent(key));
+      const j = await r.json();
+      if (j && j.success) {
+        window.V16Q.data = j;
+        window.V16Q.user = key;
+        window.V16Q.loadedAt = Date.now();
+        return j;
+      }
+    } catch(e){ console.warn('[v16q] load failed', e); }
+    finally { window.V16Q.loading = false; }
+    return null;
+  }
+
+  // ---- generic loading shell ----
+  function v16qLoadingShell(title, subtitle){
+    return '<div class="card" style="border-top:3px solid #6366f1">'
+      + '<div class="card-header"><div><div class="card-title">' + v16qEsc(title) + '</div>'
+      +   '<div class="card-sub">' + v16qEsc(subtitle||'Loading from your live spreadsheet…') + '</div></div></div>'
+      + '<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px">'
+      +   '<i class="fas fa-spinner fa-spin" style="font-size:24px;margin-bottom:10px;color:#6366f1"></i>'
+      +   '<div>Fetching data…</div></div></div>';
+  }
+
+  function v16qErrorShell(title, msg){
+    return '<div class="card" style="border-top:3px solid #dc2626">'
+      + '<div class="card-header"><div class="card-title">' + v16qEsc(title) + '</div>'
+      + '<div class="card-sub" style="color:#dc2626">' + v16qEsc(msg||'Could not load data') + '</div></div></div>';
+  }
+
+  // ---- format helpers ----
+  function v16qFmtCell(v){
+    if (v == null || v === '') return '<span style="color:var(--muted)">—</span>';
+    // Booleans → coloured tick / dash so they read at a glance
+    if (v === true) return '<span style="color:#16a34a;font-weight:600"><i class="fas fa-check"></i> Yes</span>';
+    if (v === false) return '<span style="color:#94a3b8">—</span>';
+    const s = String(v).trim();
+    if (!s) return '<span style="color:var(--muted)">—</span>';
+    // ISO date-time → short date
+    if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+      try { return v16qEsc(new Date(s).toLocaleDateString('en-GB')); } catch(e){}
+    }
+    if (s.length > 90) return v16qEsc(s.slice(0,87)) + '…';
+    // Preserve newlines as line breaks (Thasbiha's data has multi-line cells)
+    if (s.indexOf('\n') !== -1) {
+      return v16qEsc(s).replace(/\n/g, '<br>');
+    }
+    return v16qEsc(s);
+  }
+
+  function v16qBadge(text, color){
+    return '<span style="display:inline-block;background:' + color + '18;color:' + color + ';padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">' + v16qEsc(text) + '</span>';
+  }
+
+  // ---- generic sortable, searchable table renderer ----
+  // dataset: { headers: [], rows: [] }
+  // opts:    { id, title, subtitle, accent, columnHints: {headerName: 'badge:green|red|blue|orange'}, defaultPageSize }
+  function v16qRenderTable(dataset, opts){
+    opts = opts || {};
+    const id = opts.id || ('v16q-tbl-' + Math.random().toString(36).slice(2,8));
+    const accent = opts.accent || '#6366f1';
+    const headers = (dataset.headers || []).filter(h => h && String(h).trim());
+    const rows = dataset.rows || [];
+
+    // Store the data on window for sort/filter callbacks
+    window.__V16Q_TABLES = window.__V16Q_TABLES || {};
+    window.__V16Q_TABLES[id] = { headers: headers, rows: rows.slice(), opts: opts, sortKey: null, sortDir: 1, filter: '' };
+
+    const kpisHtml = opts.kpis ? '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">'
+      + opts.kpis.map(k => '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;background:var(--surface)">'
+          + '<div style="font-size:22px;font-weight:800;color:' + (k.color||accent) + '">' + v16qEsc(k.value) + '</div>'
+          + '<div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:3px">' + v16qEsc(k.label) + '</div></div>').join('')
+      + '</div>' : '';
+
+    return '<div class="card" style="border-top:3px solid ' + accent + '">'
+      + '<div class="card-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">'
+      +   '<div><div class="card-title">' + v16qEsc(opts.title || 'Data') + '</div>'
+      +   '<div class="card-sub">' + v16qEsc(opts.subtitle || (rows.length + ' rows')) + '</div></div>'
+      +   '<div style="display:flex;gap:8px;align-items:center">'
+      +     '<input id="' + id + '-search" placeholder="Search…" oninput="v16qFilterTable(\'' + id + '\', this.value)" '
+      +       'style="border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12.5px;width:180px;background:var(--surface)">'
+      +     '<button onclick="v16qExportCSV(\'' + id + '\')" style="background:' + accent + ';color:#fff;border:0;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">'
+      +       '<i class="fas fa-download"></i> CSV</button>'
+      +   '</div></div>'
+      + kpisHtml
+      + '<div id="' + id + '-body" class="table-wrap" style="max-height:520px;overflow:auto">'
+      +   v16qRenderTableBody(id)
+      + '</div></div>';
+  }
+
+  // Render just the <table> innards (used on sort/filter)
+  function v16qRenderTableBody(id){
+    const st = window.__V16Q_TABLES[id];
+    if (!st) return '';
+    const headers = st.headers;
+    let rows = st.rows;
+    // Filter
+    if (st.filter) {
+      const f = st.filter.toLowerCase();
+      rows = rows.filter(r => {
+        for (const h of headers) {
+          if (String(r[h]||'').toLowerCase().indexOf(f) !== -1) return true;
+        }
+        return false;
+      });
+    }
+    // Sort
+    if (st.sortKey) {
+      const k = st.sortKey, d = st.sortDir;
+      rows = rows.slice().sort((a,b) => {
+        const av = a[k]==null?'':String(a[k]); const bv = b[k]==null?'':String(b[k]);
+        const an = parseFloat(av), bn = parseFloat(bv);
+        if (!isNaN(an) && !isNaN(bn)) return (an-bn)*d;
+        return av.localeCompare(bv)*d;
+      });
+    }
+    const accent = (st.opts && st.opts.accent) || '#6366f1';
+    const hints = (st.opts && st.opts.columnHints) || {};
+
+    const thHtml = headers.map(h => {
+      const isSort = st.sortKey === h;
+      const arrow = isSort ? (st.sortDir === 1 ? ' ↑' : ' ↓') : '';
+      return '<th onclick="v16qSortTable(\'' + id + '\', \'' + h.replace(/'/g,"\\'") + '\')" '
+        + 'style="cursor:pointer;user-select:none;position:sticky;top:0;background:var(--surface);z-index:1;font-size:11.5px">' 
+        + v16qEsc(h) + arrow + '</th>';
+    }).join('');
+
+    const trHtml = rows.length === 0
+      ? '<tr><td colspan="' + headers.length + '" style="text-align:center;padding:30px;color:var(--muted)">No matching rows</td></tr>'
+      : rows.map(r => '<tr>' + headers.map(h => {
+          const v = r[h];
+          let cell = v16qFmtCell(v);
+          const hint = hints[h];
+          if (hint && v != null && v !== '') {
+            const sv = String(v).toLowerCase().trim();
+            if (hint === 'status') {
+              // Boolean → green=yes/red=no badges
+              if (v === true || sv === 'true' || sv === 'yes' || sv === 'y') cell = v16qBadge('Yes', '#16a34a');
+              else if (v === false || sv === 'false' || sv === 'no' || sv === 'n') cell = v16qBadge('No', '#94a3b8');
+              else if (/granted|approved|complete|done|paid|lodged|uco|registered/.test(sv)) cell = v16qBadge(v, '#16a34a');
+              else if (/refused|rejected|cancel|fail|overdue|unsucces/.test(sv)) cell = v16qBadge(v, '#dc2626');
+              else if (/pending|process|review|wait|progress|to do|to apply/.test(sv)) cell = v16qBadge(v, '#f59e0b');
+              else if (/applied|submitted|under|sent for processing|co\b/.test(sv)) cell = v16qBadge(v, '#3b82f6');
+              else cell = v16qBadge(v, '#6b7280');
+            }
+          }
+          return '<td style="font-size:12px">' + cell + '</td>';
+        }).join('') + '</tr>').join('');
+
+    return '<table class="data-table"><thead><tr>' + thHtml + '</tr></thead><tbody>' + trHtml + '</tbody></table>'
+      + '<div style="padding:8px 12px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);background:var(--surface)">Showing ' + rows.length + ' of ' + st.rows.length + ' rows</div>';
+  }
+
+  window.v16qSortTable = function(id, key){
+    const st = window.__V16Q_TABLES[id];
+    if (!st) return;
+    if (st.sortKey === key) st.sortDir = -st.sortDir;
+    else { st.sortKey = key; st.sortDir = 1; }
+    const body = document.getElementById(id + '-body');
+    if (body) body.innerHTML = v16qRenderTableBody(id);
+  };
+
+  window.v16qFilterTable = function(id, val){
+    const st = window.__V16Q_TABLES[id];
+    if (!st) return;
+    st.filter = val || '';
+    const body = document.getElementById(id + '-body');
+    if (body) body.innerHTML = v16qRenderTableBody(id);
+  };
+
+  window.v16qExportCSV = function(id){
+    const st = window.__V16Q_TABLES[id];
+    if (!st) return;
+    const headers = st.headers;
+    const esc = s => {
+      const v = s==null?'':String(s);
+      if (/[",\n]/.test(v)) return '"' + v.replace(/"/g,'""') + '"';
+      return v;
+    };
+    const lines = [headers.map(esc).join(',')];
+    for (const r of st.rows) lines.push(headers.map(h => esc(r[h])).join(','));
+    const csv = lines.join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = (st.opts.title || 'data').replace(/\s+/g,'_').toLowerCase() + '.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // ============================================================
+  // Sub-tab renderer (for Razan's Finance with sub-categories)
+  // ============================================================
+  function v16qSubTabs(id, tabs, activeIdx){
+    activeIdx = activeIdx || 0;
+    window.__V16Q_SUBTABS = window.__V16Q_SUBTABS || {};
+    window.__V16Q_SUBTABS[id] = { tabs: tabs, active: activeIdx };
+    const bar = '<div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:14px;overflow-x:auto">'
+      + tabs.map((t,i) => '<div onclick="v16qSwitchSub(\'' + id + '\', ' + i + ')" '
+          + 'style="padding:8px 14px;font-size:12.5px;font-weight:' + (i===activeIdx?'700':'500')
+          + ';cursor:pointer;border-bottom:2px solid ' + (i===activeIdx?'#6366f1':'transparent')
+          + ';color:' + (i===activeIdx?'#6366f1':'var(--text2)') + ';white-space:nowrap">'
+          + '<i class="fas ' + (t.icon||'fa-folder') + '" style="font-size:11px;margin-right:5px"></i>' + v16qEsc(t.label)
+          + (t.count != null ? ' <span style="font-size:10px;color:var(--muted)">(' + t.count + ')</span>' : '')
+          + '</div>').join('')
+      + '</div>'
+      + '<div id="' + id + '-content">' + tabs[activeIdx].render() + '</div>';
+    return bar;
+  }
+
+  window.v16qSwitchSub = function(id, idx){
+    const st = window.__V16Q_SUBTABS[id];
+    if (!st) return;
+    st.active = idx;
+    const target = document.getElementById(id);
+    if (target) target.outerHTML = v16qSubTabs(id, st.tabs, idx).replace('id="', 'id="') ;
+    // Actually simpler: just re-render the whole parent.
+    // Easier: re-trigger the active tab handler
+    const mc = document.getElementById('mainContent');
+    if (!mc) return;
+    // The cleanest approach is to re-call switchRoleTab on whatever tab we're on
+    if (typeof window.switchRoleTab === 'function' && typeof window.roleDashTab === 'string') {
+      window.switchRoleTab(window.roleDashTab);
+    }
+  };
+
+  // ============================================================
+  // THASBIHA — Admissions tab (renders thasbiha_admissions)
+  // ============================================================
+  async function v16qRenderThasbihaAdmissions(){
+    const data = await v16qLoad();
+    if (!data || !data.thasbiha_admissions) return v16qErrorShell('Admissions', 'Could not load Thasbiha admissions data');
+    const ds = data.thasbiha_admissions;
+    const rows = ds.rows;
+    // KPIs — terms used in the sheet:
+    //   "CO"  = Conditional Offer    "UCO" = Unconditional Offer
+    //   "Application sent for processing" = applied (in-progress)
+    //   "Rejected" / "Unsuccesful" = rejected
+    //   IELTS values: "No" / "Student said will do, Pending" / (sometimes a score)
+    const officeReg = rows.filter(r => /yes/i.test(String(r['Office Registration']||''))).length;
+    const withOffers = rows.filter(r => /\b(CO|UCO|Offer)\b/i.test(String(r['Offers']||''))).length;
+    const ucoOrPaid = rows.filter(r => /\bUCO\b|payment/i.test(String(r['Offers']||''))).length;
+    const applied = rows.filter(r => /application sent for processing|application sent/i.test(String(r['Final Status']||''))).length;
+    const rejected = rows.filter(r => /rejected|unsuccesful|unsuccessful/i.test(String(r['Final Status']||''))).length;
+    const ieltsDone = rows.filter(r => {
+      const v = String(r['IELTS']||'').trim();
+      // Anything with a numeric score OR "Done"/"Completed" counts as done
+      return /\d/.test(v) && !/pending|will do|to do/i.test(v);
+    }).length;
+    const docsPending = rows.filter(r => /pending|not received|missing/i.test(String(r['Documents Status']||''))).length;
+    const todoCnt = rows.filter(r => String(r['To Do']||'').trim()).length;
+
+    return v16qRenderTable(ds, {
+      id: 'v16q-thasb-adm',
+      title: 'Thasbiha · Admissions Tracker',
+      subtitle: rows.length + ' students · live from GG_Admission sheet',
+      accent: '#1e3a8a',
+      kpis: [
+        { label:'Total Students', value: rows.length, color:'#1e3a8a' },
+        { label:'Office Registered', value: officeReg, color:'#0e7490' },
+        { label:'With Offers (CO/UCO)', value: withOffers, color:'#16a34a' },
+        { label:'UCO / Paid', value: ucoOrPaid, color:'#15803d' },
+        { label:'Applied', value: applied, color:'#3b82f6' },
+        { label:'Rejected', value: rejected, color:'#dc2626' },
+        { label:'Docs Pending', value: docsPending, color:'#f59e0b' },
+        { label:'Open To-Do', value: todoCnt, color:'#9333ea' }
+      ],
+      columnHints: { 'Final Status':'status', 'Offers':'status', 'Documents Status':'status', 'Office Registration':'status' }
+    });
+  }
+
+  // ============================================================
+  // THASBIHA — HR tab (renders thasbiha_visa for now — small dataset)
+  // ============================================================
+  async function v16qRenderThasbihaVisa(){
+    const data = await v16qLoad();
+    if (!data || !data.thasbiha_visa) return v16qErrorShell('Visa Tracker', 'Could not load Thasbiha visa data');
+    const ds = data.thasbiha_visa;
+    return v16qRenderTable(ds, {
+      id: 'v16q-thasb-visa',
+      title: 'Thasbiha · Visa Applications',
+      subtitle: ds.rows.length + ' visa applications · live from sheet',
+      accent: '#9333ea',
+      kpis: [
+        { label:'Active Visas', value: ds.rows.length, color:'#9333ea' }
+      ],
+      columnHints: { 'Visa payment':'status', 'Documents Status':'status' }
+    });
+  }
+
+  // ============================================================
+  // RAZAN — Visa tab (combines razan_visa_2026 + razan_visa_2025)
+  // ============================================================
+  async function v16qRenderRazanVisa(){
+    const data = await v16qLoad();
+    if (!data) return v16qErrorShell('Visa & Applications', 'Could not load Razan visa data');
+
+    const ds2026 = data.razan_visa_2026 || { headers:[], rows:[] };
+    const ds2025 = data.razan_visa_2025 || { headers:[], rows:[] };
+    const dsHima = data.razan_himaaus_admissions || { headers:[], rows:[] };
+
+    // Counts
+    const granted2026 = ds2026.rows.filter(r => /granted|approved/i.test(String(r['VISA STATUS']||''))).length;
+    const granted2025 = ds2025.rows.filter(r => /granted|approved/i.test(String(r['VISA STATUS']||''))).length;
+    const pending2026 = ds2026.rows.filter(r => /pending|process|lodged|wait/i.test(String(r['VISA STATUS']||''))).length;
+
+    const kpis = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">'
+      + [
+        { label:'2026 Total', value: ds2026.rows.length, color:'#1d4ed8' },
+        { label:'2026 Granted', value: granted2026, color:'#16a34a' },
+        { label:'2026 In-Progress', value: pending2026, color:'#f59e0b' },
+        { label:'2025 Total', value: ds2025.rows.length, color:'#6366f1' },
+        { label:'2025 Granted', value: granted2025, color:'#16a34a' }
+      ].map(k => '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;background:var(--surface)">'
+          + '<div style="font-size:22px;font-weight:800;color:' + k.color + '">' + k.value + '</div>'
+          + '<div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:3px">' + k.label + '</div></div>').join('')
+      + '</div>';
+
+    // Sub-tabs: 2026 / 2025 / HimaAus
+    const subBar = '<div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:14px">'
+      + '<div onclick="v16qShowSub(\'razan-visa\',\'2026\')" id="rzv-tab-2026" '
+      +   'style="padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;border-bottom:2px solid #1d4ed8;color:#1d4ed8">'
+      +   '<i class="fas fa-passport"></i> Visa 2026 (' + ds2026.rows.length + ')</div>'
+      + '<div onclick="v16qShowSub(\'razan-visa\',\'2025\')" id="rzv-tab-2025" '
+      +   'style="padding:8px 14px;font-size:12.5px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">'
+      +   '<i class="fas fa-history"></i> Visa 2025 (' + ds2025.rows.length + ')</div>'
+      + '<div onclick="v16qShowSub(\'razan-visa\',\'hima\')" id="rzv-tab-hima" '
+      +   'style="padding:8px 14px;font-size:12.5px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">'
+      +   '<i class="fas fa-building"></i> HimaAus (' + dsHima.rows.length + ')</div>'
+      + '</div>';
+
+    // Pre-render all three tables; show only first by default
+    const t2026 = v16qRenderTable(ds2026, {
+      id:'v16q-rzv-2026', title:'Razan · Visa 2026', subtitle: ds2026.rows.length + ' applications', accent:'#1d4ed8',
+      columnHints:{ 'VISA STATUS':'status' }
+    });
+    const t2025 = v16qRenderTable(ds2025, {
+      id:'v16q-rzv-2025', title:'Razan · Visa 2025', subtitle: ds2025.rows.length + ' applications', accent:'#6366f1',
+      columnHints:{ 'VISA STATUS':'status' }
+    });
+    const tHima = v16qRenderTable(dsHima, {
+      id:'v16q-rzv-hima', title:'Razan · HimaAus Admissions', subtitle: dsHima.rows.length + ' applications', accent:'#0e7490'
+    });
+
+    return kpis + subBar
+      + '<div id="rzv-pane-2026">' + t2026 + '</div>'
+      + '<div id="rzv-pane-2025" style="display:none">' + t2025 + '</div>'
+      + '<div id="rzv-pane-hima" style="display:none">' + tHima + '</div>';
+  }
+
+  // Helper to toggle Razan visa sub-tabs (uses display:none, no re-fetch)
+  window.v16qShowSub = function(group, key){
+    if (group === 'razan-visa') {
+      ['2026','2025','hima'].forEach(k => {
+        const pane = document.getElementById('rzv-pane-' + k);
+        const tab  = document.getElementById('rzv-tab-' + k);
+        if (pane) pane.style.display = (k === key) ? 'block' : 'none';
+        if (tab) {
+          tab.style.fontWeight = (k === key) ? '700' : '500';
+          tab.style.borderBottom = (k === key) ? '2px solid #1d4ed8' : '2px solid transparent';
+          tab.style.color = (k === key) ? '#1d4ed8' : 'var(--text2)';
+        }
+      });
+    } else if (group === 'razan-fin') {
+      ['amana-exp','amana-inc','petty','glsa-pipe','glsa-pay'].forEach(k => {
+        const pane = document.getElementById('rzf-pane-' + k);
+        const tab  = document.getElementById('rzf-tab-' + k);
+        if (pane) pane.style.display = (k === key) ? 'block' : 'none';
+        if (tab) {
+          tab.style.fontWeight = (k === key) ? '700' : '500';
+          tab.style.borderBottom = (k === key) ? '2px solid #16a34a' : '2px solid transparent';
+          tab.style.color = (k === key) ? '#16a34a' : 'var(--text2)';
+        }
+      });
+    } else if (group === 'razan-adm') {
+      ['adm','inv','reg','mail'].forEach(k => {
+        const pane = document.getElementById('rzadm-pane-' + k);
+        const tab  = document.getElementById('rzadm-tab-' + k);
+        if (pane) pane.style.display = (k === key) ? 'block' : 'none';
+        if (tab) {
+          tab.style.fontWeight = (k === key) ? '700' : '500';
+          tab.style.borderBottom = (k === key) ? '2px solid #f59e0b' : '2px solid transparent';
+          tab.style.color = (k === key) ? '#f59e0b' : 'var(--text2)';
+        }
+      });
+    } else if (group === 'shiran') {
+      ['flyers','budgets'].forEach(k => {
+        const pane = document.getElementById('shr-pane-' + k);
+        const tab  = document.getElementById('shr-tab-' + k);
+        if (pane) pane.style.display = (k === key) ? 'block' : 'none';
+        if (tab) {
+          tab.style.fontWeight = (k === key) ? '700' : '500';
+          tab.style.borderBottom = (k === key) ? '2px solid #5b21b6' : '2px solid transparent';
+          tab.style.color = (k === key) ? '#5b21b6' : 'var(--text2)';
+        }
+      });
+    }
+  };
+
+  // ============================================================
+  // RAZAN — Finance tab (Amana expenses + incomes + petty + GLSA)
+  // ============================================================
+  async function v16qRenderRazanFinance(){
+    const data = await v16qLoad();
+    if (!data) return v16qErrorShell('Finance & BD', 'Could not load Razan finance data');
+
+    const exp  = data.razan_amana_expenses || { headers:[], rows:[] };
+    const inc  = data.razan_amana_incomes  || { headers:[], rows:[] };
+    const pet  = data.razan_petty_cash     || { headers:[], rows:[] };
+    const glp  = data.razan_glsa_pipeline  || { headers:[], rows:[] };
+    const glpay= data.razan_glsa_payments  || { headers:[], rows:[] };
+
+    // Sum helper
+    const sumCol = (rows, col) => {
+      let total = 0;
+      for (const r of rows) {
+        const n = parseFloat(String(r[col]||'').replace(/[,$\s]/g,''));
+        if (!isNaN(n)) total += n;
+      }
+      return total;
+    };
+    const fmtMoney = n => 'Rs ' + Math.round(n).toLocaleString('en-IN');
+
+    // Try to find amount columns
+    const expAmtCol = exp.headers.find(h => /amount|cost|expense|value|total|rs|price/i.test(h)) || exp.headers[exp.headers.length-1];
+    const incAmtCol = inc.headers.find(h => /amount|income|receive|value|total|rs/i.test(h)) || inc.headers[inc.headers.length-1];
+
+    const totalExp = expAmtCol ? sumCol(exp.rows, expAmtCol) : 0;
+    const totalInc = incAmtCol ? sumCol(inc.rows, incAmtCol) : 0;
+
+    const kpis = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px">'
+      + [
+        { label:'Amana Income', value: fmtMoney(totalInc), color:'#16a34a' },
+        { label:'Amana Expenses', value: fmtMoney(totalExp), color:'#dc2626' },
+        { label:'Net', value: fmtMoney(totalInc-totalExp), color: (totalInc-totalExp)>=0 ? '#16a34a' : '#dc2626' },
+        { label:'GLSA Pipeline', value: glp.rows.length, color:'#1d4ed8' },
+        { label:'GLSA Payments', value: glpay.rows.length, color:'#0e7490' }
+      ].map(k => '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;background:var(--surface)">'
+          + '<div style="font-size:20px;font-weight:800;color:' + k.color + '">' + v16qEsc(k.value) + '</div>'
+          + '<div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:3px">' + k.label + '</div></div>').join('')
+      + '</div>';
+
+    const subBar = '<div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:14px;flex-wrap:wrap">'
+      + '<div onclick="v16qShowSub(\'razan-fin\',\'amana-exp\')" id="rzf-tab-amana-exp" '
+      +   'style="padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;border-bottom:2px solid #16a34a;color:#16a34a">'
+      +   '<i class="fas fa-receipt"></i> Expenses (' + exp.rows.length + ')</div>'
+      + '<div onclick="v16qShowSub(\'razan-fin\',\'amana-inc\')" id="rzf-tab-amana-inc" '
+      +   'style="padding:8px 14px;font-size:12.5px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">'
+      +   '<i class="fas fa-arrow-down"></i> Income (' + inc.rows.length + ')</div>'
+      + '<div onclick="v16qShowSub(\'razan-fin\',\'petty\')" id="rzf-tab-petty" '
+      +   'style="padding:8px 14px;font-size:12.5px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">'
+      +   '<i class="fas fa-coins"></i> Petty Cash (' + pet.rows.length + ')</div>'
+      + '<div onclick="v16qShowSub(\'razan-fin\',\'glsa-pipe\')" id="rzf-tab-glsa-pipe" '
+      +   'style="padding:8px 14px;font-size:12.5px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">'
+      +   '<i class="fas fa-stream"></i> GLSA Pipeline (' + glp.rows.length + ')</div>'
+      + '<div onclick="v16qShowSub(\'razan-fin\',\'glsa-pay\')" id="rzf-tab-glsa-pay" '
+      +   'style="padding:8px 14px;font-size:12.5px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">'
+      +   '<i class="fas fa-money-bill-wave"></i> GLSA Payments (' + glpay.rows.length + ')</div>'
+      + '</div>';
+
+    const tExp   = v16qRenderTable(exp,   { id:'v16q-rzf-exp',   title:'Amana · Expenses',     accent:'#dc2626' });
+    const tInc   = v16qRenderTable(inc,   { id:'v16q-rzf-inc',   title:'Amana · Income',       accent:'#16a34a' });
+    const tPet   = v16qRenderTable(pet,   { id:'v16q-rzf-pet',   title:'Petty Cash',           accent:'#f59e0b' });
+    const tGlp   = v16qRenderTable(glp,   { id:'v16q-rzf-glp',   title:'GLSA · Client Pipeline', accent:'#1d4ed8' });
+    const tGlpay = v16qRenderTable(glpay, { id:'v16q-rzf-glpay', title:'GLSA · Payments',      accent:'#0e7490' });
+
+    return kpis + subBar
+      + '<div id="rzf-pane-amana-exp">' + tExp + '</div>'
+      + '<div id="rzf-pane-amana-inc" style="display:none">' + tInc + '</div>'
+      + '<div id="rzf-pane-petty"     style="display:none">' + tPet + '</div>'
+      + '<div id="rzf-pane-glsa-pipe" style="display:none">' + tGlp + '</div>'
+      + '<div id="rzf-pane-glsa-pay"  style="display:none">' + tGlpay + '</div>';
+  }
+
+  // ============================================================
+  // RAZAN — Admissions tab (admissions + invoices + registered + mails)
+  // ============================================================
+  async function v16qRenderRazanAdmissions(){
+    const data = await v16qLoad();
+    if (!data) return v16qErrorShell('Admissions', 'Could not load Razan admissions data');
+
+    const adm  = data.razan_admissions     || { headers:[], rows:[] };
+    const inv  = data.razan_invoices       || { headers:[], rows:[] };
+    const reg  = data.razan_registered     || { headers:[], rows:[] };
+    const mail = data.razan_client_gmails  || { headers:[], rows:[] };
+
+    const kpis = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">'
+      + [
+        { label:'Admissions', value: adm.rows.length, color:'#1d4ed8' },
+        { label:'Invoices', value: inv.rows.length, color:'#16a34a' },
+        { label:'Registered', value: reg.rows.length, color:'#9333ea' },
+        { label:'Client Emails', value: mail.rows.length, color:'#0e7490' }
+      ].map(k => '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;background:var(--surface)">'
+          + '<div style="font-size:22px;font-weight:800;color:' + k.color + '">' + k.value + '</div>'
+          + '<div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:3px">' + k.label + '</div></div>').join('')
+      + '</div>';
+
+    const subBar = '<div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:14px;flex-wrap:wrap">'
+      + '<div onclick="v16qShowSub(\'razan-adm\',\'adm\')" id="rzadm-tab-adm" '
+      +   'style="padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;border-bottom:2px solid #f59e0b;color:#f59e0b">'
+      +   '<i class="fas fa-graduation-cap"></i> Admissions (' + adm.rows.length + ')</div>'
+      + '<div onclick="v16qShowSub(\'razan-adm\',\'inv\')" id="rzadm-tab-inv" '
+      +   'style="padding:8px 14px;font-size:12.5px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">'
+      +   '<i class="fas fa-file-invoice-dollar"></i> Invoices (' + inv.rows.length + ')</div>'
+      + '<div onclick="v16qShowSub(\'razan-adm\',\'reg\')" id="rzadm-tab-reg" '
+      +   'style="padding:8px 14px;font-size:12.5px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">'
+      +   '<i class="fas fa-user-check"></i> Registered (' + reg.rows.length + ')</div>'
+      + '<div onclick="v16qShowSub(\'razan-adm\',\'mail\')" id="rzadm-tab-mail" '
+      +   'style="padding:8px 14px;font-size:12.5px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">'
+      +   '<i class="fas fa-envelope"></i> Client Emails (' + mail.rows.length + ')</div>'
+      + '</div>';
+
+    const tAdm  = v16qRenderTable(adm,  { id:'v16q-rzadm-adm',  title:'Razan · Admissions',    accent:'#f59e0b' });
+    const tInv  = v16qRenderTable(inv,  { id:'v16q-rzadm-inv',  title:'Razan · Invoices',      accent:'#16a34a' });
+    const tReg  = v16qRenderTable(reg,  { id:'v16q-rzadm-reg',  title:'Razan · Registered',    accent:'#9333ea' });
+    const tMail = v16qRenderTable(mail, { id:'v16q-rzadm-mail', title:'Razan · Client Emails', accent:'#0e7490' });
+
+    return kpis + subBar
+      + '<div id="rzadm-pane-adm">' + tAdm + '</div>'
+      + '<div id="rzadm-pane-inv"  style="display:none">' + tInv + '</div>'
+      + '<div id="rzadm-pane-reg"  style="display:none">' + tReg + '</div>'
+      + '<div id="rzadm-pane-mail" style="display:none">' + tMail + '</div>';
+  }
+
+  // ============================================================
+  // SHIRAN — Design Queue tab (flyers) + Brand Assets (budgets)
+  // ============================================================
+  async function v16qRenderShiranFlyers(){
+    const data = await v16qLoad();
+    if (!data || !data.shiran_flyers) return v16qErrorShell('Design Queue', 'Could not load Shiran flyers data');
+
+    const flyers  = data.shiran_flyers || { headers:[], rows:[] };
+    const budgets = data.shiran_budgets || { headers:[], rows:[] };
+
+    // designed/posted come through as real booleans (Python True/False -> JSON true/false)
+    const isYes = v => v === true || /^(true|yes|y|1)$/i.test(String(v||'').trim());
+    const designed = flyers.rows.filter(r => isYes(r.designed)).length;
+    const posted   = flyers.rows.filter(r => isYes(r.posted)).length;
+    const pending  = flyers.rows.length - designed;
+    const months   = new Set(flyers.rows.map(r => r.month).filter(Boolean)).size;
+
+    const kpis = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">'
+      + [
+        { label:'Total Flyers', value: flyers.rows.length, color:'#5b21b6' },
+        { label:'Designed', value: designed, color:'#16a34a' },
+        { label:'Posted', value: posted, color:'#3b82f6' },
+        { label:'Pending Design', value: pending, color:'#f59e0b' },
+        { label:'Months Tracked', value: months, color:'#0e7490' },
+        { label:'Budget Months', value: budgets.rows.length, color:'#dc2626' }
+      ].map(k => '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;background:var(--surface)">'
+          + '<div style="font-size:22px;font-weight:800;color:' + k.color + '">' + k.value + '</div>'
+          + '<div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:3px">' + k.label + '</div></div>').join('')
+      + '</div>';
+
+    const subBar = '<div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:14px">'
+      + '<div onclick="v16qShowSub(\'shiran\',\'flyers\')" id="shr-tab-flyers" '
+      +   'style="padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;border-bottom:2px solid #5b21b6;color:#5b21b6">'
+      +   '<i class="fas fa-pencil-ruler"></i> Meta Promotions / Flyers (' + flyers.rows.length + ')</div>'
+      + '<div onclick="v16qShowSub(\'shiran\',\'budgets\')" id="shr-tab-budgets" '
+      +   'style="padding:8px 14px;font-size:12.5px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">'
+      +   '<i class="fas fa-chart-line"></i> Monthly Budgets (' + budgets.rows.length + ')</div>'
+      + '</div>';
+
+    const tFly = v16qRenderTable(flyers,  { id:'v16q-shr-fly', title:'Shiran · Meta Promotions', accent:'#5b21b6',
+      columnHints:{ designed:'status', posted:'status' } });
+    const tBud = v16qRenderTable(budgets, { id:'v16q-shr-bud', title:'Shiran · Monthly Budgets', accent:'#f59e0b' });
+
+    return kpis + subBar
+      + '<div id="shr-pane-flyers">' + tFly + '</div>'
+      + '<div id="shr-pane-budgets" style="display:none">' + tBud + '</div>';
+  }
+
+  // ============================================================
+  // Tab interception — wrap switchRoleTab so user-specific tabs
+  // route through v16q while leaving others untouched.
+  // ============================================================
+  // Map: user × tabId → async renderer
+  const V16Q_RENDERERS = {
+    'thasbiha.s': {
+      'admissions': v16qRenderThasbihaAdmissions,
+      'hr':         v16qRenderThasbihaVisa
+    },
+    'razan.thawus': {
+      'visa':       v16qRenderRazanVisa,
+      'finance':    v16qRenderRazanFinance,
+      'admissions': v16qRenderRazanAdmissions
+    },
+    'shiran': {
+      'design':     v16qRenderShiranFlyers,
+      'assets':     v16qRenderShiranFlyers
+    }
+  };
+
+  function v16qShouldHandle(user, tab){
+    return !!(V16Q_RENDERERS[user] && V16Q_RENDERERS[user][tab]);
+  }
+
+  function v16qPaintTab(headerHtml, tabBarHtml, contentHtml){
+    const mc = document.getElementById('mainContent');
+    if (!mc) return;
+    mc.innerHTML = '<div class="page active">' + headerHtml + tabBarHtml + contentHtml + '</div>';
+  }
+
+  // Helper: render the SAME header + tab bar as renderRoleTabbedDashboard
+  // so the page still looks like a role tab with everything wired.
+  function v16qBuildHeaderAndBar(activeTab){
+    try {
+      const u = currentUser;
+      if (!u) return { header:'', bar:'' };
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+      const dateStr = now.toLocaleDateString('en-GB');
+      const roleCfg = (typeof ROLE_TABS !== 'undefined' ? ROLE_TABS[u.username] : null) || {
+        title: u.role + ' Portal', color:'#1e3a8a',
+        tabs:[{id:'overview',label:'Overview',icon:'fa-th-large'}]
+      };
+      const accent = roleCfg.color;
+      const tabs = roleCfg.tabs;
+      const header = '<div style="background:linear-gradient(135deg,' + accent + ',' + accent + 'cc);color:white;border-radius:14px;padding:18px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">'
+        + '<div><div style="font-size:20px;font-weight:800">' + v16qEsc(roleCfg.title) + '</div>'
+        + '<div style="font-size:12.5px;opacity:0.85;margin-top:3px">' + v16qEsc(u.name) + ' | ' + v16qEsc(u.role) + '</div></div>'
+        + '<div style="text-align:right;font-family:\'DM Mono\',monospace">'
+        + '<div style="font-size:22px;font-weight:700">' + timeStr + '</div>'
+        + '<div style="font-size:12px;opacity:0.85">' + dateStr + '</div></div></div>';
+      const bar = '<div style="display:flex;gap:4px;border-bottom:2px solid var(--border);margin-bottom:18px;overflow-x:auto">'
+        + tabs.map(t => {
+          const active = t.id === activeTab;
+          return '<div onclick="switchRoleTab(\'' + t.id + '\')" style="padding:11px 18px;font-size:13px;font-weight:' + (active?'700':'500')
+            + ';cursor:pointer;border-bottom:3px solid ' + (active?accent:'transparent') + ';color:' + (active?accent:'var(--text2)')
+            + ';margin-bottom:-2px;background:' + (active?accent+'18':'transparent') + ';border-radius:6px 6px 0 0;white-space:nowrap;display:flex;align-items:center;gap:6px">'
+            + '<i class="fas ' + t.icon + '" style="font-size:11px"></i> ' + v16qEsc(t.label) + '</div>';
+        }).join('')
+        + '</div>';
+      return { header: header, bar: bar };
+    } catch(e){ return { header:'', bar:'' }; }
+  }
+
+  // Intercept switchRoleTab. Use a one-shot guard to avoid wrapping twice.
+  function v16qWireTabIntercept(){
+    if (typeof window.switchRoleTab !== 'function') { setTimeout(v16qWireTabIntercept, 500); return; }
+    if (window.__v16qTabWrapped) return;
+    window.__v16qTabWrapped = true;
+    const __origSwitch = window.switchRoleTab;
+
+    window.switchRoleTab = function(tabId){
+      try {
+        const user = v16qUserKey();
+        // Only intercept tabs we have v16q renderers for. Leave 'overview' /
+        // 'attendance' to v16m so the status row + check-in still work.
+        if (v16qShouldHandle(user, tabId)) {
+          window.roleDashTab = tabId;
+          const hb = v16qBuildHeaderAndBar(tabId);
+          // Paint loading shell first
+          v16qPaintTab(hb.header, hb.bar, v16qLoadingShell('Loading…', 'Fetching your live spreadsheet data…'));
+          // Then async-render the v16q content
+          V16Q_RENDERERS[user][tabId]().then(html => {
+            // Make sure user hasn't switched tabs again
+            if (window.roleDashTab !== tabId) return;
+            v16qPaintTab(hb.header, hb.bar, html);
+          }).catch(e => {
+            console.error('[v16q] render failed', e);
+            v16qPaintTab(hb.header, hb.bar, v16qErrorShell('Error', e && e.message ? e.message : 'Unknown error'));
+          });
+          return;
+        }
+      } catch(e){ console.warn('[v16q] intercept error, falling back', e); }
+      return __origSwitch.apply(this, arguments);
+    };
+  }
+
+  // Boot
+  setTimeout(v16qWireTabIntercept, 200);
+  setInterval(v16qWireTabIntercept, 4000); // keep re-attaching in case another wrap happens late
+
+  console.log('[v16q] Per-user workspace mirror (Thasbiha admissions, Razan visa/finance/admissions, Shiran flyers/budgets) loaded.');
+})();
+</script>
 <script src="/static/agent-portal.js"></script>
 <script src="/static/media-suite.js"></script>
 <script src="/static/team-comms.js"></script>

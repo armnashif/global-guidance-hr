@@ -9,6 +9,8 @@
       "ESNext"
     ],
     "types": ["vite/client"],
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx"
   },
