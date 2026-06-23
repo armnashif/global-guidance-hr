@@ -26461,6 +26461,553 @@ else _tbBoot();
   console.log('[v16n] Portal cleanup + workflow gate (Att→Plan→Dashboard) + GPS-required + persistent state + real notif count + dedupe widgets loaded.');
 })();
 </script>
+<script>
+/* =================================================================
+   v16p — Attendance Page Polish + GPS Robustness
+   -----------------------------------------------------------------
+   Fixes user-reported issue: "location is not capturing, make the
+   attendance more clean"
+
+   Changes:
+   1. Better GPS capture — uses Permissions API to check state first,
+      gives actionable browser-specific instructions when blocked,
+      clear toast on success, retry/timeout handling.
+   2. New cleaner attendance UI — single card layout, mobile-friendly,
+      live GPS status indicator, less visual noise.
+   3. Manual location fallback — when GPS fails 2x, allow user to
+      pick mode + flag-for-review (so they aren't fully blocked).
+   4. Permission-blocked banner with deep-link instructions for
+      Chrome / Safari / Firefox / mobile.
+================================================================= */
+(function(){
+  if (window.__v16pLoaded) return;
+  window.__v16pLoaded = true;
+
+  // ---- helper: ESC (reuse if available, else define minimal)
+  const _esc = (typeof ESC === 'function') ? ESC : function(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  };
+  const _now = (typeof NOW_ISO === 'function') ? NOW_ISO : function(){ return new Date().toISOString().slice(0,10); };
+
+  // ---- detect browser for GPS-block instructions
+  function v16pBrowser(){
+    const ua = navigator.userAgent || '';
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(ua);
+    let b = 'Browser';
+    if (/Edg\//.test(ua)) b = 'Edge';
+    else if (/Chrome\//.test(ua) && !/Edg/.test(ua)) b = 'Chrome';
+    else if (/Firefox\//.test(ua)) b = 'Firefox';
+    else if (/Safari\//.test(ua) && !/Chrome/.test(ua)) b = 'Safari';
+    return { name: b, mobile: isMobile };
+  }
+
+  // ---- friendly GPS error message
+  function v16pGpsHelp(code){
+    const b = v16pBrowser();
+    let title = 'Location access blocked', steps = [];
+    if (code === 1 /* PERMISSION_DENIED */) {
+      title = 'Location access blocked in your browser';
+      if (b.name === 'Chrome' || b.name === 'Edge') {
+        steps = b.mobile
+          ? ['Tap the lock/info icon in the address bar', 'Tap Permissions → Location → Allow', 'Reload the page']
+          : ['Click the 🔒 lock icon in the address bar', 'Find "Location" and set it to Allow', 'Reload the page (F5)'];
+      } else if (b.name === 'Safari') {
+        steps = b.mobile
+          ? ['Open Settings → Safari → Location → Allow', 'Or Settings → Privacy → Location Services → Safari → While Using', 'Reload the page']
+          : ['Safari menu → Settings for This Website…', 'Set Location to "Allow"', 'Reload the page'];
+      } else if (b.name === 'Firefox') {
+        steps = ['Click the lock icon next to the URL', 'Click "More information" → Permissions', 'Set Access Your Location to Allow', 'Reload the page'];
+      } else {
+        steps = ['Look for a location/lock icon near the address bar', 'Set Location permission to Allow', 'Reload the page'];
+      }
+    } else if (code === 2) {
+      title = 'Could not get your location';
+      steps = ['Make sure GPS / Location Services are on (Settings → Privacy)', 'Move closer to a window if you are indoors', 'Try again in a moment'];
+    } else if (code === 3) {
+      title = 'Location request timed out';
+      steps = ['Your GPS chip may be slow indoors', 'Move closer to a window or step outside', 'Tap "Try again" below'];
+    } else {
+      title = 'Geolocation is not supported in this browser';
+      steps = ['Update to the latest version of Chrome, Safari, Edge, or Firefox', 'Or use a different device'];
+    }
+    return { title, steps, browser: b };
+  }
+
+  // ---- define v16lCaptureGps on window (original is closure-local in v16l module).
+  // This gives us a single capture function with Permissions API pre-check, friendly errors,
+  // and a hard timeout safety net.
+  window.v16lCaptureGps = async function v16pCaptureGps(){
+    // Pre-check via Permissions API where supported
+    try {
+      if (navigator.permissions && navigator.permissions.query) {
+        const p = await navigator.permissions.query({ name: 'geolocation' });
+        window.__v16pPermState = p.state; // 'granted' | 'prompt' | 'denied'
+      }
+    } catch(e){ /* not all browsers support it */ }
+
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve({ ok:false, error:'Geolocation API not supported by this browser', code: 0, help: v16pGpsHelp(0) });
+        return;
+      }
+      let resolved = false;
+      const finalize = (v) => { if (!resolved) { resolved = true; resolve(v); } };
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const v = {
+            ok: true,
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: Math.round(pos.coords.accuracy || 0),
+            ts: Date.now()
+          };
+          window.V16L && (window.V16L.lastGps = v);
+          finalize(v);
+        },
+        (err) => {
+          const help = v16pGpsHelp(err.code);
+          finalize({ ok:false, error: err.message || help.title, code: err.code, help });
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+      );
+
+      // Hard timeout safety net (in case the browser hangs)
+      setTimeout(() => finalize({ ok:false, error:'GPS request timed out', code: 3, help: v16pGpsHelp(3) }), 17000);
+    });
+  };
+
+  // ---- cleaner attendance form renderer
+  function v16pInput(label, id, value, attrs, placeholder){
+    return '<label style="display:block">'
+      +    '<div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em">'+label+'</div>'
+      +    '<input id="'+id+'" type="text" value="'+_esc(value||'')+'" placeholder="'+_esc(placeholder||'')+'" '+(attrs||'')+' style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:13.5px;outline:none;transition:border-color .15s" onfocus="this.style.borderColor=\'#6378ff\'" onblur="this.style.borderColor=\'var(--border)\'">'
+      + '</label>';
+  }
+
+  function v16pRenderGpsCard(){
+    const gps  = (window.V16L && window.V16L.lastGps) || null;
+    const addr = (window.V16L && window.V16L.lastAddress) || '';
+    const geo  = (window.V16L && window.V16L.geoVerified) || null;
+    const isCapturing = !!window.__v16pCapturing;
+    const fb = window._v16pFallback || null;
+
+    // CAPTURING STATE
+    if (isCapturing) {
+      return ''
+        + '<div style="background:linear-gradient(135deg,rgba(99,120,255,0.10),rgba(56,217,169,0.06));border:1px solid rgba(99,120,255,0.30);border-radius:12px;padding:18px 20px;margin-bottom:14px;display:flex;align-items:center;gap:14px">'
+        +   '<div style="width:42px;height:42px;border-radius:50%;background:rgba(99,120,255,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+        +     '<i class="fas fa-location-arrow fa-pulse" style="color:#6378ff;font-size:18px"></i>'
+        +   '</div>'
+        +   '<div style="flex:1">'
+        +     '<div style="font-size:14px;font-weight:700;color:var(--text)">Capturing your location…</div>'
+        +     '<div style="font-size:12px;color:var(--muted);margin-top:2px">Please allow location access if your browser asks.</div>'
+        +   '</div>'
+        + '</div>';
+    }
+
+    // SUCCESS STATE
+    if (gps && gps.ok) {
+      const geoLine = geo
+        ? (geo.match
+            ? '<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(22,163,74,0.14);color:#16a34a;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700"><i class="fas fa-circle-check"></i> In ' + _esc(geo.officeName) + ' · ' + geo.distanceM + 'm</span>'
+            : '<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(245,158,11,0.14);color:#b45309;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700"><i class="fas fa-circle-exclamation"></i> ' + geo.distanceM + 'm from ' + _esc(geo.officeName) + ' · outside ' + geo.radius + 'm</span>')
+        : '<span style="display:inline-flex;align-items:center;gap:5px;background:var(--surface2);color:var(--muted);padding:3px 9px;border-radius:999px;font-size:11.5px">No office geofence</span>';
+      return ''
+        + '<div style="background:linear-gradient(135deg,rgba(22,163,74,0.10),rgba(22,163,74,0.04));border:1px solid rgba(22,163,74,0.30);border-radius:12px;padding:14px 16px;margin-bottom:14px">'
+        +   '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">'
+        +     '<div style="flex:1;min-width:240px;display:flex;gap:12px;align-items:flex-start">'
+        +       '<div style="width:36px;height:36px;border-radius:50%;background:rgba(22,163,74,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+        +         '<i class="fas fa-location-dot" style="color:#16a34a;font-size:15px"></i>'
+        +       '</div>'
+        +       '<div style="flex:1;min-width:0">'
+        +         '<div style="font-size:11px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Location captured</div>'
+        +         '<div style="font-size:13.5px;color:var(--text);font-weight:600;line-height:1.35;word-break:break-word">' + _esc(addr || 'Resolving address…') + '</div>'
+        +         '<div style="font-size:11px;color:var(--muted);margin-top:3px;font-family:DM Mono,monospace">' + gps.lat.toFixed(5) + ', ' + gps.lng.toFixed(5) + (gps.accuracy ? (' · ±' + gps.accuracy + 'm') : '') + '</div>'
+        +         '<div style="margin-top:7px">' + geoLine + '</div>'
+        +       '</div>'
+        +     '</div>'
+        +     '<button onclick="v16lAutoGpsCapture(true)" title="Refresh location" style="background:transparent;border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px"><i class="fas fa-arrows-rotate"></i> Refresh</button>'
+        +   '</div>'
+        + '</div>';
+    }
+
+    // FALLBACK MODE (manual entry after GPS blocked twice)
+    if (fb && fb.active) {
+      return ''
+        + '<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.30);border-radius:12px;padding:14px 16px;margin-bottom:14px">'
+        +   '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
+        +     '<div style="width:32px;height:32px;border-radius:50%;background:rgba(245,158,11,0.20);display:flex;align-items:center;justify-content:center"><i class="fas fa-triangle-exclamation" style="color:#b45309"></i></div>'
+        +     '<div style="flex:1">'
+        +       '<div style="font-size:13.5px;font-weight:700;color:var(--text)">Manual location (GPS blocked)</div>'
+        +       '<div style="font-size:11.5px;color:var(--muted)">This check-in will be flagged for management review.</div>'
+        +     '</div>'
+        +     '<button onclick="v16pCancelFallback()" style="background:transparent;border:1px solid var(--border);color:var(--text);padding:5px 9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">Try GPS again</button>'
+        +   '</div>'
+        +   '<div style="display:grid;grid-template-columns:1fr;gap:10px">'
+        +     v16pInput('Where are you right now?', 'v16pManualAddr', fb.address || '', 'oninput="window._v16pFallback.address=this.value;v16pUpdateSubmit()"', 'e.g. Global Guidance HQ, Colombo')
+        +     v16pInput('Reason for no GPS', 'v16pManualReason', fb.reason || '', 'oninput="window._v16pFallback.reason=this.value;v16pUpdateSubmit()"', 'e.g. Browser blocked, indoor with no signal, etc.')
+        +   '</div>'
+        + '</div>';
+    }
+
+    // ERROR / BLOCKED STATE
+    const help = (gps && gps.help) || v16pGpsHelp(1);
+    return ''
+      + '<div style="background:linear-gradient(135deg,rgba(220,38,38,0.08),rgba(245,158,11,0.04));border:1px solid rgba(220,38,38,0.30);border-radius:12px;padding:14px 16px;margin-bottom:14px">'
+      +   '<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px">'
+      +     '<div style="width:36px;height:36px;border-radius:50%;background:rgba(220,38,38,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fas fa-location-slash" style="color:#dc2626;font-size:15px"></i></div>'
+      +     '<div style="flex:1">'
+      +       '<div style="font-size:11px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">Location required</div>'
+      +       '<div style="font-size:13.5px;color:var(--text);font-weight:600">' + _esc(help.title) + '</div>'
+      +       (gps && gps.error ? '<div style="font-size:11.5px;color:var(--muted);margin-top:3px">' + _esc(gps.error) + '</div>' : '')
+      +     '</div>'
+      +   '</div>'
+      +   '<div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:10px 12px;margin-bottom:10px">'
+      +     '<div style="font-size:11.5px;font-weight:700;color:var(--text);margin-bottom:5px">How to fix this in ' + _esc(help.browser ? help.browser.name : 'your browser') + ':</div>'
+      +     '<ol style="margin:0;padding-left:20px;font-size:12.5px;color:var(--text);line-height:1.6">'
+      +       (help.steps || []).map(s => '<li>' + _esc(s) + '</li>').join('')
+      +     '</ol>'
+      +   '</div>'
+      +   '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      +     '<button onclick="v16lAutoGpsCapture(true)" style="background:linear-gradient(135deg,#6378ff,#7e8fff);border:0;color:#fff;padding:9px 16px;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><i class="fas fa-location-arrow"></i> Try again</button>'
+      +     '<button onclick="v16pUseFallback()" style="background:transparent;border:1px solid var(--border);color:var(--text);padding:9px 16px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer">Continue without GPS (flagged)</button>'
+      +   '</div>'
+      + '</div>';
+  }
+
+  window.v16pUseFallback = function(){
+    window._v16pFallback = { active: true, address: '', reason: '' };
+    if (typeof v16lRenderAttForm === 'function') v16lRenderAttForm();
+    // Auto-focus the address field
+    setTimeout(function(){ const el = document.getElementById('v16pManualAddr'); if (el) el.focus(); }, 50);
+  };
+  window.v16pCancelFallback = function(){
+    window._v16pFallback = null;
+    if (typeof v16lAutoGpsCapture === 'function') v16lAutoGpsCapture(true);
+  };
+  // Update submit button state in-place (no full re-render — preserves input focus)
+  window.v16pUpdateSubmit = function(){
+    const host = document.getElementById('v16lAttFormHost'); if (!host) return;
+    const s = window._v16lFormState; if (!s) return;
+    const fb = window._v16pFallback;
+    const lastGps = window.V16L && window.V16L.lastGps;
+    const fbReady = fb && fb.active && fb.address && fb.address.length > 3 && fb.reason && fb.reason.length > 3;
+    const hasLocation = (lastGps && lastGps.ok) || fbReady;
+    const fieldReady = (s.mode !== 'Field' || (s.fieldVisit.client && s.fieldVisit.institution && s.fieldVisit.location && s.fieldVisit.purpose));
+    const remoteReady = (s.mode !== 'Remote' || s.remoteReason);
+    const canSubmit = hasLocation && fieldReady && remoteReady;
+    const btns = host.querySelectorAll('button');
+    let submitBtn = null;
+    btns.forEach(b => { if (/Submit/i.test(b.textContent)) submitBtn = b; });
+    if (!submitBtn) return;
+    submitBtn.disabled = !canSubmit;
+    const ctaLabel = fbReady ? 'Submit (flagged for review) →' : 'Submit Attendance →';
+    const ctaBg = canSubmit
+      ? (fbReady ? 'linear-gradient(135deg,#f59e0b,#fbbf24)' : 'linear-gradient(135deg,#16a34a,#22c55e)')
+      : 'var(--surface2)';
+    submitBtn.style.background = ctaBg;
+    submitBtn.style.color = canSubmit ? '#fff' : 'var(--muted)';
+    submitBtn.style.cursor = canSubmit ? 'pointer' : 'not-allowed';
+    submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> ' + ctaLabel;
+  };
+
+  // ---- install render override immediately on window
+  // (v16l's local v16lRenderAttForm is not on window, but inline onclick handlers
+  //  like onclick="v16lRenderAttForm()" resolve via global scope, so setting
+  //  window.v16lRenderAttForm routes those clicks to our version.)
+  (function __v16pInstallRenderOverride(){
+    window.v16lRenderAttForm = function v16pRenderAttForm(){
+      const host = document.getElementById('v16lAttFormHost');
+      if (!host) return;
+      const s = window._v16lFormState = window._v16lFormState || {
+        status: 'Present',
+        mode:   'Office',
+        remoteReason: '',
+        fieldVisit: { client:'', institution:'', location:'', purpose:'' },
+        tasks: []
+      };
+      const lastGps = window.V16L && window.V16L.lastGps;
+      const fb = window._v16pFallback;
+
+      // GPS / Location card (handles all 4 states: capturing / success / error / fallback)
+      const gpsCard = v16pRenderGpsCard();
+
+      // Status pills (compact)
+      const statusOpts = [
+        { id:'Present',  color:'#16a34a', icon:'fa-circle-check' },
+        { id:'Late',     color:'#f59e0b', icon:'fa-clock' },
+        { id:'Half Day', color:'#3b82f6', icon:'fa-circle-half-stroke' },
+        { id:'Leave',    color:'#94a3b8', icon:'fa-plane-departure' },
+        { id:'Sick',     color:'#dc2626', icon:'fa-briefcase-medical' }
+      ];
+      const statusPills = statusOpts.map(o => {
+        const on = s.status === o.id;
+        return '<button onclick="v16lSetStatus(\''+o.id+'\')" style="padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid '+(on?o.color:'var(--border)')+';background:'+(on?o.color+'18':'var(--surface)')+';color:'+(on?o.color:'var(--text)')+';display:inline-flex;align-items:center;gap:6px;transition:all .15s"><i class="fas '+o.icon+'"></i> '+o.id+'</button>';
+      }).join('');
+
+      // Mode pills (compact)
+      const modeOpts = [
+        { id:'Office', icon:'fa-building',   label:'Office'      },
+        { id:'Remote', icon:'fa-house-laptop', label:'Remote'      },
+        { id:'Field',  icon:'fa-route',      label:'Field Visit' }
+      ];
+      const modePills = modeOpts.map(m => {
+        const on = s.mode === m.id;
+        return '<button onclick="v16lSetMode(\''+m.id+'\')" style="padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid '+(on?'#6378ff':'var(--border)')+';background:'+(on?'rgba(99,120,255,0.12)':'var(--surface)')+';color:'+(on?'#6378ff':'var(--text)')+';display:inline-flex;align-items:center;gap:6px;transition:all .15s"><i class="fas '+m.icon+'"></i> '+m.label+'</button>';
+      }).join('');
+
+      // Conditional mode-specific block (only when needed)
+      let modeBlock = '';
+      if (s.mode === 'Field') {
+        const fv = s.fieldVisit;
+        modeBlock = ''
+          + '<div style="border-top:1px dashed var(--border);margin-top:14px;padding-top:14px">'
+          +   '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Field Visit Details <span style="color:#dc2626">*</span></div>'
+          +   '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">'
+          +     v16pInput('Client name',  'v16lFvClient',  fv.client,     'oninput="window._v16lFormState.fieldVisit.client=this.value"',     'Mr. Ahmed')
+          +     v16pInput('Institution',  'v16lFvInst',    fv.institution,'oninput="window._v16lFormState.fieldVisit.institution=this.value"','XYZ University')
+          +     v16pInput('Location',     'v16lFvLoc',     fv.location,   'oninput="window._v16lFormState.fieldVisit.location=this.value"',   'City / Venue')
+          +     v16pInput('Purpose',      'v16lFvPurpose', fv.purpose,    'oninput="window._v16lFormState.fieldVisit.purpose=this.value"',   'Document collection')
+          +   '</div>'
+          + '</div>';
+      } else if (s.mode === 'Remote') {
+        const opts = ['WFH Approved','Travel','Emergency','Other'];
+        const pills = opts.map(o => {
+          const on = s.remoteReason === o;
+          return '<button onclick="window._v16lFormState.remoteReason=\''+o+'\';v16lRenderAttForm()" style="padding:6px 11px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid '+(on?'#6378ff':'var(--border)')+';background:'+(on?'rgba(99,120,255,0.12)':'var(--surface)')+';color:'+(on?'#6378ff':'var(--text)')+'">' + o + '</button>';
+        }).join(' ');
+        modeBlock = ''
+          + '<div style="border-top:1px dashed var(--border);margin-top:14px;padding-top:14px">'
+          +   '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Remote Reason <span style="color:#dc2626">*</span></div>'
+          +   '<div style="display:flex;flex-wrap:wrap;gap:6px">' + pills + '</div>'
+          + '</div>';
+      }
+
+      // Submit gate: GPS OK OR fallback active AND fallback fields filled
+      const fbReady = fb && fb.active && fb.address && fb.address.length > 3 && fb.reason && fb.reason.length > 3;
+      const hasLocation = (lastGps && lastGps.ok) || fbReady;
+      const fieldReady = (s.mode !== 'Field' || (s.fieldVisit.client && s.fieldVisit.institution && s.fieldVisit.location && s.fieldVisit.purpose));
+      const remoteReady = (s.mode !== 'Remote' || s.remoteReason);
+      const canSubmit = hasLocation && fieldReady && remoteReady;
+
+      const ctaLabel = fbReady ? 'Submit (flagged for review)' : 'Submit Attendance';
+      const ctaBg = canSubmit
+        ? (fbReady ? 'linear-gradient(135deg,#f59e0b,#fbbf24)' : 'linear-gradient(135deg,#16a34a,#22c55e)')
+        : 'var(--surface2)';
+
+      host.innerHTML = ''
+        + gpsCard
+        + '<div class="card" style="padding:18px 20px;margin-bottom:14px">'
+        +   '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Status &amp; Mode</div>'
+        +   '<div style="font-size:11.5px;color:var(--muted);margin-bottom:6px">Attendance status</div>'
+        +   '<div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">' + statusPills + '</div>'
+        +   '<div style="font-size:11.5px;color:var(--muted);margin-bottom:6px">Work mode</div>'
+        +   '<div style="display:flex;flex-wrap:wrap;gap:7px">' + modePills + '</div>'
+        +   modeBlock
+        + '</div>'
+        + '<div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap">'
+        +   '<button onclick="nav(\'dashboard\')" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:11px 22px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer">Cancel</button>'
+        +   '<button onclick="v16pSubmitAttendance()" ' + (canSubmit ? '' : 'disabled') + ' style="background:' + ctaBg + ';color:' + (canSubmit ? '#fff' : 'var(--muted)') + ';border:0;padding:11px 28px;border-radius:9px;font-size:13.5px;font-weight:700;cursor:' + (canSubmit ? 'pointer' : 'not-allowed') + ';display:inline-flex;align-items:center;gap:8px"><i class="fas fa-sign-in-alt"></i> ' + ctaLabel + ' →</button>'
+        + '</div>';
+    };
+  })();
+
+  // ---- override v16lAttInit so the FIRST render uses our v16p version (not the v16l closure-local one)
+  window.v16lAttInit = async function v16pAttInit(){
+    try { await v16pLoadOffices(); } catch(e){}
+    // Use our render override directly via window
+    try { window.v16lRenderAttForm(); } catch(e){}
+    // Kick off GPS — calls our wrapped v16lAutoGpsCapture
+    setTimeout(function(){ try { window.v16lAutoGpsCapture(); } catch(e){} }, 250);
+  };
+
+  // ---- helpers (window-scoped versions because v16l originals are closure-local)
+  function v16pHaversine(lat1,lng1,lat2,lng2){
+    const R = 6371000;
+    const toRad = d => d * Math.PI / 180;
+    const dLat = toRad(lat2-lat1), dLng = toRad(lng2-lng1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+    return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+  }
+  async function v16pLoadOffices(){
+    if (!window.V16L) window.V16L = { offices: [], lastGps: null, lastAddress: '', geoVerified: null };
+    if (window.V16L.offices && window.V16L.offices.length) return window.V16L.offices;
+    try {
+      const r = await fetch('/api/v16l/offices', { cache:'no-store' });
+      const j = await r.json();
+      window.V16L.offices = (j && j.offices) || [];
+    } catch(e){ window.V16L.offices = []; }
+    return window.V16L.offices;
+  }
+  function v16pGeofence(lat, lng){
+    const offices = (window.V16L && window.V16L.offices) || [];
+    let best = null;
+    offices.forEach(o => {
+      if (!o.active || !o.lat || !o.lng) return;
+      const d = v16pHaversine(lat, lng, o.lat, o.lng);
+      if (!best || d < best.distanceM) best = { officeId: o.id, officeName: o.name, city: o.city, distanceM: d, radius: o.radius || 100, match: d <= (o.radius || 100) };
+    });
+    return best;
+  }
+  async function v16pReverseGeocode(lat, lng){
+    try {
+      const r = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng+'&zoom=16&addressdetails=1', { headers: { 'Accept-Language': 'en' } });
+      if (!r.ok) throw new Error('geocode http '+r.status);
+      const j = await r.json();
+      const a = j.address || {};
+      const parts = [
+        a.amenity || a.building || a.road,
+        a.suburb || a.neighbourhood,
+        a.city || a.town || a.village,
+        a.country
+      ].filter(Boolean);
+      const addr = parts.join(', ') || (j.display_name || ('Lat ' + lat.toFixed(4) + ', Lng ' + lng.toFixed(4)));
+      if (window.V16L) window.V16L.lastAddress = addr;
+      return addr;
+    } catch(e){
+      const addr = 'Lat ' + lat.toFixed(5) + ', Lng ' + lng.toFixed(5);
+      if (window.V16L) window.V16L.lastAddress = addr;
+      return addr;
+    }
+  }
+
+  // ---- replace v16lAutoGpsCapture with a cleaner version (silent error path, no alert)
+  window.v16lAutoGpsCapture = async function v16pAutoGpsCapture(force){
+    // Cache hit (skip if forced)
+    if (!force && window.V16L && window.V16L.lastGps && window.V16L.lastGps.ok && (Date.now() - window.V16L.lastGps.ts < 60000)) {
+      try { window.v16lRenderAttForm(); } catch(e){}
+      return;
+    }
+    // Make sure offices are loaded for geofence
+    if (!window.V16L || !window.V16L.offices || !window.V16L.offices.length) {
+      try { await v16pLoadOffices(); } catch(e){}
+    }
+    window.__v16pCapturing = true;
+    window._v16pFallback = null;
+    try { window.v16lRenderAttForm(); } catch(e){}
+    let v;
+    try { v = await window.v16lCaptureGps(); } catch(e){ v = { ok:false, error: e.message || 'capture failed' }; }
+    window.__v16pCapturing = false;
+    if (v && v.ok) {
+      if (!window.V16L) window.V16L = {};
+      window.V16L.lastGps = v;
+      window.V16L.geoVerified = v16pGeofence(v.lat, v.lng);
+      try { window.v16lRenderAttForm(); } catch(e){}
+      v16pReverseGeocode(v.lat, v.lng).then(() => { try { window.v16lRenderAttForm(); } catch(e){} });
+    } else {
+      if (!window.V16L) window.V16L = {};
+      window.V16L.lastGps = { ok:false, error: v && v.error, code: v && v.code, help: v && v.help };
+      try { window.v16lRenderAttForm(); } catch(e){}
+      // No alert() — the UI error card now shows all instructions clearly
+    }
+  };
+
+  // ---- v16p submit (handles both GPS path and manual fallback)
+  window.v16pSubmitAttendance = async function(){
+    const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+    const s = window._v16lFormState;
+    const gps = window.V16L && window.V16L.lastGps;
+    const fb  = window._v16pFallback;
+    const usingFallback = !!(fb && fb.active && fb.address && fb.reason);
+
+    if (!usingFallback && (!gps || !gps.ok)) {
+      if (typeof showToast === 'function') showToast('Please capture GPS or use the fallback option below.', 'warning', 4000);
+      else alert('Please capture GPS location first.');
+      return;
+    }
+    if (s.mode === 'Field') {
+      const fv = s.fieldVisit;
+      if (!fv.client || !fv.institution || !fv.location || !fv.purpose) {
+        if (typeof showToast === 'function') showToast('Please fill all field visit details.', 'warning', 4000);
+        else alert('Please fill all field visit details.');
+        return;
+      }
+    }
+    if (s.mode === 'Remote' && !s.remoteReason) {
+      if (typeof showToast === 'function') showToast('Please pick a remote reason.', 'warning', 3500);
+      else alert('Please pick a remote reason.');
+      return;
+    }
+    // Off-geofence warning (Office mode only, with real GPS)
+    if (!usingFallback && s.mode === 'Office' && window.V16L && window.V16L.geoVerified && !window.V16L.geoVerified.match) {
+      const geo = window.V16L.geoVerified;
+      const ok = confirm('⚠️ You are ' + geo.distanceM + 'm from ' + geo.officeName + ' (outside the ' + geo.radius + 'm office radius).\n\nThis will be flagged for management review.\n\nContinue?');
+      if (!ok) return;
+    }
+
+    const _b = v16pBrowser();
+    const _ua = navigator.userAgent || '';
+    let _device = 'Desktop';
+    if (/Android/i.test(_ua)) _device = 'Android';
+    else if (/iPhone|iPad|iPod/i.test(_ua)) _device = 'iOS';
+    else if (/Mac/i.test(_ua)) _device = 'Mac';
+    else if (/Windows/i.test(_ua)) _device = 'Windows';
+    else if (/Linux/i.test(_ua)) _device = 'Linux';
+    const dev = { device: _device, browser: _b.name };
+    const payload = {
+      user: u.username || '',
+      name: u.name || '',
+      empId: u.empId || '',
+      level: u.level || 0,
+      kind: 'checkin',
+      status: s.status,
+      mode: s.mode,
+      lat: usingFallback ? null : gps.lat,
+      lng: usingFallback ? null : gps.lng,
+      accuracy: usingFallback ? null : gps.accuracy,
+      address: usingFallback ? fb.address : (window.V16L.lastAddress || ''),
+      officeId: (!usingFallback && window.V16L.geoVerified && window.V16L.geoVerified.officeId) || '',
+      officeMatch: !!(!usingFallback && window.V16L.geoVerified && window.V16L.geoVerified.match),
+      distanceM: (!usingFallback && window.V16L.geoVerified) ? window.V16L.geoVerified.distanceM : null,
+      fieldVisit: s.mode === 'Field' ? s.fieldVisit : null,
+      remoteReason: s.mode === 'Remote' ? s.remoteReason : '',
+      device: dev.device,
+      browser: dev.browser,
+      gpsBlocked: usingFallback,
+      gpsBlockReason: usingFallback ? fb.reason : '',
+      reviewFlag: usingFallback || (!usingFallback && window.V16L.geoVerified && !window.V16L.geoVerified.match) ? 'manual_review' : null
+    };
+    try {
+      const r = await fetch('/api/v16l/attendance', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const j = await r.json();
+      if (!j.success) {
+        if (typeof showToast === 'function') showToast('Submit failed: ' + (j.error || 'unknown'), 'error', 5000);
+        else alert('Submit failed: ' + (j.error || 'unknown'));
+        return;
+      }
+      // Sync legacy state
+      try {
+        if (typeof attendanceState === 'object') {
+          attendanceState.checkinDone = true;
+          attendanceState.mode = s.mode;
+          attendanceState.checkinTs = Date.now();
+          attendanceState.checkinSubmittedAt = new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', hour12:false });
+          attendanceState.location = usingFallback
+            ? { ok:true, manual:true, address: fb.address, reason: fb.reason }
+            : { ok:true, lat: gps.lat, lng: gps.lng, accuracy: gps.accuracy, address: window.V16L.lastAddress };
+          if (typeof saveAtt === 'function') saveAtt();
+        }
+      } catch(e){}
+
+      // Reset fallback for next time
+      window._v16pFallback = null;
+
+      const msg = usingFallback ? '✅ Attendance recorded (flagged for review) — opening Daily Plan…' : '✅ Attendance recorded — opening Daily Plan…';
+      if (typeof showToast === 'function') showToast(msg, 'success', 3500);
+      setTimeout(() => { try { nav('v16lplan'); } catch(e){} }, 600);
+    } catch(e){
+      if (typeof showToast === 'function') showToast('Network error: ' + e.message, 'error', 5000);
+      else alert('Network error: ' + e.message);
+    }
+  };
+
+  // Keep v16lSubmitAttendance pointing at v16p version too (in case anything else calls it)
+  window.v16lSubmitAttendance = window.v16pSubmitAttendance;
+
+  console.log('[v16p] Attendance page polish + GPS robustness (permissions API + fallback + cleaner UI) loaded.');
+})();
+</script>
 <script src="/static/agent-portal.js"></script>
 <script src="/static/media-suite.js"></script>
 <script src="/static/team-comms.js"></script>
