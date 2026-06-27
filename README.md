@@ -6,11 +6,77 @@
 - **Stack**: Hono on Cloudflare Pages · Vanilla JS SPA · Cloudflare KV (binding `COMMS`)
 
 ## URLs
-- **Production**: https://e2a4c92e.webapp-2il.pages.dev (v16r, deployed 2026-06-27)
+- **Production**: https://969f2071.webapp-2il.pages.dev (v16t, deployed 2026-06-27)
+- **Previous**: https://e47154ea.webapp-2il.pages.dev (v16s, deployed 2026-06-27)
 - **Alias**: https://webapp-2il.pages.dev (always points to latest)
 - **Local dev**: http://localhost:3000 (PM2)
 
-## v16r — CEO Live Dashboard + GPS Fresh-Fix + Razan Bank Balance + CEO Attendance Optional (latest, shipped 2026-06-27)
+## v16t — CEO Activity Monitor (latest, shipped 2026-06-27)
+
+Round-8 add-on per CEO request: *"make an option for CEO to view all the Staffs and every one activitys and logs, like each and every staffs updating in the portal"*.
+
+A real-time portal-wide activity tracker accessible to CEO / COO / Super Admin / Owner via the `Activity Monitor` sidebar link or `nav('activitymonitor')`.
+
+**What it captures (auto-hooks):**
+- `login` / `login_failed` / `logout` (wraps `doLogin` / `doLogout`)
+- `nav` events with target page (wraps `window.nav`)
+- `planner_save` (wraps `window.savePlanner`)
+- `attendance_checkin` / `attendance_checkout` / `leave_submit` / `create_task` / `create_note` / `create_file` / `create_expense` / `create_meeting` / `task_complete` (event delegation on buttons)
+- `usermgmt_*` (wraps v16s user management actions)
+- `heartbeat` every 5 min while session is alive
+
+**UI features (Activity Monitor page):**
+- 6 KPI cards: Active Now (5-min window), Events 1h / 24h / 7d, Top User, Stored Events (ring-buffer fill)
+- 24-hour hourly activity bar chart
+- Top-10 action breakdown with progress bars
+- Staff Activity Summary table — per-user 24h / 7d counts + live dot for users seen in last 5 min, "Timeline" button drills into a per-user modal
+- Live Activity Feed (most recent 300 events) with icons, timestamps, target, JSON meta
+- Filter bar: free-text search, user dropdown, action dropdown, Clear, Apply, manual Refresh, auto-refresh (15s) toggle, CSV export, 30-day+ purge
+- Non-authorised users get a clean "Access Restricted" lock screen
+
+**Backend endpoints (`/api/v16t/activity/*`):**
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/api/v16t/activity` | Log one event (fire-and-forget) |
+| POST | `/api/v16t/activity/batch` | Log many events at once (frontend batches every 600 ms) |
+| GET | `/api/v16t/activity` | List events with filters `?user=&action=&since=&until=&limit=&q=` |
+| GET | `/api/v16t/activity/stats` | Aggregated KPIs (1h/24h/7d, byUser, byAction, hourly[24]) |
+| GET | `/api/v16t/activity/users` | Distinct users list (for filter dropdown) |
+| GET | `/api/v16t/activity/actions` | Distinct actions list |
+| DELETE | `/api/v16t/activity` | Purge events older than N days, or all (CEO only) |
+
+**Storage:** KV key `v16t:activity` — JSON array (ring buffer, cap 2000 events). Each event: `{ id, ts, user, role, action, target, meta, ua, ip }`.
+
+**Permission gate:** Page restricted to usernames `razan`, `razan.thawus`, `thasbiha`, `thasbiha.s`, `nashif.razzak`, `nafees.razzak`, `superadmin`, or any user with role containing CEO / COO / Super Admin / Owner, or `level >= 90`.
+
+**Tests:** Playwright suite (9 cases) — all PASS. Module load, Shiran login event capture, nav event capture, CEO renders monitor (24,993 bytes HTML), drill-down modal with 8-row timeline, stats aggregate correctly, non-CEO blocked at lock screen, filter API scopes events per-user.
+
+**Build:** `dist/_worker.js` 4,207.67 kB (+44 kB from v16s). Source `public/command-portal.html` grew 28,982 → 29,764 lines (+782).
+
+## v16s — User Management Portal + Per-User Planner Fix (shipped 2026-06-27)
+
+Round-8 dual fix-pack addressing two CEO requests:
+
+> "in shirans dashboard task list its showing razans tasks, please fix these for all the staffs."
+> "make an option for CEO or Super Admin to create more users portal as we are hiring new staffs"
+
+**1. Per-User Planner Fix** — `loadPlanner()` now resolves segments via `ROLE_PLANNER_SEGMENTS[username]` instead of falling back to the BD/counsellor template. Shiran (designer) now sees her own design segments (Design Brief Review, Asset Creation, Brand Guidelines, Social Media Graphics, Print Material, Revisions, File Organization). Binupa, Sukaina, Saleh, Shakya, Jinushiya, etc. all get their role-correct templates. Also fixes `WS_STATE.tasks` / `WS_STATE.docs` / `WS_STATE.meetings` to be per-user scoped (`gg-ws-<suffix>-<username>` localStorage keys) — previously these leaked across users via unscoped keys.
+
+**2. User Management Portal** — CEO / COO / Super Admin can:
+- Create new staff portal accounts (for new hires) with username validation (`/^[a-z][a-z0-9._-]{1,29}$/`)
+- Edit existing users (name, role, level, department, page access via multi-select)
+- Reset passwords
+- Disable / re-enable accounts (disabled users blocked at login with: *"This account is currently disabled. Contact the CEO to re-enable it."*)
+- Delete v16s-managed users
+- View audit log of all management actions
+
+**Storage:** KV keys `v16s:users` (array of user records), `v16s:passwords` (record map), `v16s:audit` (recent action log).
+
+**Backend endpoints:** `GET/POST /api/v16s/users`, `PUT /api/v16s/users/:username`, `POST /api/v16s/users/:username/password`, `POST /api/v16s/users/:username/status`, `DELETE /api/v16s/users/:username`, `GET /api/v16s/password-for/:username`, `GET /api/v16s/audit`.
+
+**Tests:** Playwright suite (5 cases) — all PASS. Shiran planner shows designer segments (no Razan-flavoured fallback), CEO mgmt page renders 13 built-in users with 5 KPIs + table + actions, new user creation via API works and the new user can log in with their assigned password, disabled user is blocked at login with the correct error message.
+
+## v16r — CEO Live Dashboard + GPS Fresh-Fix + Razan Bank Balance + CEO Attendance Optional (shipped 2026-06-27)
 
 Round-7 fix pack addressing 4 distinct CEO/Razan/GPS issues:
 
