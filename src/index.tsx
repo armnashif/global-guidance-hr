@@ -8512,6 +8512,446 @@ app.delete('/api/v16t/activity', async (c) => {
     }
 });
 
+// ============================================================
+// v16u — Idle Detection · Status Notifications · Remote Capture
+// ============================================================
+// Storage model:
+//   - Presence per user: KV `v16u:presence:<username>` → JSON
+//     { user, status, statusMsg, lastSeen, lastActive, idleMs, role, idleCeoNotified, idleSelfAlerted }
+//   - Notification inbox: KV `v16u:notifications` → ring-buffer JSON array (cap 500)
+//   - Capture request queue: KV `v16u:capture:requests` → JSON array (cap 200)
+//   - Capture result (screenshot/webcam data URL): KV `v16u:capture:result:<requestId>`
+//     stored with TTL 1h. Polled by the requester (CEO).
+
+const KV_V16U_NOTIF = 'v16u:notifications';
+const KV_V16U_CAP_REQ = 'v16u:capture:requests';
+const V16U_NOTIF_CAP = 500;
+const V16U_CAPREQ_CAP = 200;
+
+function v16uNow(){ return Date.now(); }
+function v16uId(prefix: string){ return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
+
+function v16uPresenceKey(user: string){ return 'v16u:presence:' + user.toLowerCase(); }
+function v16uCapResultKey(reqId: string){ return 'v16u:capture:result:' + reqId; }
+
+async function v16uLoadPresence(c: any, user: string): Promise<any> {
+    try {
+        const kv = (c.env as any)?.COMMS;
+        if (!kv) return null;
+        const raw = await kv.get(v16uPresenceKey(user));
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch { return null; }
+}
+async function v16uSavePresence(c: any, user: string, rec: any): Promise<boolean> {
+    try {
+        const kv = (c.env as any)?.COMMS;
+        if (!kv) return false;
+        await kv.put(v16uPresenceKey(user), JSON.stringify(rec), { expirationTtl: 7 * 24 * 60 * 60 });
+        return true;
+    } catch { return false; }
+}
+
+// List all presence records by enumerating known users from v16s + v16t activity.
+// We can't list KV keys cheaply, so we use the activity index of known users.
+async function v16uListAllPresence(c: any): Promise<any[]> {
+    try {
+        // Pull distinct users from v16t activity
+        const events = await kvLoadArr(c, KV_V16T_ACTIVITY);
+        const userSet: Record<string, boolean> = {};
+        for (const e of events) if (e && e.user) userSet[String(e.user).toLowerCase()] = true;
+        // Also from v16s users
+        try {
+            const v16sUsers = await kvLoadArr(c, KV_V16S_USERS);
+            for (const u of v16sUsers) if (u && u.username) userSet[String(u.username).toLowerCase()] = true;
+        } catch {}
+        const users = Object.keys(userSet);
+        const out: any[] = [];
+        for (const u of users){
+            const rec = await v16uLoadPresence(c, u);
+            if (rec) out.push(rec);
+        }
+        return out;
+    } catch { return []; }
+}
+
+// ---- Helpers --------------------------------------------------
+function v16uIsManagement(role: string, username: string): boolean {
+    const r = (role||'').toLowerCase();
+    const u = (username||'').toLowerCase();
+    return u === 'razan' || u === 'razan.thawus' || u === 'thasbiha' || u === 'thasbiha.s' ||
+           u === 'nashif.razzak' || u === 'nafees.razzak' || u === 'superadmin' ||
+           r.indexOf('ceo') !== -1 || r.indexOf('coo') !== -1 ||
+           r.indexOf('super admin') !== -1 || r.indexOf('owner') !== -1 ||
+           r.indexOf('manager') !== -1 || r.indexOf('director') !== -1 ||
+           r.indexOf('head') !== -1;
+}
+function v16uIsCeo(role: string, username: string): boolean {
+    const r = (role||'').toLowerCase();
+    const u = (username||'').toLowerCase();
+    return u === 'nashif.razzak' || u === 'superadmin' ||
+           r.indexOf('ceo') !== -1 || r.indexOf('owner') !== -1;
+}
+
+async function v16uAddNotification(c: any, rec: any){
+    try {
+        const arr = await kvLoadArr(c, KV_V16U_NOTIF);
+        arr.push({
+            id: v16uId('n'),
+            ts: v16uNow(),
+            ...rec,
+            read: false
+        });
+        await kvSaveArr(c, KV_V16U_NOTIF, arr, V16U_NOTIF_CAP);
+    } catch {}
+}
+
+// ============================================================
+// PRESENCE / HEARTBEAT
+// ============================================================
+// POST /api/v16u/heartbeat — staff sends every 30s while active
+// Body: { user, role, status, statusMsg, isActive (user actively interacting) }
+app.post('/api/v16u/heartbeat', async (c) => {
+    try {
+        const body = await c.req.json().catch(() => ({}));
+        const user = String(body?.user || '').trim().toLowerCase();
+        if (!user) return c.json({ success:false, error:'user required' }, 400);
+        const now = v16uNow();
+        const status = String(body?.status || 'online');
+        const statusMsg = String(body?.statusMsg || '');
+        const role = String(body?.role || '');
+        const isActive = body?.isActive !== false; // default true
+
+        // Load existing presence to compare and detect transitions
+        const prev = await v16uLoadPresence(c, user) || {
+            user, status:'offline', statusMsg:'', lastSeen:0, lastActive:0, role,
+            idleCeoNotified:false, idleSelfAlerted:false
+        };
+
+        const next: any = {
+            user,
+            role: role || prev.role || '',
+            status,
+            statusMsg,
+            lastSeen: now,
+            lastActive: isActive ? now : (prev.lastActive || now),
+            idleMs: isActive ? 0 : (now - (prev.lastActive || now)),
+            idleCeoNotified: prev.idleCeoNotified || false,
+            idleSelfAlerted: prev.idleSelfAlerted || false,
+            ua: (c.req.header('user-agent')||'').slice(0,200),
+            ip: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || ''
+        };
+
+        // Reset idle flags if user is active again
+        if (isActive){
+            next.idleCeoNotified = false;
+            next.idleSelfAlerted = false;
+        }
+
+        // Detect status change (online → away/busy/dnd/offline) — notify CEO/management
+        if (prev.status !== status && status !== 'online'){
+            // Only fire for explicit status changes by user
+            const isMgmtUser = v16uIsManagement(role, user);
+            const notifyTarget = isMgmtUser ? 'ceo' : 'management';
+            await v16uAddNotification(c, {
+                kind: 'status_change',
+                fromUser: user,
+                fromRole: role,
+                targetAudience: notifyTarget,
+                title: user + ' is now ' + status,
+                body: statusMsg ? statusMsg : ('Status changed from ' + (prev.status||'online') + ' to ' + status),
+                prevStatus: prev.status || 'online',
+                newStatus: status
+            });
+        }
+
+        // Compute idle duration (since last active)
+        const idleMs = now - (next.lastActive || now);
+        const fifteenMin = 15 * 60 * 1000;
+        const thirtyMin = 30 * 60 * 1000;
+
+        // 15-min mark → notify CEO once
+        if (idleMs >= fifteenMin && !next.idleCeoNotified && status !== 'offline' && status !== 'away'){
+            next.idleCeoNotified = true;
+            await v16uAddNotification(c, {
+                kind: 'idle_15',
+                fromUser: user,
+                fromRole: role,
+                targetAudience: 'ceo',
+                title: user + ' is idle (15+ min)',
+                body: 'Has not interacted with the portal for ' + Math.round(idleMs/60000) + ' minutes.',
+                idleMs
+            });
+        }
+
+        // 30-min mark → push self-alert (returned in response for client to show)
+        let selfAlert: any = null;
+        if (idleMs >= thirtyMin && !next.idleSelfAlerted){
+            next.idleSelfAlerted = true;
+            selfAlert = {
+                kind: 'idle_30_self',
+                title: 'You appear to be idle',
+                body: 'You have been inactive for ' + Math.round(idleMs/60000) + ' minutes. If you are working off-portal, please update your status.'
+            };
+            // Also notify CEO of escalation
+            await v16uAddNotification(c, {
+                kind: 'idle_30',
+                fromUser: user,
+                fromRole: role,
+                targetAudience: 'ceo',
+                title: user + ' is idle (30+ min)',
+                body: 'Staff has been auto-alerted to update their status.',
+                idleMs
+            });
+        }
+
+        await v16uSavePresence(c, user, next);
+
+        // Check for any pending capture requests targeted at this user
+        const reqArr = await kvLoadArr(c, KV_V16U_CAP_REQ);
+        const pending = reqArr.filter((r: any) =>
+            r && String(r.targetUser||'').toLowerCase() === user &&
+            (r.status === 'pending' || r.status === 'approved-streaming') &&
+            (now - (r.ts||0)) < 60 * 60 * 1000
+        );
+
+        return c.json({
+            success: true,
+            now,
+            idleMs,
+            selfAlert,
+            pendingCaptureRequests: pending
+        });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16u/presence — list everyone (for CEO live board)
+app.get('/api/v16u/presence', async (c) => {
+    try {
+        const arr = await v16uListAllPresence(c);
+        const now = v16uNow();
+        // Annotate
+        const out = arr.map((p: any) => ({
+            ...p,
+            idleMs: now - (p.lastActive || p.lastSeen || 0),
+            ageMs: now - (p.lastSeen || 0)
+        }));
+        return c.json({ success:true, presence: out, now });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16u/presence/:user — single user presence
+app.get('/api/v16u/presence/:user', async (c) => {
+    try {
+        const user = String(c.req.param('user')||'').toLowerCase();
+        const rec = await v16uLoadPresence(c, user);
+        if (!rec) return c.json({ success:true, presence: null });
+        const now = v16uNow();
+        return c.json({ success:true, presence: { ...rec, idleMs: now - (rec.lastActive||rec.lastSeen||0), ageMs: now - (rec.lastSeen||0) } });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// ============================================================
+// NOTIFICATIONS (CEO / management inbox)
+// ============================================================
+// GET /api/v16u/notifications?audience=ceo|management&unreadOnly=1&limit=100
+app.get('/api/v16u/notifications', async (c) => {
+    try {
+        const audience = String(c.req.query('audience') || 'ceo').toLowerCase();
+        const unreadOnly = c.req.query('unreadOnly') === '1';
+        const limit = Math.min(Math.max(Number(c.req.query('limit') || '100'), 1), 500);
+        const since = Number(c.req.query('since') || '0');
+
+        const arr = await kvLoadArr(c, KV_V16U_NOTIF);
+        let filtered = arr.filter((n: any) => {
+            if (!n) return false;
+            // Audience match: CEO sees everything addressed to ceo OR management
+            if (audience === 'ceo') {
+                if (n.targetAudience !== 'ceo' && n.targetAudience !== 'management') return false;
+            } else if (audience === 'management') {
+                if (n.targetAudience !== 'management') return false;
+            } else {
+                return false;
+            }
+            if (unreadOnly && n.read) return false;
+            if (since && (n.ts||0) < since) return false;
+            return true;
+        });
+        filtered.sort((a: any, b: any) => (b.ts||0) - (a.ts||0));
+        return c.json({ success:true, total: filtered.length, notifications: filtered.slice(0, limit) });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// POST /api/v16u/notifications/mark — mark as read
+// Body: { ids:[], all:false }
+app.post('/api/v16u/notifications/mark', async (c) => {
+    try {
+        const body = await c.req.json().catch(() => ({}));
+        const ids: string[] = Array.isArray(body?.ids) ? body.ids : [];
+        const all = !!body?.all;
+        const arr = await kvLoadArr(c, KV_V16U_NOTIF);
+        let n = 0;
+        for (const item of arr){
+            if (!item) continue;
+            if (all || ids.indexOf(item.id) !== -1){
+                if (!item.read){ item.read = true; n++; }
+            }
+        }
+        await kvSaveArr(c, KV_V16U_NOTIF, arr, V16U_NOTIF_CAP);
+        return c.json({ success:true, marked: n });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// POST /api/v16u/notifications/clear — purge all (CEO only)
+app.post('/api/v16u/notifications/clear', async (c) => {
+    try {
+        await kvSaveArr(c, KV_V16U_NOTIF, [], V16U_NOTIF_CAP);
+        return c.json({ success:true });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// ============================================================
+// REMOTE CAPTURE — CEO requests screenshot/webcam/screen-share
+// ============================================================
+// POST /api/v16u/capture/request
+// Body: { fromUser, targetUser, kind:'screenshot'|'webcam'|'live-screen'|'both', note?:string }
+app.post('/api/v16u/capture/request', async (c) => {
+    try {
+        const body = await c.req.json().catch(() => ({}));
+        const fromUser = String(body?.fromUser || '').toLowerCase();
+        const targetUser = String(body?.targetUser || '').toLowerCase();
+        const kind = String(body?.kind || 'screenshot');
+        const note = String(body?.note || '');
+        if (!fromUser || !targetUser) return c.json({ success:false, error:'fromUser and targetUser required' }, 400);
+        if (['screenshot','webcam','both','live-screen'].indexOf(kind) === -1){
+            return c.json({ success:false, error:'invalid kind' }, 400);
+        }
+        const reqRec = {
+            id: v16uId('cap'),
+            ts: v16uNow(),
+            fromUser,
+            targetUser,
+            kind,
+            note,
+            status: 'pending'
+        };
+        const arr = await kvLoadArr(c, KV_V16U_CAP_REQ);
+        arr.push(reqRec);
+        await kvSaveArr(c, KV_V16U_CAP_REQ, arr, V16U_CAPREQ_CAP);
+        return c.json({ success:true, request: reqRec });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// POST /api/v16u/capture/respond — target staff responds (allow/deny)
+// Body: { requestId, status:'approved'|'denied'|'approved-streaming', dataUrls?:{ screenshot?, webcam? } }
+app.post('/api/v16u/capture/respond', async (c) => {
+    try {
+        const body = await c.req.json().catch(() => ({}));
+        const requestId = String(body?.requestId || '');
+        const status = String(body?.status || '');
+        if (!requestId || !status) return c.json({ success:false, error:'requestId and status required' }, 400);
+        const arr = await kvLoadArr(c, KV_V16U_CAP_REQ);
+        const idx = arr.findIndex((r: any) => r && r.id === requestId);
+        if (idx === -1) return c.json({ success:false, error:'request not found' }, 404);
+        arr[idx].status = status;
+        arr[idx].respondedAt = v16uNow();
+        if (body?.error) arr[idx].error = String(body.error);
+        await kvSaveArr(c, KV_V16U_CAP_REQ, arr, V16U_CAPREQ_CAP);
+
+        // If data URLs included, save them (TTL 1h)
+        const data = body?.dataUrls || {};
+        if (data && (data.screenshot || data.webcam)){
+            const kv = (c.env as any)?.COMMS;
+            if (kv){
+                try {
+                    await kv.put(v16uCapResultKey(requestId), JSON.stringify({
+                        screenshot: data.screenshot || null,
+                        webcam: data.webcam || null,
+                        capturedAt: v16uNow()
+                    }), { expirationTtl: 60 * 60 });
+                } catch {}
+            }
+        }
+
+        // Log to activity for audit
+        await v16uAddNotification(c, {
+            kind: 'capture_' + status,
+            fromUser: arr[idx].targetUser,
+            fromRole: '',
+            targetAudience: 'ceo',
+            title: arr[idx].targetUser + ' ' + (status === 'approved' ? 'approved' : status === 'denied' ? 'declined' : 'updated') + ' capture request',
+            body: arr[idx].kind + (body?.error ? (' — ' + body.error) : ''),
+            requestId
+        });
+
+        return c.json({ success:true });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16u/capture/result/:requestId — CEO polls for captured data
+app.get('/api/v16u/capture/result/:requestId', async (c) => {
+    try {
+        const requestId = String(c.req.param('requestId') || '');
+        const kv = (c.env as any)?.COMMS;
+        if (!kv) return c.json({ success:false, error:'no kv' }, 500);
+        const raw = await kv.get(v16uCapResultKey(requestId));
+        if (!raw) return c.json({ success:true, result: null });
+        return c.json({ success:true, result: JSON.parse(raw) });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16u/capture/requests?targetUser=X — list pending requests for a user
+app.get('/api/v16u/capture/requests', async (c) => {
+    try {
+        const targetUser = String(c.req.query('targetUser') || '').toLowerCase();
+        const fromUser = String(c.req.query('fromUser') || '').toLowerCase();
+        const arr = await kvLoadArr(c, KV_V16U_CAP_REQ);
+        let filtered = arr;
+        if (targetUser) filtered = filtered.filter((r: any) => r && String(r.targetUser||'').toLowerCase() === targetUser);
+        if (fromUser) filtered = filtered.filter((r: any) => r && String(r.fromUser||'').toLowerCase() === fromUser);
+        filtered.sort((a: any, b: any) => (b.ts||0) - (a.ts||0));
+        return c.json({ success:true, requests: filtered.slice(0, 100) });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// POST /api/v16u/capture/cancel — cancel a pending request
+app.post('/api/v16u/capture/cancel', async (c) => {
+    try {
+        const body = await c.req.json().catch(() => ({}));
+        const requestId = String(body?.requestId || '');
+        if (!requestId) return c.json({ success:false, error:'requestId required' }, 400);
+        const arr = await kvLoadArr(c, KV_V16U_CAP_REQ);
+        const idx = arr.findIndex((r: any) => r && r.id === requestId);
+        if (idx === -1) return c.json({ success:false, error:'not found' }, 404);
+        arr[idx].status = 'cancelled';
+        arr[idx].respondedAt = v16uNow();
+        await kvSaveArr(c, KV_V16U_CAP_REQ, arr, V16U_CAPREQ_CAP);
+        return c.json({ success:true });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
 // 404 Not Found page (must be the LAST route registered)
 app.get('*', (c) => {
   return c.html(`

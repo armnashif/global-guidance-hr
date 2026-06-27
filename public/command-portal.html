@@ -29764,6 +29764,953 @@ else _tbBoot();
   console.log('[v16t] Activity Monitor — loaded. Tracking staff actions; CEO can view via sidebar.');
 })();
 </script>
+<script>
+/* ============================================================
+ * v16u — Idle Detection · Status Notifications · Remote Capture
+ *         · Salary-Day Shake · Mobile-Friendly
+ * ------------------------------------------------------------
+ * Round 9 — addresses:
+ *  1. Salary-day shake animation not always showing (rebuilt as
+ *     a reliable per-day pulse banner with shake keyframes).
+ *  2. Idle detection: 15-min → CEO push notification;
+ *     30-min → user gets an "are you still there?" alert.
+ *  3. Status-change → notification feed for management/CEO.
+ *  4. CEO can request a screenshot / webcam photo / live screen
+ *     from any staff via Team Comms camera icon. One-way only
+ *     (CEO doesn't share). Mobile-aware (iOS = webcam only).
+ * ============================================================ */
+(function(){
+  'use strict';
+
+  // ---- safe currentUser reader -----------------------------------------
+  function v16uCurUser(){
+    try { if (window.currentUser && typeof window.currentUser === 'object') return window.currentUser; } catch(e){}
+    try {
+      var u = (0, eval)('typeof currentUser !== "undefined" ? currentUser : null');
+      if (u && typeof u === 'object' && u.username) return u;
+    } catch(e){}
+    return null;
+  }
+
+  function v16uIsCeo(u){
+    if (!u) return false;
+    var r = (u.role||'').toLowerCase();
+    var n = (u.username||'').toLowerCase();
+    return n === 'nashif.razzak' || n === 'superadmin' ||
+           r.indexOf('ceo') !== -1 || r.indexOf('owner') !== -1;
+  }
+  function v16uIsManagement(u){
+    if (!u) return false;
+    var r = (u.role||'').toLowerCase();
+    var n = (u.username||'').toLowerCase();
+    return n === 'nashif.razzak' || n === 'nafees.razzak' || n === 'razan' ||
+           n === 'razan.thawus' || n === 'thasbiha' || n === 'thasbiha.s' ||
+           n === 'superadmin' ||
+           r.indexOf('ceo') !== -1 || r.indexOf('coo') !== -1 ||
+           r.indexOf('super admin') !== -1 || r.indexOf('owner') !== -1 ||
+           r.indexOf('manager') !== -1 || r.indexOf('director') !== -1 ||
+           r.indexOf('head') !== -1;
+  }
+  function v16uIsIos(){
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+  function v16uIsMobile(){
+    return /Mobile|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+
+  // ============================================================
+  // 1. SALARY-DAY SHAKE BANNER
+  // ============================================================
+  // Re-implements the "shake on salary day" effect reliably. Reads
+  // a configurable payday (default 25th of the month, Asia/Colombo).
+  // Shows a celebratory banner on the dashboard on payday and on the
+  // day before / after. Uses CSS shake keyframes that work on every
+  // browser including iOS Safari.
+  function v16uPayday(){
+    try {
+      var ws = window.GG_SETTINGS;
+      if (ws && ws.finance && ws.finance.payrollDay) return Number(ws.finance.payrollDay) || 25;
+    } catch(e){}
+    return 25;
+  }
+  function v16uTodayParts(){
+    // Asia/Colombo timezone for consistency
+    var now = new Date();
+    try {
+      var fmt = new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Colombo', year:'numeric', month:'2-digit', day:'2-digit' });
+      var parts = fmt.formatToParts(now);
+      var y = 0, m = 0, d = 0;
+      parts.forEach(function(p){
+        if (p.type === 'year') y = Number(p.value);
+        if (p.type === 'month') m = Number(p.value);
+        if (p.type === 'day') d = Number(p.value);
+      });
+      return { y:y, m:m, d:d };
+    } catch(e){
+      return { y: now.getFullYear(), m: now.getMonth()+1, d: now.getDate() };
+    }
+  }
+  function v16uInjectShakeCss(){
+    if (document.getElementById('v16u-shake-css')) return;
+    var st = document.createElement('style');
+    st.id = 'v16u-shake-css';
+    st.textContent =
+      '@keyframes v16uShake {' +
+      '  0%, 100% { transform: translateX(0) rotate(0deg); }' +
+      '  10% { transform: translateX(-2px) rotate(-1deg); }' +
+      '  20% { transform: translateX(2px) rotate(1deg); }' +
+      '  30% { transform: translateX(-3px) rotate(-1deg); }' +
+      '  40% { transform: translateX(3px) rotate(1deg); }' +
+      '  50% { transform: translateX(-2px) rotate(-1deg); }' +
+      '  60% { transform: translateX(2px) rotate(1deg); }' +
+      '  70% { transform: translateX(-1px) rotate(0); }' +
+      '  80% { transform: translateX(1px) rotate(0); }' +
+      '  90% { transform: translateX(0) rotate(0); }' +
+      '}' +
+      '@keyframes v16uCoinPulse {' +
+      '  0%, 100% { transform: scale(1) rotate(0); }' +
+      '  50% { transform: scale(1.2) rotate(360deg); }' +
+      '}' +
+      '@keyframes v16uShineSweep {' +
+      '  0% { background-position: -200% 0; }' +
+      '  100% { background-position: 200% 0; }' +
+      '}' +
+      '.v16uSalaryBanner {' +
+      '  position: relative;' +
+      '  background: linear-gradient(135deg, #f59e0b 0%, #d97706 40%, #b45309 100%);' +
+      '  color: white;' +
+      '  border-radius: 12px;' +
+      '  padding: 14px 18px;' +
+      '  margin: 12px 0;' +
+      '  display: flex;' +
+      '  align-items: center;' +
+      '  gap: 14px;' +
+      '  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);' +
+      '  animation: v16uShake 1.2s ease-in-out infinite;' +
+      '  cursor: pointer;' +
+      '  overflow: hidden;' +
+      '}' +
+      '.v16uSalaryBanner::after {' +
+      '  content: "";' +
+      '  position: absolute; top: 0; left: 0; right: 0; bottom: 0;' +
+      '  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);' +
+      '  background-size: 200% 100%;' +
+      '  animation: v16uShineSweep 3s linear infinite;' +
+      '  pointer-events: none;' +
+      '}' +
+      '.v16uSalaryBanner .v16uSalaryIcon {' +
+      '  font-size: 32px;' +
+      '  display: inline-block;' +
+      '  animation: v16uCoinPulse 2s ease-in-out infinite;' +
+      '}' +
+      '.v16uSalaryBanner .v16uSalaryClose {' +
+      '  margin-left: auto;' +
+      '  background: rgba(0,0,0,.2);' +
+      '  border: 0;' +
+      '  color: white;' +
+      '  width: 28px;' +
+      '  height: 28px;' +
+      '  border-radius: 50%;' +
+      '  cursor: pointer;' +
+      '  font-size: 14px;' +
+      '}' +
+      '/* mobile */ ' +
+      '@media (max-width: 640px) {' +
+      '  .v16uSalaryBanner { font-size: 13px; padding: 12px; }' +
+      '  .v16uSalaryBanner .v16uSalaryIcon { font-size: 26px; }' +
+      '}';
+    document.head.appendChild(st);
+  }
+
+  function v16uMaybeRenderSalaryBanner(){
+    try {
+      v16uInjectShakeCss();
+      var t = v16uTodayParts();
+      var payday = v16uPayday();
+      var dom = t.d;
+      var dayBefore = payday - 1;
+      var dayAfter = payday + 1;
+      var isPayday = (dom === payday);
+      var isAround = (dom === dayBefore || dom === dayAfter);
+      if (!isPayday && !isAround) return;
+
+      // Dismissal: each month, banner can be dismissed for the day
+      var dismissKey = 'v16u-salary-dismiss-' + t.y + '-' + t.m + '-' + t.d;
+      if (sessionStorage.getItem(dismissKey)) return;
+
+      // Find a dashboard target. Try a few likely containers.
+      var target = document.getElementById('mainContent') || document.querySelector('.main-content') || document.querySelector('#app');
+      if (!target) return;
+      if (document.getElementById('v16uSalaryBanner')) return; // already shown
+
+      var msg, sub;
+      if (isPayday){
+        msg = '🎉 Today is Payday!';
+        sub = 'Payslips are being generated. Check Finance → Payroll.';
+      } else if (dom === dayBefore){
+        msg = '💰 Salary lands tomorrow!';
+        sub = 'Payslips will be auto-generated and emailed.';
+      } else {
+        msg = '✅ Salaries paid yesterday';
+        sub = 'Payslip available in Finance → Payroll.';
+      }
+
+      var banner = document.createElement('div');
+      banner.id = 'v16uSalaryBanner';
+      banner.className = 'v16uSalaryBanner';
+      banner.innerHTML =
+        '<span class="v16uSalaryIcon">💰</span>' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:16px;font-weight:700;">'+msg+'</div>' +
+          '<div style="font-size:12px;opacity:.92;margin-top:2px;">'+sub+'</div>' +
+        '</div>' +
+        '<button class="v16uSalaryClose" onclick="v16uDismissSalary(event)" aria-label="Dismiss">×</button>';
+      banner.onclick = function(e){
+        if (e.target && (e.target.className||'').indexOf('v16uSalaryClose') !== -1) return;
+        if (typeof window.nav === 'function') window.nav('payroll');
+      };
+      target.insertBefore(banner, target.firstChild);
+
+      window.v16uDismissSalary = function(e){
+        if (e) { e.stopPropagation(); e.preventDefault(); }
+        try { sessionStorage.setItem(dismissKey, '1'); } catch(_){ }
+        var el = document.getElementById('v16uSalaryBanner');
+        if (el) el.remove();
+      };
+    } catch(e){ console.warn('[v16u] salary banner failed', e); }
+  }
+
+  // ============================================================
+  // 2. PRESENCE / HEARTBEAT / IDLE DETECTION
+  // ============================================================
+  var V16U_PRESENCE = {
+    status: 'online',
+    statusMsg: '',
+    lastActive: Date.now(),
+    isActive: true,
+    heartbeatTimer: null,
+    activityListeners: false
+  };
+
+  function v16uMarkActive(){
+    V16U_PRESENCE.lastActive = Date.now();
+    V16U_PRESENCE.isActive = true;
+  }
+
+  function v16uAttachActivityListeners(){
+    if (V16U_PRESENCE.activityListeners) return;
+    V16U_PRESENCE.activityListeners = true;
+    var events = ['mousedown','keydown','touchstart','scroll','mousemove'];
+    var throttle = 0;
+    events.forEach(function(ev){
+      window.addEventListener(ev, function(){
+        var now = Date.now();
+        if (now - throttle < 1000) return;
+        throttle = now;
+        v16uMarkActive();
+      }, { passive: true });
+    });
+    // Visibility: when tab is hidden, mark inactive
+    document.addEventListener('visibilitychange', function(){
+      if (document.visibilityState === 'hidden'){
+        V16U_PRESENCE.isActive = false;
+      } else {
+        v16uMarkActive();
+      }
+    });
+  }
+
+  function v16uSendHeartbeat(){
+    var u = v16uCurUser();
+    if (!u || !u.username) return; // no heartbeat until login
+    var now = Date.now();
+    // Active if user interacted within last 60s
+    var isActive = V16U_PRESENCE.isActive && (now - V16U_PRESENCE.lastActive < 60000) && document.visibilityState !== 'hidden';
+    var body = {
+      user: u.username,
+      role: u.role || '',
+      status: V16U_PRESENCE.status || 'online',
+      statusMsg: V16U_PRESENCE.statusMsg || '',
+      isActive: isActive
+    };
+    fetch('/api/v16u/heartbeat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      keepalive: true
+    }).then(function(r){ return r.json(); }).then(function(resp){
+      if (!resp || !resp.success) return;
+      if (resp.selfAlert) v16uShowIdleSelfAlert(resp.selfAlert);
+      // Process pending capture requests
+      if (resp.pendingCaptureRequests && resp.pendingCaptureRequests.length){
+        resp.pendingCaptureRequests.forEach(function(req){ v16uHandleIncomingCaptureRequest(req); });
+      }
+    }).catch(function(){});
+  }
+
+  function v16uShowIdleSelfAlert(alert){
+    // Prevent duplicates
+    if (document.getElementById('v16uIdleSelfAlert')) return;
+    var d = document.createElement('div');
+    d.id = 'v16uIdleSelfAlert';
+    d.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#f59e0b;color:white;padding:14px 22px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.3);z-index:99999;display:flex;align-items:center;gap:12px;max-width:90vw;';
+    d.innerHTML =
+      '<i class="fas fa-clock" style="font-size:22px;"></i>' +
+      '<div style="flex:1;">' +
+        '<div style="font-weight:700;font-size:14px;">'+(alert.title||'You appear to be idle')+'</div>' +
+        '<div style="font-size:12px;opacity:.95;margin-top:2px;">'+(alert.body||'')+'</div>' +
+      '</div>' +
+      '<button onclick="v16uDismissIdle()" style="background:rgba(0,0,0,.2);color:white;border:0;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">I\'m here</button>';
+    document.body.appendChild(d);
+    window.v16uDismissIdle = function(){
+      v16uMarkActive();
+      var el = document.getElementById('v16uIdleSelfAlert'); if (el) el.remove();
+      // Send an immediate heartbeat to clear the flag server-side
+      setTimeout(v16uSendHeartbeat, 200);
+    };
+  }
+
+  function v16uStartHeartbeat(){
+    v16uAttachActivityListeners();
+    if (V16U_PRESENCE.heartbeatTimer) return;
+    // First heartbeat after a delay (let user log in)
+    setTimeout(v16uSendHeartbeat, 3000);
+    // Then every 30s
+    V16U_PRESENCE.heartbeatTimer = setInterval(v16uSendHeartbeat, 30000);
+  }
+
+  // ============================================================
+  // 3. STATUS CHANGE HOOK
+  // ============================================================
+  // Wraps tbSetPresence() if available, otherwise exposes
+  // window.v16uSetStatus() for direct use.
+  function v16uInstallStatusHook(){
+    try {
+      if (typeof window.tbSetPresence === 'function' && !window.__v16uTbSetWrapped){
+        var orig = window.tbSetPresence;
+        window.tbSetPresence = function(p){
+          V16U_PRESENCE.status = p;
+          // Immediate heartbeat so CEO is notified within ~1s
+          setTimeout(v16uSendHeartbeat, 50);
+          return orig.apply(this, arguments);
+        };
+        window.__v16uTbSetWrapped = true;
+      }
+    } catch(e){}
+
+    window.v16uSetStatus = function(status, msg){
+      V16U_PRESENCE.status = status || 'online';
+      V16U_PRESENCE.statusMsg = msg || '';
+      setTimeout(v16uSendHeartbeat, 50);
+    };
+  }
+
+  // ============================================================
+  // 4. CEO NOTIFICATION TRAY
+  // ============================================================
+  var V16U_NOTIF = { items: [], lastSeenTs: 0, pollTimer: null, badgeEl: null, trayOpen: false };
+
+  function v16uInjectNotifCss(){
+    if (document.getElementById('v16u-notif-css')) return;
+    var st = document.createElement('style');
+    st.id = 'v16u-notif-css';
+    st.textContent =
+      '#v16uNotifBtn {' +
+      '  position: fixed;' +
+      '  top: 14px;' +
+      '  right: 16px;' +
+      '  width: 42px;' +
+      '  height: 42px;' +
+      '  border-radius: 50%;' +
+      '  background: #1e293b;' +
+      '  color: white;' +
+      '  display: flex;' +
+      '  align-items: center;' +
+      '  justify-content: center;' +
+      '  cursor: pointer;' +
+      '  box-shadow: 0 4px 12px rgba(0,0,0,.3);' +
+      '  z-index: 99990;' +
+      '  border: 2px solid rgba(255,255,255,.1);' +
+      '}' +
+      '#v16uNotifBtn:hover { background: #334155; }' +
+      '#v16uNotifBtn .v16uBadge {' +
+      '  position: absolute;' +
+      '  top: -4px;' +
+      '  right: -4px;' +
+      '  background: #ef4444;' +
+      '  color: white;' +
+      '  border-radius: 999px;' +
+      '  min-width: 18px;' +
+      '  height: 18px;' +
+      '  padding: 0 5px;' +
+      '  font-size: 10px;' +
+      '  font-weight: 700;' +
+      '  display: flex;' +
+      '  align-items: center;' +
+      '  justify-content: center;' +
+      '  border: 2px solid #1e293b;' +
+      '  animation: v16uShake 0.6s ease-in-out;' +
+      '}' +
+      '#v16uNotifTray {' +
+      '  position: fixed;' +
+      '  top: 64px;' +
+      '  right: 16px;' +
+      '  width: 360px;' +
+      '  max-width: 92vw;' +
+      '  max-height: 70vh;' +
+      '  background: white;' +
+      '  border-radius: 12px;' +
+      '  box-shadow: 0 20px 60px rgba(0,0,0,.35);' +
+      '  z-index: 99989;' +
+      '  display: flex;' +
+      '  flex-direction: column;' +
+      '  overflow: hidden;' +
+      '  color: #0f172a;' +
+      '}' +
+      '.v16uNotifItem {' +
+      '  padding: 12px 14px;' +
+      '  border-bottom: 1px solid #f1f5f9;' +
+      '  display: flex;' +
+      '  gap: 10px;' +
+      '  cursor: pointer;' +
+      '}' +
+      '.v16uNotifItem:hover { background: #f8fafc; }' +
+      '.v16uNotifItem.unread { background: #eff6ff; }' +
+      '@media (max-width: 640px) {' +
+      '  #v16uNotifBtn { top: 10px; right: 10px; width: 38px; height: 38px; }' +
+      '  #v16uNotifTray { top: 56px; right: 8px; left: 8px; width: auto; max-width: none; }' +
+      '}';
+    document.head.appendChild(st);
+  }
+
+  function v16uEnsureNotifButton(){
+    var u = v16uCurUser();
+    if (!u || (!v16uIsCeo(u) && !v16uIsManagement(u))) {
+      var existing = document.getElementById('v16uNotifBtn');
+      if (existing) existing.remove();
+      var tray = document.getElementById('v16uNotifTray');
+      if (tray) tray.remove();
+      return;
+    }
+    v16uInjectNotifCss();
+    if (document.getElementById('v16uNotifBtn')) return;
+    var btn = document.createElement('div');
+    btn.id = 'v16uNotifBtn';
+    btn.title = 'Management notifications';
+    btn.innerHTML = '<i class="fas fa-bell"></i><span class="v16uBadge" id="v16uBadge" style="display:none;">0</span>';
+    btn.onclick = v16uToggleTray;
+    document.body.appendChild(btn);
+  }
+
+  function v16uToggleTray(){
+    var tray = document.getElementById('v16uNotifTray');
+    if (tray){ tray.remove(); V16U_NOTIF.trayOpen = false; return; }
+    v16uRenderTray();
+  }
+
+  function v16uRenderTray(){
+    var existing = document.getElementById('v16uNotifTray');
+    if (existing) existing.remove();
+    var tray = document.createElement('div');
+    tray.id = 'v16uNotifTray';
+    var unread = (V16U_NOTIF.items || []).filter(function(n){ return !n.read; }).length;
+    var itemsHtml = '';
+    if (!V16U_NOTIF.items.length){
+      itemsHtml = '<div style="padding:30px;text-align:center;color:#94a3b8;"><i class="fas fa-bell-slash" style="font-size:24px;"></i><div style="margin-top:8px;font-size:13px;">No notifications</div></div>';
+    } else {
+      itemsHtml = V16U_NOTIF.items.slice(0, 50).map(function(n){
+        var icon = 'fa-bell', color = '#64748b';
+        if (n.kind === 'idle_15'){ icon = 'fa-user-clock'; color = '#f59e0b'; }
+        else if (n.kind === 'idle_30'){ icon = 'fa-user-slash'; color = '#ef4444'; }
+        else if (n.kind === 'status_change'){ icon = 'fa-circle-half-stroke'; color = '#3b82f6'; }
+        else if (n.kind && n.kind.indexOf('capture') !== -1){ icon = 'fa-camera'; color = '#8b5cf6'; }
+        var ago = v16uFmtAgo(n.ts);
+        return '<div class="v16uNotifItem '+(n.read?'':'unread')+'" data-id="'+n.id+'">' +
+          '<div style="width:32px;height:32px;border-radius:50%;background:'+color+'22;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+            '<i class="fas '+icon+'" style="color:'+color+';"></i>' +
+          '</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:13px;font-weight:600;">'+(n.title||'')+'</div>' +
+            '<div style="font-size:12px;color:#64748b;margin-top:2px;">'+(n.body||'')+'</div>' +
+            '<div style="font-size:11px;color:#94a3b8;margin-top:3px;">'+ago+'</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+    tray.innerHTML =
+      '<div style="padding:12px 14px;border-bottom:1px solid #e5e7eb;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;">' +
+        '<div><i class="fas fa-bell" style="color:#3b82f6;margin-right:8px;"></i><strong>Notifications</strong>' +
+          (unread ? ' <span style="background:#ef4444;color:white;font-size:10px;padding:2px 6px;border-radius:10px;margin-left:6px;">'+unread+'</span>' : '') +
+        '</div>' +
+        '<div>' +
+          '<button onclick="v16uMarkAllRead()" style="background:none;border:0;color:#3b82f6;font-size:12px;cursor:pointer;margin-right:8px;">Mark all read</button>' +
+          '<button onclick="v16uToggleTray()" style="background:none;border:0;font-size:18px;cursor:pointer;color:#64748b;">×</button>' +
+        '</div>' +
+      '</div>' +
+      '<div style="overflow-y:auto;flex:1;">'+itemsHtml+'</div>';
+    document.body.appendChild(tray);
+    V16U_NOTIF.trayOpen = true;
+    // Click handler to mark read
+    tray.querySelectorAll('.v16uNotifItem').forEach(function(item){
+      item.addEventListener('click', function(){
+        var id = item.getAttribute('data-id');
+        v16uMarkRead([id]);
+      });
+    });
+  }
+
+  function v16uFmtAgo(ts){
+    if (!ts) return '';
+    var diff = (Date.now() - ts) / 1000;
+    if (diff < 60) return Math.floor(diff) + 's ago';
+    if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+    try { return new Date(ts).toLocaleString(); } catch(e){ return ''; }
+  }
+
+  window.v16uMarkRead = function(ids){
+    fetch('/api/v16u/notifications/mark', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ ids: ids })
+    }).then(function(){ v16uPollNotifications(); }).catch(function(){});
+  };
+  window.v16uMarkAllRead = function(){
+    fetch('/api/v16u/notifications/mark', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ all: true })
+    }).then(function(){ v16uPollNotifications(); }).catch(function(){});
+  };
+  window.v16uToggleTray = v16uToggleTray;
+
+  function v16uPollNotifications(){
+    var u = v16uCurUser();
+    if (!u) return;
+    var audience = v16uIsCeo(u) ? 'ceo' : (v16uIsManagement(u) ? 'management' : null);
+    if (!audience) return;
+    fetch('/api/v16u/notifications?audience=' + audience + '&limit=100')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (!d || !d.success) return;
+        var newItems = d.notifications || [];
+        // Detect newly arrived
+        var prevIds = {}; (V16U_NOTIF.items||[]).forEach(function(n){ prevIds[n.id] = true; });
+        var arrived = newItems.filter(function(n){ return !prevIds[n.id]; });
+        V16U_NOTIF.items = newItems;
+        // Update badge
+        var unread = newItems.filter(function(n){ return !n.read; }).length;
+        var badge = document.getElementById('v16uBadge');
+        if (badge){
+          badge.textContent = unread > 99 ? '99+' : unread;
+          badge.style.display = unread > 0 ? 'flex' : 'none';
+        }
+        // Refresh tray if open
+        if (V16U_NOTIF.trayOpen) v16uRenderTray();
+        // Toast for new arrivals (only after first poll)
+        if (V16U_NOTIF.lastSeenTs > 0 && arrived.length){
+          arrived.slice(0, 3).forEach(function(n){ v16uToast(n); });
+        }
+        V16U_NOTIF.lastSeenTs = Date.now();
+      })
+      .catch(function(){});
+  }
+
+  function v16uToast(n){
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;top:64px;right:16px;background:white;color:#0f172a;padding:12px 16px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:99988;max-width:320px;border-left:4px solid #3b82f6;display:flex;gap:10px;align-items:flex-start;animation:v16uShake .6s ease-in-out;';
+    d.innerHTML =
+      '<i class="fas fa-bell" style="color:#3b82f6;margin-top:2px;"></i>' +
+      '<div style="flex:1;">' +
+        '<div style="font-size:13px;font-weight:700;">'+(n.title||'Notification')+'</div>' +
+        '<div style="font-size:12px;color:#475569;margin-top:2px;">'+(n.body||'')+'</div>' +
+      '</div>';
+    document.body.appendChild(d);
+    setTimeout(function(){ d.style.transition = 'opacity .4s'; d.style.opacity = '0'; setTimeout(function(){ d.remove(); }, 400); }, 4500);
+  }
+
+  function v16uStartNotificationPolling(){
+    if (V16U_NOTIF.pollTimer) return;
+    v16uEnsureNotifButton();
+    setTimeout(v16uPollNotifications, 2000);
+    V16U_NOTIF.pollTimer = setInterval(function(){
+      v16uEnsureNotifButton();
+      v16uPollNotifications();
+    }, 20000); // poll every 20s
+  }
+
+  // ============================================================
+  // 5. REMOTE CAPTURE — incoming request handler (for staff)
+  // ============================================================
+  var V16U_HANDLED_REQS = {};
+
+  function v16uHandleIncomingCaptureRequest(req){
+    if (!req || !req.id) return;
+    if (V16U_HANDLED_REQS[req.id]) return;
+    if (req.status !== 'pending') { V16U_HANDLED_REQS[req.id] = true; return; }
+    V16U_HANDLED_REQS[req.id] = true;
+    v16uShowCaptureConsent(req);
+  }
+
+  function v16uShowCaptureConsent(req){
+    if (document.getElementById('v16uCaptureConsent')) return;
+    var modal = document.createElement('div');
+    modal.id = 'v16uCaptureConsent';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    var kindLabel = req.kind === 'screenshot' ? 'a screenshot of your screen'
+                  : req.kind === 'webcam' ? 'a webcam photo'
+                  : req.kind === 'live-screen' ? 'live screen share'
+                  : 'a screenshot and webcam photo';
+    var iosWarn = '';
+    if (v16uIsIos() && (req.kind === 'screenshot' || req.kind === 'live-screen' || req.kind === 'both')){
+      iosWarn = '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px;margin-top:10px;font-size:12px;color:#92400e;"><i class="fas fa-exclamation-circle"></i> iOS does not support screen capture. Only webcam will be sent.</div>';
+    }
+    modal.innerHTML =
+      '<div style="background:white;border-radius:14px;max-width:440px;width:100%;padding:24px;box-shadow:0 25px 70px rgba(0,0,0,.4);">' +
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">' +
+          '<div style="width:48px;height:48px;border-radius:50%;background:#8b5cf6;display:flex;align-items:center;justify-content:center;">' +
+            '<i class="fas fa-camera" style="color:white;font-size:22px;"></i>' +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size:17px;font-weight:700;color:#0f172a;">Capture request</div>' +
+            '<div style="font-size:12px;color:#64748b;">from <strong>'+req.fromUser+'</strong></div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="color:#334155;font-size:14px;line-height:1.5;">' +
+          '<strong>'+req.fromUser+'</strong> is asking to take ' + kindLabel + ' for review.' +
+          (req.note ? '<div style="background:#f1f5f9;border-radius:8px;padding:10px;margin-top:10px;font-size:13px;font-style:italic;">"'+req.note+'"</div>' : '') +
+        '</div>' +
+        iosWarn +
+        '<div style="background:#eff6ff;border-radius:8px;padding:10px;margin-top:14px;font-size:11px;color:#1e40af;">' +
+          '<i class="fas fa-info-circle"></i> Your browser will ask for permission. Once approved, the capture will be sent immediately and the request closed.' +
+        '</div>' +
+        '<div style="display:flex;gap:10px;margin-top:18px;">' +
+          '<button id="v16uCapDeny" style="flex:1;background:#f1f5f9;color:#475569;border:0;padding:11px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">Decline</button>' +
+          '<button id="v16uCapAllow" style="flex:1;background:#8b5cf6;color:white;border:0;padding:11px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;"><i class="fas fa-camera"></i> Allow & Send</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(modal);
+    document.getElementById('v16uCapDeny').onclick = function(){
+      modal.remove();
+      v16uRespondCapture(req.id, 'denied', null, 'user_declined');
+    };
+    document.getElementById('v16uCapAllow').onclick = function(){
+      modal.remove();
+      v16uPerformCapture(req);
+    };
+  }
+
+  function v16uRespondCapture(requestId, status, dataUrls, error){
+    fetch('/api/v16u/capture/respond', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requestId: requestId, status: status, dataUrls: dataUrls || null, error: error || null })
+    }).catch(function(){});
+  }
+
+  async function v16uPerformCapture(req){
+    var result = { screenshot: null, webcam: null };
+    var needScreenshot = req.kind === 'screenshot' || req.kind === 'both';
+    var needWebcam = req.kind === 'webcam' || req.kind === 'both';
+    var needLive = req.kind === 'live-screen';
+    var err = null;
+    var isIos = v16uIsIos();
+
+    try {
+      // Screenshot via getDisplayMedia (not available on iOS)
+      if ((needScreenshot || needLive) && !isIos){
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){
+          err = 'screen_capture_unsupported';
+        } else {
+          try {
+            var stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+            if (needLive){
+              // For live screen, keep streaming; show a "you are sharing" indicator
+              v16uStartLiveScreenShare(req, stream);
+              return; // live mode handles its own response
+            }
+            // For one-off screenshot, grab a frame
+            var v = document.createElement('video');
+            v.srcObject = stream; v.muted = true; await v.play();
+            await new Promise(function(r){ setTimeout(r, 300); });
+            var cv = document.createElement('canvas');
+            cv.width = v.videoWidth || 1280; cv.height = v.videoHeight || 720;
+            cv.getContext('2d').drawImage(v, 0, 0, cv.width, cv.height);
+            stream.getTracks().forEach(function(t){ t.stop(); });
+            result.screenshot = cv.toDataURL('image/jpeg', 0.85);
+          } catch(e){
+            if (e && e.name === 'NotAllowedError') err = 'user_denied_screen';
+            else err = 'screen_capture_error: ' + (e && e.message);
+          }
+        }
+      }
+
+      // Webcam photo via getUserMedia
+      if (needWebcam || (needLive && isIos)){
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+          err = err || 'webcam_unsupported';
+        } else {
+          try {
+            var ws = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+            var wv = document.createElement('video');
+            wv.srcObject = ws; wv.muted = true; await wv.play();
+            await new Promise(function(r){ setTimeout(r, 400); });
+            var wcv = document.createElement('canvas');
+            wcv.width = wv.videoWidth || 640; wcv.height = wv.videoHeight || 480;
+            wcv.getContext('2d').drawImage(wv, 0, 0, wcv.width, wcv.height);
+            ws.getTracks().forEach(function(t){ t.stop(); });
+            result.webcam = wcv.toDataURL('image/jpeg', 0.85);
+          } catch(e){
+            if (e && e.name === 'NotAllowedError') err = err || 'user_denied_webcam';
+            else err = err || ('webcam_error: ' + (e && e.message));
+          }
+        }
+      }
+
+      if (result.screenshot || result.webcam){
+        v16uRespondCapture(req.id, 'approved', result, err);
+        v16uToastLocal('Capture sent to ' + req.fromUser, 'success');
+      } else {
+        v16uRespondCapture(req.id, 'denied', null, err || 'no_capture');
+      }
+    } catch(e){
+      v16uRespondCapture(req.id, 'denied', null, 'fatal: ' + (e && e.message));
+    }
+  }
+
+  function v16uStartLiveScreenShare(req, stream){
+    // Render a small "you are sharing" indicator
+    var ind = document.createElement('div');
+    ind.id = 'v16uLiveShareIndicator';
+    ind.style.cssText = 'position:fixed;bottom:20px;left:20px;background:#dc2626;color:white;padding:10px 16px;border-radius:10px;display:flex;align-items:center;gap:10px;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.3);font-size:13px;font-weight:600;';
+    ind.innerHTML =
+      '<i class="fas fa-circle" style="animation:v16uCoinPulse 1.5s infinite;"></i>' +
+      'Sharing screen with ' + req.fromUser +
+      '<button id="v16uStopLive" style="background:rgba(0,0,0,.3);color:white;border:0;padding:6px 10px;border-radius:6px;cursor:pointer;margin-left:8px;font-weight:700;">Stop</button>';
+    document.body.appendChild(ind);
+
+    // Periodically capture frames and upload (every 2s)
+    var captureTimer = setInterval(async function(){
+      try {
+        var v = document.createElement('video');
+        v.srcObject = stream; v.muted = true; await v.play();
+        await new Promise(function(r){ setTimeout(r, 100); });
+        var cv = document.createElement('canvas');
+        cv.width = v.videoWidth || 1280; cv.height = v.videoHeight || 720;
+        cv.getContext('2d').drawImage(v, 0, 0, cv.width, cv.height);
+        var url = cv.toDataURL('image/jpeg', 0.6);
+        v16uRespondCapture(req.id, 'approved-streaming', { screenshot: url }, null);
+      } catch(e){}
+    }, 2000);
+
+    function stop(){
+      clearInterval(captureTimer);
+      try { stream.getTracks().forEach(function(t){ t.stop(); }); } catch(e){}
+      var el = document.getElementById('v16uLiveShareIndicator'); if (el) el.remove();
+      v16uRespondCapture(req.id, 'denied', null, 'user_stopped');
+    }
+    document.getElementById('v16uStopLive').onclick = stop;
+    stream.getVideoTracks().forEach(function(t){ t.addEventListener('ended', stop); });
+  }
+
+  function v16uToastLocal(msg, kind){
+    var d = document.createElement('div');
+    var bg = kind === 'success' ? '#10b981' : kind === 'error' ? '#ef4444' : '#3b82f6';
+    d.style.cssText = 'position:fixed;bottom:20px;right:20px;background:'+bg+';color:white;padding:12px 18px;border-radius:8px;z-index:99988;font-size:13px;font-weight:600;box-shadow:0 8px 20px rgba(0,0,0,.25);';
+    d.textContent = msg;
+    document.body.appendChild(d);
+    setTimeout(function(){ d.style.opacity = '0'; d.style.transition = 'opacity .4s'; setTimeout(function(){ d.remove(); }, 400); }, 3000);
+  }
+
+  // ============================================================
+  // 6. CEO-SIDE — request capture from a staff member
+  // ============================================================
+  window.v16uRequestCapture = function(targetUser, kind, note){
+    var u = v16uCurUser();
+    if (!u) { alert('Sign in first'); return; }
+    kind = kind || 'both';
+    var nm = String(targetUser||'').toLowerCase();
+    if (!nm) return;
+    if (!confirm('Send a ' + kind + ' capture request to ' + nm + '?\n\nThey will see a prompt asking permission. You will see the result here once they Allow.')) return;
+    fetch('/api/v16u/capture/request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fromUser: (u.username||'').toLowerCase(),
+        targetUser: nm,
+        kind: kind,
+        note: note || ''
+      })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d && d.success){
+        v16uOpenCaptureResultPanel(d.request);
+      } else {
+        alert('Failed: ' + (d && d.error || 'unknown'));
+      }
+    }).catch(function(e){ alert('Network error: ' + e.message); });
+  };
+
+  function v16uOpenCaptureResultPanel(req){
+    var panel = document.createElement('div');
+    panel.id = 'v16uCaptureResult-' + req.id;
+    panel.style.cssText = 'position:fixed;bottom:20px;right:20px;width:380px;max-width:92vw;background:white;border-radius:14px;box-shadow:0 25px 70px rgba(0,0,0,.4);z-index:99987;overflow:hidden;border:1px solid #e5e7eb;';
+    panel.innerHTML =
+      '<div style="padding:12px 14px;background:#8b5cf6;color:white;display:flex;justify-content:space-between;align-items:center;">' +
+        '<div><i class="fas fa-camera"></i> <strong>Capture from '+req.targetUser+'</strong></div>' +
+        '<button onclick="document.getElementById(\'v16uCaptureResult-'+req.id+'\').remove()" style="background:rgba(0,0,0,.2);color:white;border:0;width:24px;height:24px;border-radius:50%;cursor:pointer;">×</button>' +
+      '</div>' +
+      '<div id="v16uCaptureBody-'+req.id+'" style="padding:16px;text-align:center;">' +
+        '<i class="fas fa-circle-notch fa-spin" style="font-size:32px;color:#8b5cf6;"></i>' +
+        '<div style="margin-top:12px;font-size:13px;color:#64748b;">Waiting for '+req.targetUser+' to allow…</div>' +
+        '<div style="margin-top:8px;font-size:11px;color:#94a3b8;">This panel will auto-update.</div>' +
+      '</div>';
+    document.body.appendChild(panel);
+    v16uPollCaptureResult(req);
+  }
+
+  function v16uPollCaptureResult(req){
+    var tries = 0;
+    var poll = function(){
+      tries++;
+      // Stop after 5 minutes
+      if (tries > 150) return;
+      fetch('/api/v16u/capture/result/' + req.id)
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if (d && d.success && d.result && (d.result.screenshot || d.result.webcam)){
+            v16uRenderCaptureResult(req, d.result);
+            // If live streaming, keep polling
+            // Otherwise stop
+            // For now poll every 2s if live, every 3s if one-shot
+          }
+        }).catch(function(){})
+        .finally(function(){
+          // Also check request status
+          fetch('/api/v16u/capture/requests?targetUser=' + req.targetUser + '&fromUser=' + req.fromUser)
+            .then(function(r){ return r.json(); })
+            .then(function(d){
+              var rec = (d.requests||[]).find(function(x){ return x.id === req.id; });
+              if (rec && rec.status === 'denied'){
+                var body = document.getElementById('v16uCaptureBody-' + req.id);
+                if (body){
+                  body.innerHTML = '<i class="fas fa-times-circle" style="font-size:32px;color:#ef4444;"></i>' +
+                    '<div style="margin-top:12px;font-size:13px;color:#64748b;">'+req.targetUser+' declined or could not capture.</div>' +
+                    (rec.error ? '<div style="margin-top:4px;font-size:11px;color:#94a3b8;">'+rec.error+'</div>' : '');
+                }
+                return; // stop polling
+              }
+              if (rec && rec.status === 'cancelled') return;
+              setTimeout(poll, 2500);
+            }).catch(function(){ setTimeout(poll, 3000); });
+        });
+    };
+    setTimeout(poll, 1500);
+  }
+
+  function v16uRenderCaptureResult(req, result){
+    var body = document.getElementById('v16uCaptureBody-' + req.id);
+    if (!body) return;
+    var html = '';
+    if (result.screenshot){
+      html += '<div style="margin-bottom:10px;"><div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;text-align:left;"><i class="fas fa-desktop"></i> Screen</div><img src="'+result.screenshot+'" style="width:100%;border-radius:8px;border:1px solid #e5e7eb;cursor:zoom-in;" onclick="window.open(this.src,\'_blank\')" /></div>';
+    }
+    if (result.webcam){
+      html += '<div><div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;text-align:left;"><i class="fas fa-video"></i> Webcam</div><img src="'+result.webcam+'" style="width:100%;border-radius:8px;border:1px solid #e5e7eb;cursor:zoom-in;" onclick="window.open(this.src,\'_blank\')" /></div>';
+    }
+    html += '<div style="margin-top:10px;font-size:10px;color:#94a3b8;text-align:right;">Captured ' + v16uFmtAgo(result.capturedAt) + '</div>';
+    body.innerHTML = html;
+    body.style.textAlign = 'left';
+  }
+
+  // Convenience helpers exposed on window for Team Comms UI
+  window.v16uRequestScreenshot = function(target){ window.v16uRequestCapture(target, 'screenshot', ''); };
+  window.v16uRequestWebcam     = function(target){ window.v16uRequestCapture(target, 'webcam', ''); };
+  window.v16uRequestBoth       = function(target){ window.v16uRequestCapture(target, 'both', ''); };
+  window.v16uRequestLive       = function(target){ window.v16uRequestCapture(target, 'live-screen', ''); };
+
+  // ============================================================
+  // 7. WIRE CAMERA BUTTONS INTO TEAM COMMS / TEAM PANEL
+  // ============================================================
+  // We inject CEO-only capture buttons next to each staff entry
+  // wherever the existing Team Comms / Team panel rendered call
+  // buttons. The existing team-comms.js has a panel with buttons;
+  // we add ours alongside via a re-render pass.
+  function v16uWireTeamPanelCaptureButtons(){
+    try {
+      var u = v16uCurUser();
+      if (!u || !v16uIsCeo(u)) return;
+      // Find any team panel staff rows
+      var rows = document.querySelectorAll('[data-tc-staff], .tc-staff-row, [data-tc-key]');
+      rows.forEach(function(row){
+        if (row.querySelector('.v16uCapBtn')) return; // already wired
+        var key = row.getAttribute('data-tc-key') || row.getAttribute('data-tc-staff');
+        if (!key) {
+          // Try to discover via a button onclick
+          var btn = row.querySelector('button[onclick*="snapRequest"]');
+          if (btn){
+            var m = btn.getAttribute('onclick').match(/snapRequest\(['"]([^'"]+)['"]/);
+            if (m) key = m[1];
+          }
+        }
+        if (!key) return;
+        var holder = document.createElement('span');
+        holder.style.cssText = 'display:inline-flex;gap:4px;margin-left:6px;';
+        holder.innerHTML =
+          '<button class="v16uCapBtn" title="Request screenshot from '+key+'" onclick="window.v16uRequestScreenshot(\''+key+'\')" style="width:28px;height:28px;border-radius:6px;background:#8b5cf6;color:#fff;border:0;cursor:pointer;font-size:12px;"><i class="fas fa-camera"></i></button>' +
+          '<button class="v16uCapBtn" title="Request webcam photo from '+key+'" onclick="window.v16uRequestWebcam(\''+key+'\')" style="width:28px;height:28px;border-radius:6px;background:#ec4899;color:#fff;border:0;cursor:pointer;font-size:12px;"><i class="fas fa-video"></i></button>' +
+          '<button class="v16uCapBtn" title="Request live screen share from '+key+'" onclick="window.v16uRequestLive(\''+key+'\')" style="width:28px;height:28px;border-radius:6px;background:#dc2626;color:#fff;border:0;cursor:pointer;font-size:12px;"><i class="fas fa-circle"></i></button>';
+        row.appendChild(holder);
+      });
+    } catch(e){}
+  }
+
+  // ============================================================
+  // BOOT
+  // ============================================================
+  function v16uBoot(){
+    try { v16uInstallStatusHook(); } catch(e){}
+    try { v16uStartHeartbeat(); } catch(e){}
+    try { v16uStartNotificationPolling(); } catch(e){}
+    try { v16uMaybeRenderSalaryBanner(); } catch(e){}
+
+    // Wrap nav() so we re-render salary banner after navigating
+    try {
+      if (typeof window.nav === 'function' && !window.__v16uNavWrapped){
+        var origNav = window.nav;
+        window.nav = function(){
+          var r = origNav.apply(this, arguments);
+          setTimeout(function(){
+            v16uMaybeRenderSalaryBanner();
+            v16uWireTeamPanelCaptureButtons();
+          }, 400);
+          return r;
+        };
+        window.__v16uNavWrapped = true;
+      }
+    } catch(e){}
+
+    // Periodic wiring for late-rendered panels
+    setInterval(function(){
+      try {
+        v16uEnsureNotifButton();
+        v16uMaybeRenderSalaryBanner();
+        v16uWireTeamPanelCaptureButtons();
+      } catch(e){}
+    }, 8000);
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(v16uBoot, 1500); });
+  } else {
+    setTimeout(v16uBoot, 1500);
+  }
+  // Late re-run to catch any UI that loads after us
+  setTimeout(v16uBoot, 6500);
+
+  console.log('[v16u] Idle detection + status notifications + remote capture + salary shake — loaded.');
+})();
+</script>
 <script src="/static/agent-portal.js"></script>
 <script src="/static/media-suite.js"></script>
 <script src="/static/team-comms.js"></script>
