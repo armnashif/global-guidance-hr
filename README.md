@@ -6,11 +6,65 @@
 - **Stack**: Hono on Cloudflare Pages · Vanilla JS SPA · Cloudflare KV (binding `COMMS`)
 
 ## URLs
-- **Production**: https://539ee2c3.webapp-2il.pages.dev (v16g restored, deployed 2026-06-09)
+- **Production**: https://e2a4c92e.webapp-2il.pages.dev (v16r, deployed 2026-06-27)
 - **Alias**: https://webapp-2il.pages.dev (always points to latest)
 - **Local dev**: http://localhost:3000 (PM2)
 
-## v16g-restore — Rolled back from v17 (current, 2026-06-09)
+## v16r — CEO Live Dashboard + GPS Fresh-Fix + Razan Bank Balance + CEO Attendance Optional (latest, shipped 2026-06-27)
+
+Round-7 fix pack addressing 4 distinct CEO/Razan/GPS issues:
+
+1. **CEO attendance now OPTIONAL** — No check-in modal popup at login. No workflow gate. No nag banner. CEO can still file attendance if they want, but it's never blocked or required. `wsAutoPromptCheckin()` patched to no-op for users with `level >= 100` or username `nashif.razzak`.
+
+2. **CEO Live Command Dashboard** — When CEO opens "Dashboard", the page renders a real-time operational overview:
+   - **8 attendance tiles**: In Office · Working Remote · In Field · Absent · Sick/Leave · Late Today · Plans Filed · EOD Reports
+   - **8 business KPI tiles** (Asia/Colombo today-aware):
+     - New Leads (today) · Conversions (all-time + rate) · Registrations (today + MTD) · Offers (today + MTD + open)
+     - Visa Payments (today + MTD, Rs.) · Uni Payments (today + MTD, Rs.) · Invoices (today + MTD) · Visa/CAS Active
+   - **Staff Status table** (12 staff): mode, location, last event, with geofence indicators
+   - **Live Activity Feed**: most recent 15 events (check-ins, plan submissions, EOD reports)
+   - **30-second heartbeat** auto-refresh + manual refresh button
+   - Data sources: `/api/v16l/ceo-dashboard` + `/api/v16q/workspace/razan` + `LEADS_DATA`
+
+3. **Razan's daily TODO requires today's Amana Bank closing balance** — Every EOD-submit function (`attSubmitEOD`, `submitEODReport`, `v16lSubmitReport`, `v16lSubmitReportAndCheckOut`, `wsSubmitEOD`, `thbSubmitReport*`) wraps with an Amana gate for Razan. If `attendanceState.eod.amanaClosing` is empty, the gate:
+   - Alerts: `⚠️ Please enter today's Amana Bank closing balance before filing EOD. Scroll up to "Amana Bank · Daily Balance".`
+   - Prompts for the value via `prompt()`
+   - Persists to `attendanceState.eod.amanaClosing` + POSTs to `/api/v16q/razan_amana_incomes/row`
+   - Only then allows the original submit to proceed
+
+4. **Real fresh GPS — no more stale fixes** — Root cause: existing v16p code used `maximumAge: 30000`, which returned up-to-30-second cached browser fixes (so "Center this location" never updated). v16r installs `v16rCaptureFreshGps()`:
+   - `enableHighAccuracy: true` + **`maximumAge: 0`** (force real new reading every call)
+   - Multi-sample: takes up to 3 fixes, keeps the one with best accuracy
+   - Early exit if any sample lands within 30m
+   - Marks `imprecise:true` if final accuracy > 100m
+   - Hooks `window.v16lAutoGpsCapture`, `window.v16lCaptureGps`, and the v16p capture function so every legacy code path now gets a fresh reading
+
+**Tests (Playwright, headless, against production):**
+- CEO `nashif.razzak / CEO@Global2026` login: no checkin modal, dashboard renders with all 16 live tiles + staff table + activity feed. ✅
+- Razan `razan.thawus / Staff@Global2026` EOD submit: every wrapped submit fn fires the Amana alert. ✅
+- `v16rCaptureFreshGps()`: returns fresh coords with current timestamp. ✅
+
+**Build**: `dist/_worker.js` 4,115.99 kB (+32 kB vs v16q)  
+**Source**: `public/command-portal.html` grew from 27,737 → 28,298 lines (+561 lines IIFE module)  
+**Commit**: `0bddd48` on `v16h-latest` → pushed → deployed to Cloudflare Pages `e2a4c92e.webapp-2il.pages.dev`
+
+### v16q — Per-User Workspace Mirror (shipped 2026-06-27)
+
+Each staff member sees a personalized workspace mirror with their own live spreadsheet datasets:
+
+- **Thasbiha**: 65 admissions students with university progress, payment status, document checklists
+- **Razan**: 14 datasets covering registrations, invoices, Amana incomes, admissions, visa payments, CAS tracking
+- **Shiran**: 318 flyer/marketing entries + budget tracking
+
+**Endpoints** (`/api/v16q/*`):
+- `GET /api/v16q/workspace/:user` — bundled workspace for the named user
+- `POST /api/v16q/:dataset/row` — append a row to the named dataset
+- `GET /api/v16q/seed/status` — meta + row counts
+
+**Data**: `src/v16q-seed.json` (169 KB, 18 datasets)
+**Build**: 4,083.79 kB (+31 kB vs v16p)
+
+## v16g-restore — Rolled back from v17 (2026-06-09)
 
 The v17 Daybook redesign (5-item nav / MY WORKDAY / CEO Command Center) was reverted per user request — it conflicted with the existing UI flows. Three commits were cleanly reverted (`3f50f36`, `d6b387b`, `d7d9e42`), removing `public/static/v17-daybook.js` and its script tag. The portal is back on v16g — all 9 v16g fixes (dark-theme PDFs, NaN bug, CEO report feed, download approval, comms CEO-only, calls hidden, Himaaus sync, workspace dedup, submit buttons) remain in place. Earlier v17 production URL `4a5f52f6` / `e967b80f` are now obsolete.
 
