@@ -27730,6 +27730,567 @@ else _tbBoot();
   console.log('[v16q] Per-user workspace mirror (Thasbiha admissions, Razan visa/finance/admissions, Shiran flyers/budgets) loaded.');
 })();
 </script>
+<script>
+/* ============================================================================
+   v16r — CEO Live Dashboard + GPS Accuracy Fix + Razan Bank Balance Required
+   
+   1. v16r-1: Make attendance OPTIONAL for CEO (no gate, no nag, no banner)
+   2. v16r-2: CEO dashboard live overview — today's attendance + business KPIs
+   3. v16r-3: Razan's daily TODO requires today's bank closing balance
+   4. v16r-4: Fix GPS — force fresh capture (maximumAge:0) + accuracy guard
+   ============================================================================ */
+(function(){
+  'use strict';
+
+  function v16rIsCEO(){
+    const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+    return u.username === 'nashif.razzak' || u.username === 'superadmin' || (u.level && u.level >= 100);
+  }
+  function v16rIsRazan(){
+    const u = (typeof currentUser === 'object' && currentUser) ? currentUser : {};
+    return u.username === 'razan.thawus' || u.username === 'razan';
+  }
+  function v16rEsc(s){ if (s==null) return ''; return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function v16rToday(){
+    try { return new Intl.DateTimeFormat('en-CA',{ timeZone:'Asia/Colombo', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date()); }
+    catch(e){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  }
+  function v16rIsToday(dateStr){
+    if (!dateStr) return false;
+    const t = v16rToday();
+    const s = String(dateStr);
+    // Match YYYY-MM-DD prefix or ISO datetime
+    return s.indexOf(t) === 0 || s.indexOf(t.replace(/-/g,'/')) >= 0;
+  }
+  function v16rIsThisMonth(dateStr){
+    if (!dateStr) return false;
+    const t = v16rToday().slice(0,7);
+    return String(dateStr).indexOf(t) >= 0 || String(dateStr).indexOf(t.replace(/-/g,'/')) >= 0;
+  }
+
+  // ============================================================
+  // v16r-1: CEO is exempt from attendance / planner / EOD nags.
+  //
+  // The existing v16n gate already exempts CEO via v16nIsCEO().
+  // But two other surfaces still pester the CEO:
+  //   (a) wsAutoPromptCheckin() — shows a "please check in" popup on login
+  //   (b) the workspace gate banner — "Morning planner required"
+  //   (c) the EOD button red-dot / nag
+  // We disable all three for CEO.
+  // ============================================================
+  function v16rInstallCeoExemption(){
+    if (!v16rIsCEO()) return;
+    // (a) Suppress the auto-prompt check-in popup for CEO
+    if (typeof window.wsAutoPromptCheckin === 'function' && !window.__v16rPromptPatched){
+      window.__v16rPromptPatched = true;
+      const __orig = window.wsAutoPromptCheckin;
+      window.wsAutoPromptCheckin = async function(){
+        // CEO does not get auto-prompted
+        return;
+      };
+    }
+    // (c) Remove any visible "please check-in" banners injected into the DOM
+    function killNags(){
+      try {
+        document.querySelectorAll('[data-v16n-nag], [data-checkin-nag], [data-attendance-required]').forEach(el => el.remove());
+        // Find banners that say "please check in" / "Morning planner required"
+        document.querySelectorAll('div').forEach(el => {
+          const t = (el.textContent || '').toLowerCase();
+          if (t.length < 200 && (t.indexOf('morning planner required') >= 0 || t.indexOf('please check in first') >= 0)){
+            // Only kill if it looks like a banner (small fixed positioning)
+            const s = el.style;
+            const cs = getComputedStyle(el);
+            if (cs.position === 'fixed' || el.className.indexOf('gate') >= 0 || el.className.indexOf('nag') >= 0){
+              el.style.display = 'none';
+            }
+          }
+        });
+      } catch(e){}
+    }
+    setTimeout(killNags, 600);
+    setInterval(killNags, 4000);
+  }
+
+  // ============================================================
+  // v16r-4: Reliable, fresh GPS capture
+  //
+  // Root cause user reported: "even when we update from Global Guidance,
+  // it's not updating the same location". This happens when:
+  //   - maximumAge > 0 → browser returns a cached fix (could be hours old)
+  //   - first call may return a low-accuracy WiFi fix (e.g. 5000m radius)
+  //
+  // Fix strategy:
+  //   1. Always force maximumAge: 0 (no cached fixes)
+  //   2. Take up to 3 readings, keep the one with best accuracy ≤ 50m
+  //   3. If best accuracy still > 100m, warn the user it's imprecise
+  // ============================================================
+  async function v16rCaptureFreshGps(){
+    if (!navigator.geolocation) {
+      return { ok:false, error:'Geolocation not supported by this browser', code: 0 };
+    }
+    function singleShot(timeoutMs){
+      return new Promise(resolve => {
+        let done = false;
+        const settle = (v) => { if (!done) { done = true; resolve(v); } };
+        navigator.geolocation.getCurrentPosition(
+          pos => settle({ ok:true, lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: Math.round(pos.coords.accuracy||0), ts: Date.now() }),
+          err => settle({ ok:false, error: err.message || 'GPS error', code: err.code }),
+          // CRITICAL: maximumAge:0 forces a fresh fix every time
+          { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 }
+        );
+        setTimeout(() => settle({ ok:false, error:'GPS timeout', code:3 }), timeoutMs + 500);
+      });
+    }
+    // Take up to 3 samples (8s, 10s, 12s), keep best accuracy
+    let best = null;
+    for (let i = 0; i < 3; i++){
+      const v = await singleShot(8000 + i*2000);
+      if (v.ok){
+        if (!best || (v.accuracy && v.accuracy < best.accuracy)) best = v;
+        if (best.accuracy <= 30) break; // good enough — stop
+      } else if (i === 0 && (v.code === 1 || v.code === 2)){
+        // Permission denied or position unavailable → no point retrying
+        return v;
+      }
+    }
+    if (best){
+      best.imprecise = (best.accuracy > 100);
+      // Cache for downstream consumers (preserve v16p's V16L.lastGps contract)
+      try {
+        window.V16L = window.V16L || {};
+        window.V16L.lastGps = best;
+      } catch(e){}
+      return best;
+    }
+    return { ok:false, error:'Could not get a GPS fix after 3 attempts', code:3 };
+  }
+  window.v16rCaptureFreshGps = v16rCaptureFreshGps;
+
+  // Hook into v16p's captureGps so the rest of the v16p UI uses fresh fixes.
+  // v16p assigns window.v16lCaptureGps + window.v16lAutoGpsCapture.
+  function v16rWireGpsHook(){
+    if (window.__v16rGpsWired) return;
+    if (typeof window.v16lAutoGpsCapture !== 'function') { setTimeout(v16rWireGpsHook, 500); return; }
+    window.__v16rGpsWired = true;
+
+    // Replace the capture function with our fresh, multi-sample version.
+    const __origAuto = window.v16lAutoGpsCapture;
+    window.v16lAutoGpsCapture = async function(){
+      // Mirror v16p UI: mark capturing, render, capture, render again
+      window.__v16pCapturing = true;
+      if (typeof window.v16lRenderAttForm === 'function') window.v16lRenderAttForm();
+      try {
+        const v = await v16rCaptureFreshGps();
+        window.V16L = window.V16L || {};
+        if (v.ok){
+          window.V16L.lastGps = v;
+          // Reverse-geocode using the existing helper if present
+          if (typeof window.v16pReverseGeocode === 'function'){
+            try { window.V16L.lastAddress = await window.v16pReverseGeocode(v.lat, v.lng) || ''; } catch(e){}
+          }
+          // Re-check geofence
+          if (typeof window.v16pGeofence === 'function'){
+            try { window.V16L.geoVerified = await window.v16pGeofence(v.lat, v.lng); } catch(e){}
+          }
+        } else {
+          // Surface the error in v16p's standard error card
+          window.V16L.lastGpsError = v;
+        }
+      } catch(e){
+        window.V16L.lastGpsError = { ok:false, error:String(e && e.message || e), code:0 };
+      } finally {
+        window.__v16pCapturing = false;
+        if (typeof window.v16lRenderAttForm === 'function') window.v16lRenderAttForm();
+      }
+    };
+    // Make manual capture trigger the same fresh path
+    window.v16lCaptureGps = window.v16lAutoGpsCapture;
+    console.log('[v16r] GPS hook installed — every capture is a fresh fix (maximumAge:0, multi-sample, best-accuracy).');
+  }
+  setTimeout(v16rWireGpsHook, 600);
+  setInterval(v16rWireGpsHook, 3000);
+
+  // ============================================================
+  // v16r-3: Razan's daily plan / EOD requires today's Amana bank balance.
+  //
+  // The v16k module already creates an "amana-required" task when Razan
+  // checks in. v16r enforces that submitting the EOD report ALSO requires
+  // the Amana closing balance to be entered. We wrap the EOD submit.
+  // ============================================================
+  function v16rWireAmanaGate(){
+    if (window.__v16rAmanaWired) return;
+    // v16l Daily Report submit + v16p attendance submit are the entry points
+    if (typeof window.v16lSubmitReport !== 'function' && typeof window.v16lSubmitDailyReport !== 'function') { setTimeout(v16rWireAmanaGate, 800); return; }
+    window.__v16rAmanaWired = true;
+
+    function getClosingBalance(){
+      // Try multiple possible field ids the existing UI uses
+      const candidates = ['v16rAmanaClosing','amanaClosing','amanaClose','v16lAmanaClose','daily-amana-close'];
+      for (const id of candidates){
+        const el = document.getElementById(id);
+        if (el && String(el.value || '').trim()) return String(el.value).trim();
+      }
+      try {
+        if (typeof attendanceState === 'object' && attendanceState && attendanceState.eod){
+          const v = attendanceState.eod.amanaClosing;
+          if (v && String(v).trim()) return String(v).trim();
+        }
+      } catch(e){}
+      return '';
+    }
+    function ensureBalanceBeforeSubmit(){
+      if (!v16rIsRazan()) return true;
+      const bal = getClosingBalance();
+      if (bal && /\d/.test(bal)) return true;
+      // Block — prompt user
+      const v = prompt(
+        'Razan — please enter the Amana Bank CLOSING balance for today (LKR).\n\n' +
+        'This is required as part of your daily EOD. You can include commas (e.g. 1,250,000).'
+      );
+      if (v == null) return false;
+      const clean = String(v).replace(/[^0-9.\-]/g,'');
+      if (!clean.match(/\d/)) { alert('That is not a valid number. EOD cancelled.'); return false; }
+      // Persist into attendanceState.eod so it's visible everywhere
+      try {
+        if (typeof attendanceState === 'object' && attendanceState){
+          attendanceState.eod = attendanceState.eod || {};
+          attendanceState.eod.amanaClosing = clean;
+          attendanceState.eod.amanaClosingSetAt = new Date().toISOString();
+          if (typeof saveAtt === 'function') saveAtt();
+        }
+      } catch(e){}
+      // Also fire to the server so the CEO dashboard can read it
+      try {
+        fetch('/api/v16q/razan_amana_incomes/row', {
+          method:'POST', headers:{'content-type':'application/json'},
+          body: JSON.stringify({ row: { Date: v16rToday(), Description: 'Closing balance (auto-logged)', Amount: clean, _row: 'closing-' + v16rToday() } })
+        }).catch(()=>{});
+      } catch(e){}
+      return true;
+    }
+    function wrap(fnName){
+      if (typeof window[fnName] !== 'function') return;
+      if (window['__v16r_wrapped_' + fnName]) return;
+      window['__v16r_wrapped_' + fnName] = true;
+      const __orig = window[fnName];
+      window[fnName] = function(){
+        if (!ensureBalanceBeforeSubmit()) return false;
+        return __orig.apply(this, arguments);
+      };
+    }
+    ['v16lSubmitReport','v16lSubmitDailyReport','submitDailyReport','submitEodReport'].forEach(wrap);
+    console.log('[v16r] Amana bank balance gate installed for Razan (EOD requires closing balance).');
+  }
+  setTimeout(v16rWireAmanaGate, 1000);
+  setInterval(v16rWireAmanaGate, 5000);
+
+  // ============================================================
+  // v16r-2: CEO Live Dashboard
+  //
+  // What the CEO sees the moment he logs in / clicks Dashboard:
+  //   ── Today's attendance: in-office / remote / field / absent / EOD filed
+  //   ── Today's business: leads added, conversions, registrations, offers,
+  //                        visa payments, university payments
+  //   ── Per-staff status row (who's where, what they're doing)
+  //   ── 30s auto-refresh
+  // ============================================================
+  let __v16rCache = { att: null, biz: null, ts: 0 };
+  const V16R_CACHE_MS = 25000;
+
+  async function v16rLoadAttendance(){
+    try {
+      const day = v16rToday();
+      const r = await fetch('/api/v16l/ceo-dashboard?day=' + encodeURIComponent(day), { cache:'no-store' });
+      const j = await r.json();
+      if (j && j.success) return j;
+    } catch(e){}
+    return null;
+  }
+  async function v16rLoadBusiness(){
+    try {
+      // Pull Razan's workspace bundle — gives us registrations, invoices, incomes
+      const r = await fetch('/api/v16q/workspace/razan', { cache:'no-store' });
+      const j = await r.json();
+      if (j && j.success) return j;
+    } catch(e){}
+    return null;
+  }
+
+  function v16rComputeBizKpis(razan){
+    if (!razan) return { regToday:0, regMonth:0, offersToday:0, offersMonth:0, visaPayToday:0, visaPayMonth:0, uniPayToday:0, uniPayMonth:0, invoicesToday:0, invoicesMonth:0 };
+    const ds = (k) => (razan[k] && Array.isArray(razan[k].rows)) ? razan[k].rows : [];
+    const reg = ds('razan_registered');
+    const inv = ds('razan_invoices');
+    const inc = ds('razan_amana_incomes');
+    const adm = ds('razan_admissions');
+
+    // Helper: row date field (the sheets use various column names)
+    function rowDate(r){
+      const cands = ['Date','date','DATE','Created','created','Created Date','OFFICE REGISTRATION','Registration Date','Payment Date','START DATE'];
+      for (const k of cands){
+        if (r[k]) {
+          const s = String(r[k]);
+          // Look for a YYYY-MM-DD substring
+          const m = s.match(/(\d{4}-\d{2}-\d{2})|(\d{4}\/\d{2}\/\d{2})|(\d{2}\/\d{2}\/\d{4})/);
+          if (m) {
+            if (m[3]) { // dd/mm/yyyy
+              const parts = m[3].split('/');
+              return parts[2]+'-'+parts[1]+'-'+parts[0];
+            }
+            return m[0].replace(/\//g,'-');
+          }
+        }
+      }
+      return '';
+    }
+    function rowDesc(r){
+      const cands = ['Description','description','DESCRIPTION','Particulars','PARTICULARS','Notes','category','Category','CATEGORY','For','Purpose'];
+      for (const k of cands){ if (r[k]) return String(r[k]); }
+      return '';
+    }
+    function rowAmount(r){
+      const cands = ['Amount','amount','AMOUNT','Value','value','Total','total','Rs','LKR','GBP'];
+      for (const k of cands){
+        if (r[k] != null) {
+          const n = parseFloat(String(r[k]).replace(/[,$\s]/g,''));
+          if (!isNaN(n)) return n;
+        }
+      }
+      return 0;
+    }
+
+    const regToday  = reg.filter(r => v16rIsToday(rowDate(r))).length;
+    const regMonth  = reg.filter(r => v16rIsThisMonth(rowDate(r))).length;
+
+    // "Offers today" — admissions rows whose offer/status mentions today
+    // (this is a fuzzy approximation; the sheet doesn't have explicit "offer date")
+    const offersToday = adm.filter(r => /offer/i.test(rowDesc(r) + ' ' + JSON.stringify(r)) && v16rIsToday(rowDate(r))).length;
+    const offersMonth = adm.filter(r => /offer/i.test(rowDesc(r) + ' ' + JSON.stringify(r)) && v16rIsThisMonth(rowDate(r))).length;
+
+    // Income lines tagged with "visa" → visa payments
+    const visaIncToday  = inc.filter(r => v16rIsToday(rowDate(r)) && /visa/i.test(rowDesc(r)));
+    const visaIncMonth  = inc.filter(r => v16rIsThisMonth(rowDate(r)) && /visa/i.test(rowDesc(r)));
+    const uniIncToday   = inc.filter(r => v16rIsToday(rowDate(r)) && /uni|college|cas|tuition/i.test(rowDesc(r)));
+    const uniIncMonth   = inc.filter(r => v16rIsThisMonth(rowDate(r)) && /uni|college|cas|tuition/i.test(rowDesc(r)));
+
+    const sum = (rows) => rows.reduce((a,r)=>a+rowAmount(r),0);
+
+    const invoicesToday = inv.filter(r => v16rIsToday(rowDate(r))).length;
+    const invoicesMonth = inv.filter(r => v16rIsThisMonth(rowDate(r))).length;
+
+    return {
+      regToday, regMonth,
+      offersToday, offersMonth,
+      visaPayToday: visaIncToday.length, visaPayTodayAmt: sum(visaIncToday),
+      visaPayMonth: visaIncMonth.length, visaPayMonthAmt: sum(visaIncMonth),
+      uniPayToday: uniIncToday.length,   uniPayTodayAmt: sum(uniIncToday),
+      uniPayMonth: uniIncMonth.length,   uniPayMonthAmt: sum(uniIncMonth),
+      invoicesToday, invoicesMonth
+    };
+  }
+
+  function v16rComputeLeadKpis(){
+    // Today's new leads (based on createdAt set at runtime) + global totals
+    let leads = [];
+    try { leads = Array.isArray(window.LEADS_DATA) ? window.LEADS_DATA : []; } catch(e){}
+    const today = v16rToday();
+    const newToday = leads.filter(l => l.createdAt && String(l.createdAt).indexOf(today) === 0).length;
+    const enrolled = leads.filter(l => l.status === 'enrolled').length;
+    const cas      = leads.filter(l => l.status === 'cas').length;
+    const visa     = leads.filter(l => l.status === 'visa').length;
+    const offers   = leads.filter(l => l.status === 'offer').length;
+    const applied  = leads.filter(l => l.status === 'applied').length;
+    const totalPipeline = enrolled + cas + visa + offers + applied;
+    const conv = leads.length ? Math.round(enrolled / leads.length * 100) : 0;
+    return { newToday, enrolled, cas, visa, offers, applied, totalPipeline, conv, total: leads.length };
+  }
+
+  function v16rFmtMoney(n){ if (!n || isNaN(n)) return 'Rs 0'; return 'Rs ' + Math.round(n).toLocaleString('en-IN'); }
+
+  function v16rRenderTile(label, value, color, icon, sub){
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid '+color+';border-radius:10px;padding:12px 14px">'
+      + '<div style="font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">'
+      +   '<i class="fas '+icon+'" style="margin-right:5px;color:'+color+'"></i>' + v16rEsc(label)
+      + '</div>'
+      + '<div style="font-size:22px;font-weight:800;color:var(--text);margin-top:3px">' + v16rEsc(value) + '</div>'
+      + (sub ? '<div style="font-size:10.5px;color:var(--muted);margin-top:2px">' + v16rEsc(sub) + '</div>' : '')
+      + '</div>';
+  }
+
+  async function v16rRenderCeoDashboard(){
+    const day = v16rToday();
+    // Use cached data if fresh
+    if (Date.now() - __v16rCache.ts > V16R_CACHE_MS) {
+      const [att, biz] = await Promise.all([v16rLoadAttendance(), v16rLoadBusiness()]);
+      __v16rCache = { att, biz, ts: Date.now() };
+    }
+    const att = __v16rCache.att;
+    const biz = __v16rCache.biz;
+    const bizKpis = v16rComputeBizKpis(biz);
+    const leadKpis = v16rComputeLeadKpis();
+
+    // ATTENDANCE COUNTS
+    const total = (typeof USERS === 'object') ? Object.keys(USERS).filter(u => u !== 'superadmin').length : 0;
+    const c = att && att.counts || { checkedIn:0, checkedOut:0, late:0, sick:0, leave:0, office:0, remote:0, field:0, plansToday:0, reportsToday:0 };
+    const absent = Math.max(0, total - (c.checkedIn || 0) - (c.sick || 0) - (c.leave || 0));
+    const eodPending = Math.max(0, (c.checkedIn || 0) - (c.reportsToday || 0));
+
+    // Header
+    const now = new Date();
+    const tStr = now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    const dStr = now.toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+    const header = '<div style="background:linear-gradient(135deg,#1e3a8a,#0f172a);color:#fff;border-radius:14px;padding:18px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'
+      + '<div><div style="font-size:21px;font-weight:800">CEO Live Command · ' + v16rEsc(currentUser && currentUser.name || 'CEO') + '</div>'
+      + '<div style="font-size:12.5px;opacity:0.85;margin-top:3px">' + v16rEsc(dStr) + ' · Asia/Colombo</div></div>'
+      + '<div style="text-align:right"><div style="font-size:24px;font-weight:800;font-family:\'DM Mono\',monospace">' + tStr + '</div>'
+      + '<div style="font-size:11px;opacity:0.85;margin-top:2px"><i class="fas fa-circle" style="color:#22c55e;font-size:8px;margin-right:5px"></i>Live · auto-refresh 30s</div></div>'
+      + '</div>';
+
+    // Attendance row
+    const attTiles = [
+      v16rRenderTile('In Office',     c.office || 0,         '#16a34a', 'fa-building', total ? ('of ' + total + ' staff') : ''),
+      v16rRenderTile('Working Remote',c.remote || 0,         '#3b82f6', 'fa-house-laptop', 'Logged from home'),
+      v16rRenderTile('In Field',      c.field  || 0,         '#7c3aed', 'fa-route', 'Outside office'),
+      v16rRenderTile('Absent',        absent,                '#dc2626', 'fa-user-minus', 'No check-in yet'),
+      v16rRenderTile('Sick / Leave',  (c.sick||0)+(c.leave||0),'#f59e0b','fa-bed', ''),
+      v16rRenderTile('Late Today',    c.late || 0,           '#f59e0b', 'fa-clock', 'After 9:30am'),
+      v16rRenderTile('Plans Filed',   c.plansToday || 0,     '#6378ff', 'fa-clipboard-check', 'Daily plans submitted'),
+      v16rRenderTile('EOD Reports',   c.reportsToday || 0,   '#0e7490', 'fa-file-pen', eodPending ? (eodPending + ' pending') : 'All filed')
+    ];
+    const attRow = '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin:6px 0 10px"><i class="fas fa-users" style="margin-right:6px;color:#1d4ed8"></i> Today\'s Attendance &amp; Status</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:18px">' + attTiles.join('') + '</div>';
+
+    // Business row
+    const bizTiles = [
+      v16rRenderTile('New Leads (Today)',      leadKpis.newToday, '#0ea5e9', 'fa-user-plus', 'Pipeline total ' + leadKpis.total),
+      v16rRenderTile('Conversions (All-Time)', leadKpis.enrolled, '#16a34a', 'fa-graduation-cap', leadKpis.conv + '% rate'),
+      v16rRenderTile('Registrations (Today)',  bizKpis.regToday, '#1d4ed8', 'fa-id-card', bizKpis.regMonth + ' MTD'),
+      v16rRenderTile('Offers (Today)',         bizKpis.offersToday, '#f59e0b', 'fa-file-signature', bizKpis.offersMonth + ' MTD · ' + leadKpis.offers + ' open'),
+      v16rRenderTile('Visa Payments (Today)',  bizKpis.visaPayToday, '#9333ea', 'fa-passport', v16rFmtMoney(bizKpis.visaPayTodayAmt) + ' today'),
+      v16rRenderTile('Uni Payments (Today)',   bizKpis.uniPayToday, '#0e7490', 'fa-university', v16rFmtMoney(bizKpis.uniPayTodayAmt) + ' today'),
+      v16rRenderTile('Invoices (Today)',       bizKpis.invoicesToday, '#15803d', 'fa-file-invoice-dollar', bizKpis.invoicesMonth + ' MTD'),
+      v16rRenderTile('Visa/CAS Active',        leadKpis.cas + leadKpis.visa, '#dc2626', 'fa-stamp', 'Across all counsellors')
+    ];
+    const bizRow = '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin:6px 0 10px"><i class="fas fa-chart-line" style="margin-right:6px;color:#16a34a"></i> Today\'s Business Performance</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:18px">' + bizTiles.join('') + '</div>';
+
+    // Per-staff status table
+    const users = (att && Array.isArray(att.users)) ? att.users : [];
+    const rows = users.sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0, 20).map(u => {
+      const time = u.ts ? new Date(u.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—';
+      const loc = u.address ? u.address.split(',').slice(0,2).join(', ') : '—';
+      const modeColor = u.kind === 'checkout' ? '#94a3b8' : (u.mode === 'Office' ? '#16a34a' : u.mode === 'Remote' ? '#3b82f6' : '#7c3aed');
+      const geo = u.officeMatch ? '<span style="color:#16a34a;font-size:10.5px;font-weight:700">✓ in radius</span>' : (u.distanceM != null ? '<span style="color:#dc2626;font-size:10.5px;font-weight:700">⚠ ' + u.distanceM + 'm out</span>' : '');
+      return '<tr style="border-bottom:1px solid var(--border)">'
+        + '<td style="padding:9px 14px"><div style="display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+modeColor+'"></span><div><div style="font-weight:600">' + v16rEsc(u.name||u.user) + '</div><div style="font-size:10.5px;color:var(--muted)">' + v16rEsc(u.user||'') + '</div></div></div></td>'
+        + '<td style="padding:9px 14px"><span style="font-size:11px;font-weight:700;color:'+modeColor+';text-transform:uppercase">' + v16rEsc(u.kind === 'checkout' ? 'Checked out' : (u.mode || '—')) + '</span><div style="font-size:10.5px;color:var(--muted);margin-top:2px">' + v16rEsc(u.status||'') + '</div></td>'
+        + '<td style="padding:9px 14px;font-size:12px">' + v16rEsc(loc) + '<div style="font-size:10px;color:var(--muted);margin-top:2px">' + geo + '</div></td>'
+        + '<td style="padding:9px 14px;font-size:11.5px;font-family:DM Mono,monospace;text-align:right">' + time + '</td>'
+        + '</tr>';
+    }).join('');
+    const staffTable = '<div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">'
+      + '<div style="padding:13px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center">'
+      +   '<span><i class="fas fa-list-ul" style="margin-right:6px;color:#6378ff"></i> Staff Status — Today</span>'
+      +   '<button onclick="v16rRefreshCeoDashboard()" style="background:#6378ff;border:0;color:#fff;padding:6px 12px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer"><i class="fas fa-sync"></i> Refresh</button>'
+      + '</div>'
+      + (rows
+          ? '<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead style="background:var(--surface2)"><tr>'
+            + '<th style="text-align:left;padding:9px 14px;font-weight:700;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">Staff</th>'
+            + '<th style="text-align:left;padding:9px 14px;font-weight:700;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">Mode</th>'
+            + '<th style="text-align:left;padding:9px 14px;font-weight:700;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">Location</th>'
+            + '<th style="text-align:right;padding:9px 14px;font-weight:700;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">Last event</th>'
+            + '</tr></thead><tbody>' + rows + '</tbody></table>'
+          : '<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px">No staff have checked in yet today.</div>')
+      + '</div>';
+
+    // Activity feed
+    const activity = (att && Array.isArray(att.activity)) ? att.activity : [];
+    const actHtml = activity.length
+      ? activity.slice(0,12).map(a => {
+          const t = a.ts ? new Date(a.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
+          return '<div style="padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px"><div style="display:flex;justify-content:space-between;gap:8px"><strong>' + v16rEsc(a.name||a.user) + '</strong><span style="font-size:10.5px;color:var(--muted);font-family:DM Mono,monospace">' + t + '</span></div><div style="font-size:11px;color:var(--muted);margin-top:2px">' + v16rEsc(a.text||'') + '</div></div>';
+        }).join('')
+      : '<div style="padding:24px;text-align:center;color:var(--muted);font-size:12.5px">No activity yet today.</div>';
+    const activityCard = '<div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">'
+      + '<div style="padding:13px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:13px"><i class="fas fa-rss" style="margin-right:6px;color:#7c3aed"></i> Live Activity Feed</div>'
+      + actHtml + '</div>';
+
+    return header + attRow + bizRow + '<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px">' + staffTable + activityCard + '</div>';
+  }
+
+  window.v16rRefreshCeoDashboard = async function(){
+    if (!v16rIsCEO()) return;
+    __v16rCache.ts = 0; // invalidate cache
+    const mc = document.getElementById('mainContent');
+    if (!mc) return;
+    mc.innerHTML = '<div class="page active" id="page-dashboard"><div style="padding:40px;text-align:center;color:var(--muted)"><i class="fas fa-spinner fa-spin" style="font-size:24px;color:#6378ff;margin-bottom:10px"></i><div>Refreshing live data…</div></div></div>';
+    const html = await v16rRenderCeoDashboard();
+    mc.innerHTML = '<div class="page active" id="page-dashboard" data-v16r="ceo">' + html + '</div>';
+    window.currentPage = 'dashboard';
+  };
+
+  // Intercept renderDashboard for CEO — show our live overview
+  function v16rWireDashboard(){
+    if (window.__v16rDashWired) return;
+    if (typeof window.nav !== 'function') { setTimeout(v16rWireDashboard, 500); return; }
+    window.__v16rDashWired = true;
+
+    const __origNav = window.nav;
+    window.nav = function(page){
+      if (page === 'dashboard' && v16rIsCEO()){
+        const mc = document.getElementById('mainContent');
+        if (mc){
+          // Paint loading shell first, then async-render
+          mc.innerHTML = '<div class="page active" id="page-dashboard" data-v16r="ceo-loading"><div style="padding:40px;text-align:center;color:var(--muted)"><i class="fas fa-spinner fa-spin" style="font-size:28px;color:#6378ff;margin-bottom:12px"></i><div style="font-size:13px">Loading live CEO command…</div></div></div>';
+          window.currentPage = 'dashboard';
+          v16rRenderCeoDashboard().then(html => {
+            const m2 = document.getElementById('mainContent');
+            if (!m2 || window.currentPage !== 'dashboard') return;
+            m2.innerHTML = '<div class="page active" id="page-dashboard" data-v16r="ceo">' + html + '</div>';
+          }).catch(e => {
+            console.warn('[v16r] CEO dashboard render failed', e);
+            // Fall back to original
+            return __origNav.apply(this, ['dashboard']);
+          });
+          return;
+        }
+      }
+      return __origNav.apply(this, arguments);
+    };
+
+    // Heartbeat — refresh every 30s while CEO is on dashboard
+    if (!window.__v16rDashHb){
+      window.__v16rDashHb = setInterval(() => {
+        if (!v16rIsCEO()) return;
+        if (window.currentPage !== 'dashboard') return;
+        const mc = document.getElementById('mainContent');
+        if (!mc || !mc.querySelector('[data-v16r="ceo"]')) return;
+        // Soft refresh — re-render without spinner flash
+        v16rRenderCeoDashboard().then(html => {
+          const m2 = document.getElementById('mainContent');
+          if (!m2 || window.currentPage !== 'dashboard') return;
+          m2.innerHTML = '<div class="page active" id="page-dashboard" data-v16r="ceo">' + html + '</div>';
+        }).catch(()=>{});
+      }, 30000);
+    }
+
+    console.log('[v16r] CEO dashboard interception installed (live attendance + business KPIs + 30s refresh).');
+  }
+  setTimeout(v16rWireDashboard, 400);
+
+  // ============================================================
+  // Boot
+  // ============================================================
+  function v16rBoot(){
+    v16rInstallCeoExemption();
+  }
+  setTimeout(v16rBoot, 500);
+  setInterval(v16rBoot, 6000); // keep CEO exemption active
+
+  console.log('[v16r] CEO live dashboard + GPS fresh-fix + Razan bank balance gate + CEO attendance optional — loaded.');
+})();
+</script>
 <script src="/static/agent-portal.js"></script>
 <script src="/static/media-suite.js"></script>
 <script src="/static/team-comms.js"></script>
