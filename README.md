@@ -6,12 +6,68 @@
 - **Stack**: Hono on Cloudflare Pages · Vanilla JS SPA · Cloudflare KV (binding `COMMS`)
 
 ## URLs
-- **Production**: https://969f2071.webapp-2il.pages.dev (v16t, deployed 2026-06-27)
-- **Previous**: https://e47154ea.webapp-2il.pages.dev (v16s, deployed 2026-06-27)
+- **Production**: https://aad9c459.webapp-2il.pages.dev (v16u, deployed 2026-06-27)
+- **Previous**: https://969f2071.webapp-2il.pages.dev (v16t)
 - **Alias**: https://webapp-2il.pages.dev (always points to latest)
 - **Local dev**: http://localhost:3000 (PM2)
 
-## v16t — CEO Activity Monitor (latest, shipped 2026-06-27)
+## v16u — Idle Detection · Status Notifications · Remote Capture · Salary Shake (latest, shipped 2026-06-27)
+
+Round-9 four-feature pack per CEO request: *"sometimes salary day shake also not showing"*, *"someone away from system for 15 min → notify me; 30 min → alert them"*, *"any staff status change → notify management; management change → notify CEO"*, *"CEO clicks camera icon → get their screen + webcam, also live screen share. Works on Mac/Windows/iOS/Android."*
+
+### 1. Salary-Day Shake Banner (fixed)
+Rebuilt as a reliable per-day animated banner with three composed keyframes (`v16uShake` jitter, `v16uCoinPulse` rotating coin emoji, `v16uShineSweep` light sweep). Renders on payday (default 25th, configurable via `GG_SETTINGS.finance.payrollDay`) plus day-before/day-after. Click → opens Finance → Payroll. Dismiss × hides for the rest of the day via `sessionStorage`. Asia/Colombo timezone. Mobile-responsive padding/font.
+
+### 2. Idle Detection
+- **Staff side**: portal sends `POST /api/v16u/heartbeat` every 30 s with `isActive` flag (true if any mousedown / keydown / touch / scroll / visible-tab activity in the last 60 s).
+- **15-min idle** → CEO gets a one-shot `idle_15` notification ("Shiran is idle (15+ min)").
+- **30-min idle** → staff gets an in-portal toast: *"You appear to be idle"* with **I'm here** button (marks active and clears flag). CEO also gets an `idle_30` escalation notification.
+- Flags auto-reset the moment the user interacts again.
+
+### 3. Status-Change Notifications
+- Wraps the existing `tbSetPresence()` so any change from `online → away/busy/dnd/offline` immediately fires a notification.
+- **Normal staff changes** → audience: `management` (visible to CEO + COO + Razan + Thasbiha + Super Admin).
+- **Management changes** → audience: `ceo` only.
+- **Notification tray** (bell icon top-right, CEO/management only): polls `/api/v16u/notifications` every 20 s, shows red badge with count, toast on new arrivals with shake animation, mark-all-read / per-item-read. Mobile-aware (full-width on ≤640 px).
+
+### 4. Remote Capture (one-way CEO → staff)
+CEO can request from any staff member:
+- **Screenshot** — `getDisplayMedia` (Mac / Windows / Android Chrome)
+- **Webcam photo** — `getUserMedia` (all platforms)
+- **Both** — single click, two captures
+- **Live screen** — streaming JPEG frames every 2 s while staff allows
+
+**Flow:** CEO `POST /api/v16u/capture/request` → staff's next heartbeat (≤ 30 s) returns it as `pendingCaptureRequests` → consent modal pops on staff browser with **Allow & Send** / **Decline** → Allow triggers browser permission prompt → captured frames JPEG-encoded as data URLs → `POST /capture/respond` stores them in KV with TTL 1 h → CEO panel polls `/capture/result/:id` and renders inline. Click image → full-size in new tab. Decline → request marked `denied` with reason (`user_declined`, `user_denied_screen`, etc.).
+
+**Mobile-aware:**
+- iOS Safari (iPhone / iPad) → webcam only (Apple does not expose `getDisplayMedia` on iOS). Banner in consent modal warns staff. Screenshot requests gracefully fall back to webcam.
+- Android Chrome → full support.
+- macOS / Windows → full support.
+
+**CEO does NOT share their screen** — strictly one-directional (CEO → staff capture). All requests logged in v16t activity feed for audit.
+
+### Backend endpoints (11 new, `/api/v16u/*`)
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/heartbeat` | Staff sends every 30 s; returns `idleMs`, `selfAlert`, `pendingCaptureRequests` |
+| GET | `/presence` | List all presence (CEO live board) |
+| GET | `/presence/:user` | Single user presence record |
+| GET | `/notifications?audience=ceo\|management&unreadOnly=1` | Audience-scoped inbox |
+| POST | `/notifications/mark` | Mark `{ids:[]}` or `{all:true}` |
+| POST | `/notifications/clear` | Purge all (CEO) |
+| POST | `/capture/request` | CEO initiates `{ targetUser, kind, note }` |
+| POST | `/capture/respond` | Staff replies with `{status, dataUrls, error}` |
+| POST | `/capture/cancel` | Abort pending |
+| GET | `/capture/result/:id` | CEO polls captured data (TTL 1 h) |
+| GET | `/capture/requests` | List by `targetUser` or `fromUser` |
+
+**Storage:** KV keys `v16u:presence:<user>` (7-day TTL), `v16u:notifications` (ring buffer cap 500), `v16u:capture:requests` (ring buffer cap 200), `v16u:capture:result:<id>` (TTL 1 h).
+
+**Tests:** Playwright suite (10 cases) — all pass. Module load + 6 window-exposed functions; CEO sees bell, staff doesn't; heartbeat persists 2 records; status-change fires notification ("nashif.razzak is now busy"); shake CSS injected; capture request created; staff consent modal renders with Allow/Deny; decline marks `denied` with `user_declined`; idle endpoint computes `idleMs`; **zero JS errors on page load**.
+
+**Build:** `dist/_worker.js` 4,259.96 kB (+52 kB from v16t). Source `public/command-portal.html` 29,764 → 30,718 lines (+954).
+
+## v16t — CEO Activity Monitor (shipped 2026-06-27)
 
 Round-8 add-on per CEO request: *"make an option for CEO to view all the Staffs and every one activitys and logs, like each and every staffs updating in the portal"*.
 
