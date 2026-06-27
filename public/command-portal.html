@@ -28291,6 +28291,690 @@ else _tbBoot();
   console.log('[v16r] CEO live dashboard + GPS fresh-fix + Razan bank balance gate + CEO attendance optional — loaded.');
 })();
 </script>
+<script>
+/* ============================================================================
+   v16s — User Management + Per-User Planner Fix
+
+   Round-8 fix-pack:
+
+   1. v16s-1: PER-USER PLANNER FIX
+      Bug: loadPlanner() defaults to a counsellor/BD template
+      (Lead Generation / Application Processing / Visa Documentation
+      / Commission Tracking / BD Outreach) for ALL non-admin users.
+      That's why Shiran (designer) saw what looked like Razan's tasks.
+      Fix: read ROLE_PLANNER_SEGMENTS[username] for the right segments.
+      Also patches WS_STATE.tasks / docs / meetings to be user-scoped
+      (legacy localStorage keys 'gg-ws-tasks' etc. weren't scoped, so
+      one staff's manual tasks could leak into another's session).
+
+   2. v16s-2: USER MANAGEMENT PORTAL
+      New page accessible to CEO + COO + Super Admin from
+      "CEO Command → User Management". Lets management:
+        * Add a brand-new staff user with username, name, role, level,
+          department, page permissions, starting password
+        * Edit any user (name, role, level, dept, pages, status)
+        * Reset password
+        * Disable / re-enable a user
+        * Delete a custom v16s user (static USERS cannot be deleted)
+      All changes are persisted to KV via /api/v16s/users.
+      On every login + on app start, v16s pulls KV users and merges
+      them into the in-memory USERS object so they can log in.
+   ============================================================================ */
+(function(){
+  'use strict';
+
+  // ---------- Helpers ----------
+  function v16sEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(ch){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]); }); }
+  function v16sActor(){ try { return (typeof currentUser === 'object' && currentUser && currentUser.username) || ''; } catch(e){ return ''; } }
+  function v16sIsManager(){
+    try {
+      const u = (typeof currentUser === 'object' && currentUser) ? currentUser : null;
+      if (!u) return false;
+      if (u.username === 'superadmin' || u.username === 'nashif.razzak' || u.username === 'nafees.razzak') return true;
+      return (u.level || 0) >= 100;
+    } catch(e){ return false; }
+  }
+
+  // ==========================================================================
+  // 1. v16s-1: PER-USER PLANNER FIX
+  // ==========================================================================
+  function v16sInstallPlannerFix(){
+    if (window.__v16sPlannerPatched) return;
+    if (typeof window.loadPlanner !== 'function' && typeof loadPlanner !== 'function') {
+      setTimeout(v16sInstallPlannerFix, 400);
+      return;
+    }
+    window.__v16sPlannerPatched = true;
+
+    const origLoad = window.loadPlanner || loadPlanner;
+    window.loadPlanner = function v16sLoadPlanner(){
+      try {
+        // 1) honour saved planner first
+        if (typeof getPlannerKey === 'function') {
+          const saved = sessionStorage.getItem(getPlannerKey());
+          if (saved) {
+            try { return JSON.parse(saved); } catch(e){}
+          }
+        }
+        // 2) build role-correct default for this user
+        const u = (typeof currentUser === 'object' && currentUser) ? currentUser : null;
+        const username = (u && u.username) || 'default';
+        const roleSegs = (typeof ROLE_PLANNER_SEGMENTS !== 'undefined' && ROLE_PLANNER_SEGMENTS[username])
+                          ? ROLE_PLANNER_SEGMENTS[username] : null;
+
+        if (roleSegs && roleSegs.length >= 7) {
+          const slots = ['09:00-10:00','10:00-11:00','11:00-12:00','13:00-14:00','14:00-15:00','15:00-16:00','16:00-17:00'];
+          const pri = ['High','High','Medium','Medium','High','Medium','Low'];
+          // Pad / truncate segs to 7 slots
+          const seg = [];
+          for (let i = 0; i < 7; i++) seg.push(roleSegs[i] || roleSegs[roleSegs.length-1] || 'General');
+          return slots.map(function(s,i){ return { slot:s, segment:seg[i], task:'', output:'', priority:pri[i] }; });
+        }
+      } catch(e){ console.warn('[v16s] loadPlanner override failed, falling back', e); }
+      // Fallback to original
+      return origLoad.apply(this, arguments);
+    };
+    console.log('[v16s] Per-user planner fix installed — Shiran (designer), Binupa, and others now see their own role segments.');
+  }
+
+  // Also fix legacy WS_STATE.tasks (the unscoped "AI Tasks" board).
+  function v16sFixWsStateScope(){
+    if (window.__v16sWsScopePatched) return;
+    if (typeof window.WS_STATE !== 'object' || !window.WS_STATE) {
+      setTimeout(v16sFixWsStateScope, 500);
+      return;
+    }
+    window.__v16sWsScopePatched = true;
+
+    function userKey(suffix){
+      const u = (typeof currentUser === 'object' && currentUser && currentUser.username) || 'default';
+      return 'gg-ws-' + suffix + '-' + u;
+    }
+
+    // Re-read tasks/docs/meetings from per-user keys, falling back to legacy
+    // keys (so existing data on first user isn't lost) but writing back to
+    // the scoped key.
+    function migrate(suffix, prop){
+      try {
+        const userK = userKey(suffix);
+        const legacyK = 'gg-ws-' + suffix;
+        let v = null;
+        const userRaw = localStorage.getItem(userK);
+        if (userRaw) { try { v = JSON.parse(userRaw); } catch(e){} }
+        if (!v) {
+          // Only the CEO/Super Admin gets to "inherit" the legacy data
+          const u = (typeof currentUser === 'object' && currentUser && currentUser.username) || '';
+          if (u === 'superadmin' || u === 'nashif.razzak') {
+            const legacyRaw = localStorage.getItem(legacyK);
+            if (legacyRaw) { try { v = JSON.parse(legacyRaw); } catch(e){} }
+          }
+        }
+        if (v !== null) WS_STATE[prop] = v;
+        else WS_STATE[prop] = (suffix === 'meetings') ? [] : null;
+      } catch(e){}
+    }
+
+    function applyForCurrentUser(){
+      migrate('tasks', 'tasks');
+      migrate('docs', 'docs');
+      migrate('meetings', 'meetings');
+    }
+
+    // Patch save fns to write per-user
+    if (typeof window._wsSaveTasks === 'function') {
+      const origST = window._wsSaveTasks;
+      window._wsSaveTasks = function(){
+        try { localStorage.setItem(userKey('tasks'), JSON.stringify(WS_STATE.tasks)); } catch(e){}
+      };
+    } else {
+      window._wsSaveTasks = function(){
+        try { localStorage.setItem(userKey('tasks'), JSON.stringify(WS_STATE.tasks)); } catch(e){}
+      };
+    }
+    if (typeof window._wsSaveDocs === 'function') {
+      window._wsSaveDocs = function(){
+        try { localStorage.setItem(userKey('docs'), JSON.stringify(WS_STATE.docs)); } catch(e){}
+      };
+    }
+    if (typeof window._wsSaveMeetings === 'function') {
+      window._wsSaveMeetings = function(){
+        try { localStorage.setItem(userKey('meetings'), JSON.stringify(WS_STATE.meetings)); } catch(e){}
+      };
+    }
+
+    // Run on first install (in case CEO/SA already in)
+    if (typeof currentUser === 'object' && currentUser) applyForCurrentUser();
+
+    // Wrap startApp so on every login we re-load the per-user state
+    if (typeof window.startApp === 'function' && !window.__v16sStartAppWrapped) {
+      window.__v16sStartAppWrapped = true;
+      const origStart = window.startApp;
+      window.startApp = function(){
+        const r = origStart.apply(this, arguments);
+        try { applyForCurrentUser(); } catch(e){}
+        return r;
+      };
+    }
+
+    console.log('[v16s] WS_STATE.tasks/docs/meetings are now per-user scoped (gg-ws-<suffix>-<username>).');
+  }
+
+  // ==========================================================================
+  // 2. v16s-2: USER MANAGEMENT PORTAL
+  // ==========================================================================
+  // Page list catalog (label + grouped). Used by the multi-select UI.
+  const V16S_PAGE_CATALOG = [
+    { group:'Core', pages:[
+      ['dashboard','Dashboard'],
+      ['myworkspace','My Workspace'],
+      ['attendance','My Attendance'],
+      ['leave','Leave'],
+      ['tasks','Tasks'],
+      ['settings','Settings']
+    ]},
+    { group:'CRM', pages:[
+      ['leads','Leads'],
+      ['pipeline','Pipeline'],
+      ['followups','Follow-Ups'],
+      ['applications','Applications'],
+      ['universities','Universities'],
+      ['students','Enrolled'],
+      ['coursefinder','Course Finder'],
+      ['mock','Mock Interviews'],
+      ['language','Language Training'],
+      ['visa','Visa Prep'],
+      ['enrolment','Enrolment']
+    ]},
+    { group:'Communications', pages:[
+      ['communications','Hub'],
+      ['emailhub','Email'],
+      ['whatsappweb','WhatsApp'],
+      ['redflags','Red Flags']
+    ]},
+    { group:'Management (CEO/COO)', pages:[
+      ['ceocommand','CEO Command'],
+      ['teamattendance','Team Attendance'],
+      ['employees','Team'],
+      ['performance','Performance'],
+      ['commissions','Commissions'],
+      ['petty','Petty Cash'],
+      ['payroll','Payroll'],
+      ['reports','Reports']
+    ]},
+    { group:'Other', pages:[
+      ['workspace','Legacy Workspace'],
+      ['legacy','Legacy Tools']
+    ]}
+  ];
+
+  // Apply a list of KV user records to the in-memory USERS object so they
+  // can immediately log in.
+  function v16sApplyToUsersObject(list){
+    if (!Array.isArray(list)) return 0;
+    let n = 0;
+    list.forEach(function(u){
+      if (!u || !u.username) return;
+      if (u.status === 'disabled') {
+        // Mark as disabled — keep entry but flag it; doLogin will block.
+        if (typeof USERS !== 'undefined') {
+          USERS[u.username] = Object.assign({}, USERS[u.username] || {}, u, { _v16sDisabled:true, _v16sManaged:true });
+        }
+      } else {
+        if (typeof USERS !== 'undefined') {
+          USERS[u.username] = Object.assign({}, USERS[u.username] || {}, u, { _v16sManaged:true });
+          delete USERS[u.username]._v16sDisabled;
+        }
+      }
+      n++;
+    });
+    return n;
+  }
+
+  // Fetch users + passwords from backend, then merge into USERS + local pw overrides.
+  async function v16sBootstrapUsers(){
+    try {
+      const r = await fetch('/api/v16s/users', { cache:'no-store' });
+      const j = await r.json();
+      if (j && j.success && Array.isArray(j.users)) {
+        const n = v16sApplyToUsersObject(j.users);
+        window.__v16sUserList = j.users;
+        // Pull per-user passwords and stash them into local overrides
+        // so the existing _passwordFor() helper picks them up.
+        const ov = (function(){ try { return JSON.parse(localStorage.getItem('gg-pw-overrides')||'{}'); } catch(e){ return {}; } })();
+        if (Array.isArray(j.hasPasswords)) {
+          // We need actual passwords for login — fetch them one-by-one.
+          for (const username of j.hasPasswords) {
+            try {
+              const pr = await fetch('/api/v16s/password-for/' + encodeURIComponent(username), { cache:'no-store' });
+              const pj = await pr.json();
+              if (pj && pj.success && pj.password) ov[username] = pj.password;
+            } catch(e){}
+          }
+          try { localStorage.setItem('gg-pw-overrides', JSON.stringify(ov)); } catch(e){}
+        }
+        console.log('[v16s] User Management — loaded ' + n + ' managed user(s) from KV.');
+      }
+    } catch(e){ console.warn('[v16s] User bootstrap failed', e); }
+  }
+
+  // Patch doLogin to block disabled users with a clear message.
+  function v16sInstallLoginGuard(){
+    if (window.__v16sLoginWrapped) return;
+    if (typeof window.doLogin !== 'function') { setTimeout(v16sInstallLoginGuard, 400); return; }
+    window.__v16sLoginWrapped = true;
+    const orig = window.doLogin;
+    window.doLogin = function(){
+      try {
+        const u = (document.getElementById('loginUser')||{}).value;
+        const uname = String(u||'').trim().toLowerCase();
+        if (uname && typeof USERS !== 'undefined' && USERS[uname] && USERS[uname]._v16sDisabled) {
+          const err = document.getElementById('loginError');
+          if (err) { err.style.display = 'block'; err.textContent = 'This account is currently disabled. Contact the CEO to re-enable it.'; }
+          return;
+        }
+      } catch(e){}
+      return orig.apply(this, arguments);
+    };
+  }
+
+  // ---------- User Management page renderer ----------
+  function v16sBuildPageCheckboxes(currentPages){
+    const set = new Set(Array.isArray(currentPages) ? currentPages : []);
+    let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">';
+    V16S_PAGE_CATALOG.forEach(function(grp){
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">';
+      html += '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">' + v16sEsc(grp.group) + '</div>';
+      grp.pages.forEach(function(p){
+        const id = p[0], label = p[1];
+        const checked = set.has(id) ? 'checked' : '';
+        html += '<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 0;cursor:pointer">'
+              + '<input type="checkbox" class="v16sPage" value="' + v16sEsc(id) + '" ' + checked + '>'
+              + '<span>' + v16sEsc(label) + '</span></label>';
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function v16sCollectPagesFromForm(){
+    const pages = [];
+    document.querySelectorAll('.v16sPage:checked').forEach(function(el){ pages.push(el.value); });
+    return pages;
+  }
+
+  function v16sRenderUserMgmt(){
+    if (!v16sIsManager()) {
+      return '<div style="max-width:560px;margin:60px auto;padding:30px;text-align:center;color:var(--muted);background:var(--surface);border:1px solid var(--hairline);border-radius:12px">'
+        + '<i class="fas fa-lock" style="font-size:32px;opacity:0.5;margin-bottom:14px;display:block"></i>'
+        + '<div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">User Management</div>'
+        + '<div style="font-size:13px">Only the CEO, COO and Super Admin can manage staff portal accounts.</div>'
+        + '</div>';
+    }
+
+    // Compose merged user list: static USERS + v16s-managed
+    const staticUsers = [];
+    if (typeof USERS === 'object') {
+      Object.keys(USERS).forEach(function(k){
+        const u = USERS[k];
+        staticUsers.push({
+          username:k, name:u.name||k, role:u.role||'', level:u.level||0, dept:u.dept||'',
+          pages:u.pages||[], status: u._v16sDisabled ? 'disabled' : 'active',
+          isManaged: !!u._v16sManaged,
+          isStatic: !u._v16sManaged
+        });
+      });
+    }
+    staticUsers.sort(function(a,b){ return (b.level||0) - (a.level||0); });
+
+    const rows = staticUsers.map(function(u){
+      const badgeColor = u.status === 'disabled' ? '#ef4444' : '#10b981';
+      const badgeText = u.status === 'disabled' ? 'Disabled' : 'Active';
+      const typeBadge = u.isManaged
+        ? '<span style="background:#3b82f615;color:#3b82f6;font-size:10px;padding:2px 7px;border-radius:99px;font-weight:700">Managed</span>'
+        : '<span style="background:#6b728015;color:#6b7280;font-size:10px;padding:2px 7px;border-radius:99px;font-weight:700">Built-in</span>';
+      return '<tr>'
+        + '<td><strong>' + v16sEsc(u.name) + '</strong><div style="font-size:11px;color:var(--muted)">' + v16sEsc(u.username) + '</div></td>'
+        + '<td>' + v16sEsc(u.role) + '</td>'
+        + '<td><span class="mono">L-' + (u.level||0) + '</span></td>'
+        + '<td>' + v16sEsc(u.dept) + '</td>'
+        + '<td>' + (u.pages||[]).length + ' page(s)</td>'
+        + '<td>' + typeBadge + '</td>'
+        + '<td><span style="background:' + badgeColor + '15;color:' + badgeColor + ';font-size:11px;padding:3px 9px;border-radius:99px;font-weight:700">' + badgeText + '</span></td>'
+        + '<td style="white-space:nowrap">'
+        +   '<button class="btn btn-sm btn-secondary" onclick="v16sEditUser(\'' + v16sEsc(u.username) + '\')" title="Edit"><i class="fas fa-pen"></i></button> '
+        +   '<button class="btn btn-sm btn-secondary" onclick="v16sResetPassword(\'' + v16sEsc(u.username) + '\')" title="Reset password"><i class="fas fa-key"></i></button> '
+        +   (u.isManaged
+              ? '<button class="btn btn-sm btn-secondary" onclick="v16sToggleStatus(\'' + v16sEsc(u.username) + '\',\'' + (u.status==='disabled'?'active':'disabled') + '\')" title="' + (u.status==='disabled'?'Enable':'Disable') + '"><i class="fas fa-power-off"></i></button> '
+              + '<button class="btn btn-sm btn-secondary" style="color:#ef4444" onclick="v16sDeleteUser(\'' + v16sEsc(u.username) + '\')" title="Delete"><i class="fas fa-trash"></i></button>'
+              : '<button class="btn btn-sm btn-secondary" disabled title="Built-in users can\'t be removed"><i class="fas fa-shield"></i></button>')
+        + '</td>'
+        + '</tr>';
+    }).join('');
+
+    return ''
+      + '<div class="section-header">'
+      +   '<div><div class="section-title"><i class="fas fa-users-cog" style="color:#6378ff"></i> User Management</div><div class="section-sub">Add, edit, and disable staff portal accounts</div></div>'
+      +   '<button class="btn btn-primary" onclick="v16sOpenCreate()" style="background:#6378ff;border-color:#6378ff"><i class="fas fa-user-plus"></i> Add New User</button>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px">'
+      +   v16sKpiCard('Total Users', staticUsers.length, 'All accounts', '#6378ff', 'fa-users')
+      +   v16sKpiCard('Active', staticUsers.filter(function(u){ return u.status==='active'; }).length, 'Can log in today', '#10b981', 'fa-circle-check')
+      +   v16sKpiCard('Disabled', staticUsers.filter(function(u){ return u.status==='disabled'; }).length, 'Blocked from login', '#ef4444', 'fa-ban')
+      +   v16sKpiCard('Managed (KV)', staticUsers.filter(function(u){ return u.isManaged; }).length, 'Added via this UI', '#3b82f6', 'fa-cloud')
+      +   v16sKpiCard('Management Tier', staticUsers.filter(function(u){ return (u.level||0) >= 80; }).length, 'L-80 and above', '#f59e0b', 'fa-crown')
+      + '</div>'
+      + '<div class="card">'
+      +   '<div class="card-header"><div class="card-title">All Users</div><div class="card-sub">Built-in users live in code; managed users live in Cloudflare KV (v16s:users)</div></div>'
+      +   '<div class="table-wrap"><table class="data-table">'
+      +     '<thead><tr><th>User</th><th>Role</th><th>Level</th><th>Dept</th><th>Pages</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>'
+      +     '<tbody>' + rows + '</tbody>'
+      +   '</table></div>'
+      + '</div>'
+      + '<div id="v16sModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;align-items:center;justify-content:center" onclick="if(event.target===this)v16sCloseModal()"></div>';
+  }
+
+  function v16sKpiCard(label, value, sub, color, icon){
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ' + color + ';border-radius:10px;padding:12px 14px">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="fas ' + icon + '" style="color:' + color + ';font-size:14px"></i><span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:700">' + v16sEsc(label) + '</span></div>'
+      + '<div style="font-size:22px;font-weight:800;color:var(--text)">' + v16sEsc(value) + '</div>'
+      + '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + v16sEsc(sub) + '</div>'
+      + '</div>';
+  }
+
+  function v16sOpenModal(html){
+    const m = document.getElementById('v16sModal');
+    if (!m) return;
+    m.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;max-width:880px;width:96%;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.4)">' + html + '</div>';
+    m.style.display = 'flex';
+  }
+  window.v16sCloseModal = function(){
+    const m = document.getElementById('v16sModal');
+    if (m) { m.style.display = 'none'; m.innerHTML = ''; }
+  };
+
+  window.v16sOpenCreate = function(){
+    const ROLES = ['CEO','COO','Head of Admissions/HR','Head of BD / Visa','Sr. Admissions Executive','Counsellor','Counsellor / Front Desk','Jr. Counsellor','Intern Counsellor','Comms Coordinator','Graphic Designer','HR Executive','Staff'];
+    const DEPTS = ['Executive','Admin/HR','BD & Visa','Marketing','Finance','System','General'];
+    v16sOpenModal(''
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-size:18px;font-weight:700"><i class="fas fa-user-plus" style="color:#6378ff"></i> Add New User</div><button onclick="v16sCloseModal()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px"><i class="fas fa-times"></i></button></div>'
+      + '<div style="background:rgba(99,120,255,0.08);border-left:3px solid #6378ff;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12.5px;color:var(--text)"><i class="fas fa-info-circle" style="color:#6378ff;margin-right:6px"></i>The new user will be able to log in immediately. Username must be lowercase letters, numbers, dots, hyphens, or underscores (e.g. <code>amila.fernando</code>).</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'
+      +   '<div><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">Username <span style="color:#ef4444">*</span></label><input id="v16sFUsername" type="text" placeholder="amila.fernando" style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px"></div>'
+      +   '<div><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">Full Name <span style="color:#ef4444">*</span></label><input id="v16sFName" type="text" placeholder="Amila Fernando" style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px"></div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">'
+      +   '<div><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">Employee ID</label><input id="v16sFEmpId" type="text" placeholder="GG013" style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px"></div>'
+      +   '<div><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">Department</label><select id="v16sFDept" style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px">' + DEPTS.map(function(d){ return '<option>' + v16sEsc(d) + '</option>'; }).join('') + '</select></div>'
+      +   '<div><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">Access Level (0-120)</label><input id="v16sFLevel" type="number" min="0" max="120" value="40" style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px"></div>'
+      + '</div>'
+      + '<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">Role / Position</label>'
+      +   '<input id="v16sFRole" type="text" list="v16sRoleList" placeholder="Counsellor" style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px">'
+      +   '<datalist id="v16sRoleList">' + ROLES.map(function(r){ return '<option value="' + v16sEsc(r) + '"></option>'; }).join('') + '</datalist></div>'
+      + '<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">Starting Password <span style="color:#ef4444">*</span></label><input id="v16sFPassword" type="text" placeholder="Min 6 characters" value="Staff@Global2026" style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px"></div>'
+      + '<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">Page Access</label>' + v16sBuildPageCheckboxes(['dashboard','myworkspace','attendance','leave','tasks','settings']) + '</div>'
+      + '<div style="display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--border);padding-top:14px"><button class="btn btn-secondary" onclick="v16sCloseModal()">Cancel</button><button class="btn btn-primary" onclick="v16sSubmitCreate()" style="background:#6378ff;border-color:#6378ff"><i class="fas fa-check"></i> Create User</button></div>'
+    );
+    // Auto-fill empId
+    setTimeout(function(){
+      const fid = document.getElementById('v16sFEmpId');
+      if (fid && !fid.value) {
+        let nextId = 13;
+        try {
+          if (typeof USERS === 'object') {
+            const ids = Object.values(USERS).map(function(u){ return parseInt(String(u.empId||'').replace(/^GG/,''),10) || 0; });
+            nextId = Math.max.apply(null, ids.concat([12])) + 1;
+          }
+        } catch(e){}
+        fid.value = 'GG' + String(nextId).padStart(3,'0');
+      }
+    }, 50);
+  };
+
+  window.v16sSubmitCreate = async function(){
+    const body = {
+      actor: v16sActor(),
+      username: (document.getElementById('v16sFUsername').value||'').trim().toLowerCase(),
+      name:     (document.getElementById('v16sFName').value||'').trim(),
+      empId:    (document.getElementById('v16sFEmpId').value||'').trim(),
+      role:     (document.getElementById('v16sFRole').value||'').trim(),
+      dept:     (document.getElementById('v16sFDept').value||'').trim(),
+      level:    parseInt(document.getElementById('v16sFLevel').value||'40',10),
+      pages:    v16sCollectPagesFromForm(),
+      password: (document.getElementById('v16sFPassword').value||'').trim()
+    };
+    if (!body.username || !body.name || !body.password) {
+      alert('Username, name, and password are required.'); return;
+    }
+    if (body.password.length < 6) { alert('Password must be at least 6 characters.'); return; }
+    if (!/^[a-z][a-z0-9._-]{1,29}$/.test(body.username)) {
+      alert('Username must start with a lowercase letter and contain only lowercase letters, digits, dots, hyphens, or underscores (2-30 chars).');
+      return;
+    }
+    if (typeof USERS === 'object' && USERS[body.username]) {
+      alert('A user with username "' + body.username + '" already exists.');
+      return;
+    }
+    try {
+      const r = await fetch('/api/v16s/users', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const j = await r.json();
+      if (!j || !j.success) { alert('Failed: ' + (j && j.error ? j.error : 'unknown')); return; }
+      v16sApplyToUsersObject([j.user]);
+      // Also store the password in local overrides immediately
+      try {
+        const ov = JSON.parse(localStorage.getItem('gg-pw-overrides')||'{}');
+        ov[body.username] = body.password;
+        localStorage.setItem('gg-pw-overrides', JSON.stringify(ov));
+      } catch(e){}
+      v16sCloseModal();
+      alert('✓ User "' + body.name + '" created. They can log in now with:\n\nUsername: ' + body.username + '\nPassword: ' + body.password);
+      v16sRefreshUserMgmtPage();
+    } catch(e){ alert('Error: ' + e.message); }
+  };
+
+  window.v16sEditUser = function(username){
+    const u = (typeof USERS === 'object' && USERS[username]) || null;
+    if (!u) { alert('User not found.'); return; }
+    const isManaged = !!u._v16sManaged;
+    const ROLES = ['CEO','COO','Head of Admissions/HR','Head of BD / Visa','Sr. Admissions Executive','Counsellor','Counsellor / Front Desk','Jr. Counsellor','Intern Counsellor','Comms Coordinator','Graphic Designer','HR Executive','Staff'];
+    const DEPTS = ['Executive','Admin/HR','BD & Visa','Marketing','Finance','System','General'];
+    v16sOpenModal(''
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-size:18px;font-weight:700"><i class="fas fa-user-pen" style="color:#3b82f6"></i> Edit User · ' + v16sEsc(username) + '</div><button onclick="v16sCloseModal()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px"><i class="fas fa-times"></i></button></div>'
+      + (isManaged ? '' : '<div style="background:rgba(245,158,11,0.10);border-left:3px solid #f59e0b;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12.5px"><i class="fas fa-exclamation-triangle" style="color:#f59e0b;margin-right:6px"></i>This is a <strong>built-in</strong> user. Changes are saved to KV and override the built-in defaults at runtime.</div>')
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'
+      +   '<div><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">Username</label><input type="text" value="' + v16sEsc(username) + '" disabled style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:13px;opacity:0.6"></div>'
+      +   '<div><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">Full Name</label><input id="v16sEName" type="text" value="' + v16sEsc(u.name||'') + '" style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px"></div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">'
+      +   '<div><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">Employee ID</label><input id="v16sEEmpId" type="text" value="' + v16sEsc(u.empId||'') + '" style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px"></div>'
+      +   '<div><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">Department</label><select id="v16sEDept" style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px">' + DEPTS.map(function(d){ return '<option' + (d===u.dept?' selected':'') + '>' + v16sEsc(d) + '</option>'; }).join('') + '</select></div>'
+      +   '<div><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">Access Level</label><input id="v16sELevel" type="number" min="0" max="120" value="' + (u.level||40) + '" style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px"></div>'
+      + '</div>'
+      + '<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px">Role / Position</label>'
+      +   '<input id="v16sERole" type="text" value="' + v16sEsc(u.role||'') + '" list="v16sERoleList" style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px">'
+      +   '<datalist id="v16sERoleList">' + ROLES.map(function(r){ return '<option value="' + v16sEsc(r) + '"></option>'; }).join('') + '</datalist></div>'
+      + '<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">Page Access</label>' + v16sBuildPageCheckboxes(u.pages||[]) + '</div>'
+      + '<div style="display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--border);padding-top:14px"><button class="btn btn-secondary" onclick="v16sCloseModal()">Cancel</button><button class="btn btn-primary" onclick="v16sSubmitEdit(\'' + v16sEsc(username) + '\')" style="background:#3b82f6;border-color:#3b82f6"><i class="fas fa-save"></i> Save Changes</button></div>'
+    );
+  };
+
+  window.v16sSubmitEdit = async function(username){
+    const patch = {
+      name:  (document.getElementById('v16sEName').value||'').trim(),
+      empId: (document.getElementById('v16sEEmpId').value||'').trim(),
+      role:  (document.getElementById('v16sERole').value||'').trim(),
+      dept:  (document.getElementById('v16sEDept').value||'').trim(),
+      level: parseInt(document.getElementById('v16sELevel').value||'40',10),
+      pages: v16sCollectPagesFromForm()
+    };
+    try {
+      const u = USERS[username] || {};
+      const isManaged = !!u._v16sManaged;
+      if (!isManaged) {
+        // For static users, create them as managed via POST first
+        const createBody = Object.assign({}, u, patch, { actor: v16sActor(), username, password: undefined });
+        const cr = await fetch('/api/v16s/users', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(createBody) });
+        const cj = await cr.json();
+        if (cj && cj.success) {
+          v16sApplyToUsersObject([cj.user]);
+        } else if (cj && cj.error && /already exists/i.test(cj.error)) {
+          // It was already managed at the backend — fall through to PUT
+        } else {
+          alert('Failed to migrate built-in user to managed: ' + (cj && cj.error || 'unknown'));
+          return;
+        }
+      }
+      const r = await fetch('/api/v16s/users/' + encodeURIComponent(username), { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ actor: v16sActor(), patch }) });
+      const j = await r.json();
+      if (!j || !j.success) { alert('Failed: ' + (j && j.error ? j.error : 'unknown')); return; }
+      v16sApplyToUsersObject([j.user]);
+      v16sCloseModal();
+      v16sRefreshUserMgmtPage();
+    } catch(e){ alert('Error: ' + e.message); }
+  };
+
+  window.v16sResetPassword = async function(username){
+    const newPw = prompt('Enter a new password for ' + username + ' (min 6 chars):', 'Staff@Global2026');
+    if (newPw == null) return;
+    if (newPw.length < 6) { alert('Password must be at least 6 characters.'); return; }
+    try {
+      const r = await fetch('/api/v16s/users/' + encodeURIComponent(username) + '/password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ actor: v16sActor(), password: newPw }) });
+      const j = await r.json();
+      if (!j || !j.success) { alert('Failed: ' + (j && j.error ? j.error : 'unknown')); return; }
+      try {
+        const ov = JSON.parse(localStorage.getItem('gg-pw-overrides')||'{}');
+        ov[username] = newPw;
+        localStorage.setItem('gg-pw-overrides', JSON.stringify(ov));
+      } catch(e){}
+      alert('✓ Password reset for ' + username + '\n\nNew password: ' + newPw + '\n\nShare it with the user securely.');
+    } catch(e){ alert('Error: ' + e.message); }
+  };
+
+  window.v16sToggleStatus = async function(username, newStatus){
+    if (!confirm((newStatus==='disabled'?'Disable':'Re-enable') + ' user ' + username + '?')) return;
+    try {
+      const r = await fetch('/api/v16s/users/' + encodeURIComponent(username) + '/status', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ actor: v16sActor(), status: newStatus }) });
+      const j = await r.json();
+      if (!j || !j.success) { alert('Failed: ' + (j && j.error ? j.error : 'unknown')); return; }
+      v16sApplyToUsersObject([j.user]);
+      v16sRefreshUserMgmtPage();
+    } catch(e){ alert('Error: ' + e.message); }
+  };
+
+  window.v16sDeleteUser = async function(username){
+    if (!confirm('PERMANENTLY delete managed user ' + username + '?\n\nThis removes their KV record. If they\'re a built-in user (Razan, Thasbiha, etc.) they\'ll revert to the built-in defaults. Continue?')) return;
+    try {
+      const r = await fetch('/api/v16s/users/' + encodeURIComponent(username), { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ actor: v16sActor() }) });
+      const j = await r.json();
+      if (!j || !j.success) { alert('Failed: ' + (j && j.error ? j.error : 'unknown')); return; }
+      // If it was an override of a built-in user, USERS[username] should be restored to the built-in value on next reload.
+      if (typeof USERS === 'object' && USERS[username] && USERS[username]._v16sManaged) {
+        // Just strip the v16s flag and reload
+        delete USERS[username]._v16sManaged;
+        delete USERS[username]._v16sDisabled;
+      }
+      v16sRefreshUserMgmtPage();
+    } catch(e){ alert('Error: ' + e.message); }
+  };
+
+  function v16sRefreshUserMgmtPage(){
+    try {
+      // Re-render if on the User Mgmt page
+      const mc = document.getElementById('mainContent');
+      if (mc && mc.innerHTML.indexOf('User Management') >= 0) {
+        mc.innerHTML = v16sRenderUserMgmt();
+      }
+    } catch(e){}
+  }
+
+  // ---------- Wire User Management into nav ----------
+  function v16sWireNav(){
+    if (window.__v16sNavWired) return;
+    if (typeof window.nav !== 'function') { setTimeout(v16sWireNav, 400); return; }
+    window.__v16sNavWired = true;
+    const origNav = window.nav;
+    window.nav = function(page){
+      if (page === 'usermgmt') {
+        if (!v16sIsManager()) {
+          alert('Only the CEO, COO, or Super Admin can access User Management.');
+          return;
+        }
+        // Render directly into mainContent
+        const mc = document.getElementById('mainContent');
+        if (mc) {
+          mc.innerHTML = v16sRenderUserMgmt();
+          // Highlight any visible nav-usermgmt item
+          try {
+            document.querySelectorAll('.nav-item').forEach(function(el){ el.classList.remove('active'); });
+          } catch(e){}
+          return;
+        }
+      }
+      return origNav.apply(this, arguments);
+    };
+
+    // Inject a "User Management" link into the side nav for CEO/COO/SA
+    function injectNavLink(){
+      try {
+        if (!v16sIsManager()) return;
+        if (document.getElementById('nav-usermgmt')) return;
+        const teamattNode = document.getElementById('nav-teamattendance')
+                          || document.querySelector('[id^="nav-employees"]')
+                          || document.querySelector('[id^="nav-ceocommand"]');
+        if (!teamattNode || !teamattNode.parentNode) return;
+        const item = document.createElement('div');
+        item.id = 'nav-usermgmt';
+        item.className = teamattNode.className;
+        item.setAttribute('onclick', "nav('usermgmt')");
+        item.innerHTML = '<i class="fas fa-users-cog"></i><span>User Management</span>';
+        teamattNode.parentNode.insertBefore(item, teamattNode.nextSibling);
+      } catch(e){}
+    }
+    setInterval(injectNavLink, 1500);
+    setTimeout(injectNavLink, 500);
+
+    // Also surface on the CEO Command page (Quick Actions area)
+    function injectCeoCmdLink(){
+      try {
+        if (!v16sIsManager()) return;
+        if (document.getElementById('v16sUserMgmtCta')) return;
+        const mc = document.getElementById('mainContent');
+        if (!mc) return;
+        // Only on CEO Command Center page
+        if (mc.innerHTML.indexOf('CEO Command Center') < 0) return;
+        // Append a CTA card at the top
+        const card = document.createElement('div');
+        card.id = 'v16sUserMgmtCta';
+        card.style.cssText = 'background:linear-gradient(135deg,#6378ff,#4f3fff);color:#fff;border-radius:12px;padding:16px 20px;margin:14px auto;max-width:1180px;display:flex;justify-content:space-between;align-items:center;gap:14px;cursor:pointer;box-shadow:0 6px 18px rgba(99,120,255,0.32)';
+        card.onclick = function(){ window.nav('usermgmt'); };
+        card.innerHTML = '<div style="display:flex;align-items:center;gap:14px"><div style="width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center"><i class="fas fa-users-cog" style="font-size:20px"></i></div><div><div style="font-size:15px;font-weight:700">User Management</div><div style="font-size:12px;opacity:0.88;margin-top:2px">Add new staff portals · edit roles · reset passwords · disable accounts</div></div></div><div><i class="fas fa-arrow-right"></i></div>';
+        mc.insertBefore(card, mc.firstChild);
+      } catch(e){}
+    }
+    setInterval(injectCeoCmdLink, 1500);
+  }
+
+  // ==========================================================================
+  // Boot
+  // ==========================================================================
+  function v16sBoot(){
+    v16sInstallPlannerFix();
+    v16sFixWsStateScope();
+    v16sInstallLoginGuard();
+    v16sWireNav();
+    v16sBootstrapUsers();
+  }
+  setTimeout(v16sBoot, 600);
+  setInterval(function(){
+    v16sInstallPlannerFix();
+    v16sFixWsStateScope();
+    v16sInstallLoginGuard();
+    v16sWireNav();
+  }, 5000);
+
+  console.log('[v16s] User Management portal + per-user planner fix + WS_STATE scoping — loaded.');
+})();
+</script>
 <script src="/static/agent-portal.js"></script>
 <script src="/static/media-suite.js"></script>
 <script src="/static/team-comms.js"></script>

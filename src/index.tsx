@@ -7998,6 +7998,254 @@ app.get('/api/v16q/workspace/:user', async (c) => {
     }
     return c.json(result);
 });
+
+// ============================================================
+// v16s — User Management (Add/Edit/Disable staff portals)
+// Round-8: CEO/Super Admin can hire new staff and grant portal access.
+// Storage: KV key `v16s:users` → array of user records.
+// User record shape: { username, name, empId, role, level, dept,
+//   avatar, pages[], status('active'|'disabled'), passwordHash?,
+//   createdAt, createdBy, updatedAt, updatedBy }
+// Password handling: stored as a plain shared override in
+// KV `v16s:passwords` (same model as the legacy localStorage
+// password override). On reset, the new password is written
+// here so any browser can authenticate (frontend mirrors it
+// into localStorage on next login fetch).
+// ============================================================
+const KV_V16S_USERS = 'v16s:users';
+const KV_V16S_PASSWORDS = 'v16s:passwords';
+const KV_V16S_AUDIT = 'v16s:audit';
+
+function v16sNow(){ return Date.now(); }
+function v16sValidUsername(u: string){
+    return typeof u === 'string' && /^[a-z][a-z0-9._-]{1,29}$/.test(u);
+}
+function v16sNormUser(u: any){
+    if (!u || typeof u !== 'object') return null;
+    const username = String(u.username||'').trim().toLowerCase();
+    if (!v16sValidUsername(username)) return null;
+    const level = Math.max(0, Math.min(120, Number(u.level)||0));
+    return {
+        username,
+        name: String(u.name||'').trim().slice(0,80) || username,
+        empId: String(u.empId||'').trim().slice(0,20) || ('GG' + Math.floor(Math.random()*900+100)),
+        role: String(u.role||'Staff').trim().slice(0,80),
+        level,
+        dept: String(u.dept||'General').trim().slice(0,40),
+        avatar: String(u.avatar||'#6378ff,#0e7490').slice(0,40),
+        pages: Array.isArray(u.pages) && u.pages.length ? u.pages.slice(0,50).map((p:any)=>String(p||'').slice(0,30)).filter(Boolean) : ['dashboard','myworkspace','attendance','leave','tasks','settings'],
+        status: (u.status === 'disabled') ? 'disabled' : 'active',
+    };
+}
+
+async function v16sLoadUsers(c: any): Promise<any[]> {
+    return await kvLoadArr(c, KV_V16S_USERS);
+}
+async function v16sSaveUsers(c: any, arr: any[]): Promise<boolean> {
+    try {
+        const kv = (c.env as any)?.COMMS;
+        if (!kv) return false;
+        await kv.put(KV_V16S_USERS, JSON.stringify(arr));
+        return true;
+    } catch { return false; }
+}
+async function v16sLoadPasswords(c: any): Promise<Record<string,string>> {
+    try {
+        const kv = (c.env as any)?.COMMS;
+        if (!kv) return {};
+        const raw = await kv.get(KV_V16S_PASSWORDS);
+        return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+}
+async function v16sSavePasswords(c: any, obj: Record<string,string>): Promise<boolean> {
+    try {
+        const kv = (c.env as any)?.COMMS;
+        if (!kv) return false;
+        await kv.put(KV_V16S_PASSWORDS, JSON.stringify(obj));
+        return true;
+    } catch { return false; }
+}
+async function v16sAudit(c: any, entry: any){
+    try {
+        const arr = await kvLoadArr(c, KV_V16S_AUDIT);
+        arr.push({ ...entry, ts: v16sNow() });
+        await kvSaveArr(c, KV_V16S_AUDIT, arr, 500);
+    } catch {}
+}
+
+// List all custom users (added via this UI). Static USERS in the
+// portal HTML are merged on the client side.
+app.get('/api/v16s/users', async (c) => {
+    try {
+        const users = await v16sLoadUsers(c);
+        const passwords = await v16sLoadPasswords(c);
+        return c.json({ success:true, users, hasPasswords: Object.keys(passwords) });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// Create a new staff user. Body: { actor, username, name, role, level, dept, pages, avatar, empId, password? }
+app.post('/api/v16s/users', async (c) => {
+    try {
+        const body = await c.req.json();
+        const actor = String(body.actor||'').trim().toLowerCase();
+        if (!actor) return c.json({ success:false, error:'actor required' }, 400);
+
+        const norm = v16sNormUser(body);
+        if (!norm) return c.json({ success:false, error:'invalid user payload (username must be lowercase letters/digits/._- and 2-30 chars)' }, 400);
+
+        const users = await v16sLoadUsers(c);
+        if (users.some(u => u.username === norm.username)) {
+            return c.json({ success:false, error:'username already exists' }, 409);
+        }
+
+        const now = v16sNow();
+        const record = { ...norm, createdAt: now, createdBy: actor, updatedAt: now, updatedBy: actor };
+        users.push(record);
+        const ok = await v16sSaveUsers(c, users);
+        if (!ok) return c.json({ success:false, error:'KV save failed' }, 500);
+
+        // If password provided, save to overrides
+        if (typeof body.password === 'string' && body.password.length >= 6) {
+            const pws = await v16sLoadPasswords(c);
+            pws[norm.username] = body.password;
+            await v16sSavePasswords(c, pws);
+        }
+
+        await v16sAudit(c, { action:'create', actor, target: norm.username });
+        return c.json({ success:true, user: record });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// Update an existing custom user. Body: { actor, username, patch:{...fields} }
+app.put('/api/v16s/users/:username', async (c) => {
+    try {
+        const username = String(c.req.param('username')||'').toLowerCase();
+        const body = await c.req.json();
+        const actor = String(body.actor||'').trim().toLowerCase();
+        if (!actor) return c.json({ success:false, error:'actor required' }, 400);
+
+        const users = await v16sLoadUsers(c);
+        const idx = users.findIndex(u => u.username === username);
+        if (idx < 0) return c.json({ success:false, error:'user not found' }, 404);
+
+        const patch = body.patch || {};
+        const merged = v16sNormUser({ ...users[idx], ...patch, username });
+        if (!merged) return c.json({ success:false, error:'invalid patch' }, 400);
+
+        users[idx] = { ...users[idx], ...merged, updatedAt: v16sNow(), updatedBy: actor };
+        const ok = await v16sSaveUsers(c, users);
+        if (!ok) return c.json({ success:false, error:'KV save failed' }, 500);
+
+        await v16sAudit(c, { action:'update', actor, target: username, patch });
+        return c.json({ success:true, user: users[idx] });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// Reset a user password (works for both static USERS and v16s users).
+// Body: { actor, username, password }
+app.post('/api/v16s/users/:username/password', async (c) => {
+    try {
+        const username = String(c.req.param('username')||'').toLowerCase();
+        const body = await c.req.json();
+        const actor = String(body.actor||'').trim().toLowerCase();
+        const password = String(body.password||'');
+        if (!actor) return c.json({ success:false, error:'actor required' }, 400);
+        if (password.length < 6) return c.json({ success:false, error:'password must be at least 6 chars' }, 400);
+
+        const pws = await v16sLoadPasswords(c);
+        pws[username] = password;
+        await v16sSavePasswords(c, pws);
+
+        await v16sAudit(c, { action:'password_reset', actor, target: username });
+        return c.json({ success:true });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// Disable / re-enable a user. Body: { actor, username, status:'active'|'disabled' }
+app.post('/api/v16s/users/:username/status', async (c) => {
+    try {
+        const username = String(c.req.param('username')||'').toLowerCase();
+        const body = await c.req.json();
+        const actor = String(body.actor||'').trim().toLowerCase();
+        const status = (body.status === 'disabled') ? 'disabled' : 'active';
+        if (!actor) return c.json({ success:false, error:'actor required' }, 400);
+
+        const users = await v16sLoadUsers(c);
+        const idx = users.findIndex(u => u.username === username);
+        if (idx < 0) return c.json({ success:false, error:'user not found' }, 404);
+
+        users[idx].status = status;
+        users[idx].updatedAt = v16sNow();
+        users[idx].updatedBy = actor;
+        await v16sSaveUsers(c, users);
+
+        await v16sAudit(c, { action:'status_'+status, actor, target: username });
+        return c.json({ success:true, user: users[idx] });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// Delete a custom user permanently. Cannot delete static USERS.
+// Body: { actor }
+app.delete('/api/v16s/users/:username', async (c) => {
+    try {
+        const username = String(c.req.param('username')||'').toLowerCase();
+        const body = await c.req.json().catch(()=>({}));
+        const actor = String(body.actor||'').trim().toLowerCase();
+        if (!actor) return c.json({ success:false, error:'actor required' }, 400);
+
+        const users = await v16sLoadUsers(c);
+        const idx = users.findIndex(u => u.username === username);
+        if (idx < 0) return c.json({ success:false, error:'user not found' }, 404);
+
+        users.splice(idx, 1);
+        await v16sSaveUsers(c, users);
+
+        // Remove the password override too
+        const pws = await v16sLoadPasswords(c);
+        if (pws[username]) {
+            delete pws[username];
+            await v16sSavePasswords(c, pws);
+        }
+
+        await v16sAudit(c, { action:'delete', actor, target: username });
+        return c.json({ success:true });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// Public endpoint: get the password override for a username (used by
+// the login flow to authenticate v16s-managed users).
+app.get('/api/v16s/password-for/:username', async (c) => {
+    try {
+        const username = String(c.req.param('username')||'').toLowerCase();
+        const pws = await v16sLoadPasswords(c);
+        return c.json({ success:true, hasOverride: !!pws[username], password: pws[username] || null });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// Audit log read-only
+app.get('/api/v16s/audit', async (c) => {
+    try {
+        const arr = await kvLoadArr(c, KV_V16S_AUDIT);
+        return c.json({ success:true, audit: arr.slice(-100).reverse() });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
 // 404 Not Found page (must be the LAST route registered)
 app.get('*', (c) => {
   return c.html(`
