@@ -8246,6 +8246,272 @@ app.get('/api/v16s/audit', async (c) => {
     }
 });
 
+// ============================================================
+// v16t — CEO Activity Monitor (view all staff activities/logs)
+// ============================================================
+// Storage model:
+//   KV key `v16t:activity` → ring buffer (array) of last 2000 events.
+//   Each event: { id, ts, user, role, action, target?, meta?, ua?, ip? }
+//
+// Endpoints:
+//   POST   /api/v16t/activity            — log one event (fire-and-forget)
+//   POST   /api/v16t/activity/batch      — log many events at once
+//   GET    /api/v16t/activity            — list events (filters via query)
+//   GET    /api/v16t/activity/stats      — aggregate counts (24h window)
+//   GET    /api/v16t/activity/users      — distinct user list (for filter dropdown)
+//   GET    /api/v16t/activity/actions    — distinct action list
+//   DELETE /api/v16t/activity            — purge (CEO/super only)
+
+const KV_V16T_ACTIVITY = 'v16t:activity';
+const V16T_RING_CAP = 2000;
+
+function v16tNow(){ return Date.now(); }
+function v16tId(){ return 'a_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
+function v16tNormEvent(e: any){
+    if (!e || typeof e !== 'object') return null;
+    const user = String(e.user || e.username || '').trim().toLowerCase();
+    const action = String(e.action || '').trim();
+    if (!user || !action) return null;
+    return {
+        id: e.id || v16tId(),
+        ts: typeof e.ts === 'number' ? e.ts : v16tNow(),
+        user,
+        role: String(e.role || '').trim(),
+        action,
+        target: e.target ? String(e.target).slice(0, 200) : '',
+        meta: e.meta && typeof e.meta === 'object' ? e.meta : null,
+        ua: e.ua ? String(e.ua).slice(0, 200) : '',
+        ip: e.ip ? String(e.ip).slice(0, 60) : ''
+    };
+}
+
+async function v16tLoad(c: any): Promise<any[]> {
+    return await kvLoadArr(c, KV_V16T_ACTIVITY);
+}
+async function v16tSave(c: any, arr: any[]): Promise<void> {
+    await kvSaveArr(c, KV_V16T_ACTIVITY, arr, V16T_RING_CAP);
+}
+
+// POST /api/v16t/activity — log one event (called by frontend on every key action)
+app.post('/api/v16t/activity', async (c) => {
+    try {
+        const body = await c.req.json().catch(() => ({}));
+        const ev = v16tNormEvent(body);
+        if (!ev) return c.json({ success:false, error:'invalid event (user and action required)' }, 400);
+        // Capture network metadata if not provided
+        if (!ev.ip) ev.ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || '';
+        if (!ev.ua) ev.ua = (c.req.header('user-agent') || '').slice(0, 200);
+        const arr = await v16tLoad(c);
+        arr.push(ev);
+        await v16tSave(c, arr);
+        return c.json({ success:true, id: ev.id, ts: ev.ts });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// POST /api/v16t/activity/batch — many events at once
+app.post('/api/v16t/activity/batch', async (c) => {
+    try {
+        const body = await c.req.json().catch(() => ({}));
+        const events = Array.isArray(body?.events) ? body.events : [];
+        if (events.length === 0) return c.json({ success:true, accepted: 0 });
+        const ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || '';
+        const ua = (c.req.header('user-agent') || '').slice(0, 200);
+        const normalized: any[] = [];
+        for (const e of events.slice(0, 50)) {
+            const ev = v16tNormEvent(e);
+            if (ev){
+                if (!ev.ip) ev.ip = ip;
+                if (!ev.ua) ev.ua = ua;
+                normalized.push(ev);
+            }
+        }
+        if (normalized.length === 0) return c.json({ success:true, accepted: 0 });
+        const arr = await v16tLoad(c);
+        for (const e of normalized) arr.push(e);
+        await v16tSave(c, arr);
+        return c.json({ success:true, accepted: normalized.length });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16t/activity — list events with optional filters
+// Query params: ?user=&action=&since=&until=&limit=&q=
+app.get('/api/v16t/activity', async (c) => {
+    try {
+        const arr = await v16tLoad(c);
+        const userF = String(c.req.query('user') || '').trim().toLowerCase();
+        const actionF = String(c.req.query('action') || '').trim();
+        const sinceQ = c.req.query('since');
+        const untilQ = c.req.query('until');
+        const since = sinceQ ? Number(sinceQ) : 0;
+        const until = untilQ ? Number(untilQ) : 0;
+        const limit = Math.min(Math.max(Number(c.req.query('limit') || '200'), 1), 2000);
+        const q = String(c.req.query('q') || '').trim().toLowerCase();
+
+        let filtered = arr;
+        if (userF) filtered = filtered.filter(e => (e.user || '').toLowerCase() === userF);
+        if (actionF) filtered = filtered.filter(e => (e.action || '') === actionF);
+        if (since) filtered = filtered.filter(e => (e.ts || 0) >= since);
+        if (until) filtered = filtered.filter(e => (e.ts || 0) <= until);
+        if (q){
+            filtered = filtered.filter(e => {
+                const blob = ((e.user||'') + ' ' + (e.action||'') + ' ' + (e.target||'') + ' ' + JSON.stringify(e.meta||{})).toLowerCase();
+                return blob.indexOf(q) !== -1;
+            });
+        }
+        // Sort newest first, then cap
+        filtered.sort((a, b) => (b.ts||0) - (a.ts||0));
+        const result = filtered.slice(0, limit);
+        return c.json({ success:true, total: filtered.length, returned: result.length, events: result });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16t/activity/stats — aggregate dashboard stats
+app.get('/api/v16t/activity/stats', async (c) => {
+    try {
+        const arr = await v16tLoad(c);
+        const now = v16tNow();
+        const day = 24 * 60 * 60 * 1000;
+        const last24 = arr.filter(e => (now - (e.ts||0)) < day);
+        const last1h = arr.filter(e => (now - (e.ts||0)) < 60 * 60 * 1000);
+        const last7 = arr.filter(e => (now - (e.ts||0)) < 7 * day);
+
+        // Per-user counts
+        const byUser: Record<string, { count24: number; count7: number; lastTs: number; lastAction: string; role: string }> = {};
+        for (const e of last7){
+            const u = e.user || '_unknown';
+            if (!byUser[u]) byUser[u] = { count24:0, count7:0, lastTs:0, lastAction:'', role: e.role || '' };
+            byUser[u].count7++;
+            if ((now - (e.ts||0)) < day) byUser[u].count24++;
+            if ((e.ts||0) > byUser[u].lastTs){
+                byUser[u].lastTs = e.ts||0;
+                byUser[u].lastAction = e.action||'';
+                if (e.role) byUser[u].role = e.role;
+            }
+        }
+
+        // Per-action counts (24h)
+        const byAction: Record<string, number> = {};
+        for (const e of last24){
+            const a = e.action || 'unknown';
+            byAction[a] = (byAction[a]||0) + 1;
+        }
+
+        // Hourly buckets for last 24h
+        const hourly: number[] = new Array(24).fill(0);
+        for (const e of last24){
+            const hoursAgo = Math.floor((now - (e.ts||0)) / (60 * 60 * 1000));
+            if (hoursAgo >= 0 && hoursAgo < 24) hourly[23 - hoursAgo]++;
+        }
+
+        // Active users now (last 5 min)
+        const activeNow = new Set<string>();
+        const fiveMin = 5 * 60 * 1000;
+        for (const e of arr){
+            if ((now - (e.ts||0)) < fiveMin) activeNow.add(e.user);
+        }
+
+        // Most active user (24h)
+        let mostActive = { user: '', count: 0 };
+        for (const u of Object.keys(byUser)){
+            if (byUser[u].count24 > mostActive.count){
+                mostActive = { user: u, count: byUser[u].count24 };
+            }
+        }
+
+        return c.json({
+            success: true,
+            stored: arr.length,
+            cap: V16T_RING_CAP,
+            count1h: last1h.length,
+            count24h: last24.length,
+            count7d: last7.length,
+            activeNow: activeNow.size,
+            activeNowList: Array.from(activeNow),
+            mostActive,
+            byUser,
+            byAction,
+            hourly
+        });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16t/activity/users — distinct user list for filter dropdown
+app.get('/api/v16t/activity/users', async (c) => {
+    try {
+        const arr = await v16tLoad(c);
+        const set: Record<string,{ count:number; role:string; lastTs:number }> = {};
+        for (const e of arr){
+            const u = e.user || '_unknown';
+            if (!set[u]) set[u] = { count:0, role: e.role||'', lastTs: 0 };
+            set[u].count++;
+            if ((e.ts||0) > set[u].lastTs) set[u].lastTs = e.ts||0;
+            if (e.role) set[u].role = e.role;
+        }
+        const users = Object.keys(set).map(u => ({ user: u, ...set[u] })).sort((a,b) => b.lastTs - a.lastTs);
+        return c.json({ success:true, users });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16t/activity/actions — distinct action list
+app.get('/api/v16t/activity/actions', async (c) => {
+    try {
+        const arr = await v16tLoad(c);
+        const map: Record<string, number> = {};
+        for (const e of arr){
+            const a = e.action || 'unknown';
+            map[a] = (map[a]||0) + 1;
+        }
+        const actions = Object.keys(map).map(a => ({ action: a, count: map[a] })).sort((a,b) => b.count - a.count);
+        return c.json({ success:true, actions });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// DELETE /api/v16t/activity — purge events older than N days (default 30) or all
+// Body: { olderThanDays?: number, all?: boolean, actor: string }
+app.delete('/api/v16t/activity', async (c) => {
+    try {
+        const body = await c.req.json().catch(() => ({}));
+        const actor = String(body?.actor || '').trim().toLowerCase();
+        if (!actor) return c.json({ success:false, error:'actor required' }, 400);
+        const all = !!body?.all;
+        const olderThanDays = Number(body?.olderThanDays || 30);
+        const arr = await v16tLoad(c);
+        let kept: any[];
+        let removed = 0;
+        if (all){
+            removed = arr.length;
+            kept = [];
+        } else {
+            const cutoff = v16tNow() - (olderThanDays * 24 * 60 * 60 * 1000);
+            kept = arr.filter(e => (e.ts||0) >= cutoff);
+            removed = arr.length - kept.length;
+        }
+        await v16tSave(c, kept);
+        // Log the purge itself
+        const purgeEv = v16tNormEvent({ user: actor, action: 'activity_purge', target: all ? 'all' : ('older_than_'+olderThanDays+'d'), meta: { removed } });
+        if (purgeEv){
+            const arr2 = await v16tLoad(c);
+            arr2.push(purgeEv);
+            await v16tSave(c, arr2);
+        }
+        return c.json({ success:true, removed, kept: kept.length });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
 // 404 Not Found page (must be the LAST route registered)
 app.get('*', (c) => {
   return c.html(`

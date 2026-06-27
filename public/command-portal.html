@@ -28975,6 +28975,795 @@ else _tbBoot();
   console.log('[v16s] User Management portal + per-user planner fix + WS_STATE scoping — loaded.');
 })();
 </script>
+<script>
+/* ============================================================
+ * v16t — CEO Activity Monitor
+ * ------------------------------------------------------------
+ * Tracks all staff actions in the portal and surfaces them on a
+ * dedicated "Activity Monitor" page accessible to CEO / COO /
+ * Super Admin. Lets the CEO see who is doing what, when, where.
+ *
+ * Pieces:
+ *  - window.v16tLog(action, target, meta)  — fire-and-forget POST
+ *  - v16tInstallHooks()                    — wraps doLogin/doLogout/nav/etc
+ *  - v16tRenderActivityMonitor()           — new page UI
+ *  - v16tWireNav()                         — sidebar link + CTA card
+ * ============================================================ */
+(function(){
+  'use strict';
+
+  // ---- helper: read currentUser without trampling closures ---------------
+  // The portal has `let currentUser` in its outer <script>. It does NOT bind to
+  // window, but it IS visible to evaluated/script-scope code. We try both.
+  function v16tCurUser(){
+    try {
+      if (window.currentUser && typeof window.currentUser === 'object') return window.currentUser;
+    } catch(e){}
+    try {
+      // Read script-scope binding via indirect eval
+      var u = (0, eval)('typeof currentUser !== "undefined" ? currentUser : null');
+      if (u && typeof u === 'object' && u.username) return u;
+    } catch(e){}
+    return null;
+  }
+
+  // ---- log queue with batching ------------------------------------------
+  var V16T_Q = [];
+  var V16T_TIMER = null;
+  function v16tFlush(){
+    if (V16T_Q.length === 0) return;
+    var batch = V16T_Q.splice(0, V16T_Q.length);
+    try {
+      fetch('/api/v16t/activity/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ events: batch }),
+        keepalive: true
+      }).catch(function(){ /* swallow */ });
+    } catch(e){}
+  }
+  function v16tSchedule(){
+    if (V16T_TIMER) return;
+    V16T_TIMER = setTimeout(function(){
+      V16T_TIMER = null;
+      v16tFlush();
+    }, 600);
+  }
+
+  // ---- public log function ---------------------------------------------
+  window.v16tLog = function(action, target, meta){
+    try {
+      if (!action) return;
+      var u = v16tCurUser();
+      var ev = {
+        ts: Date.now(),
+        user: u && u.username ? String(u.username).toLowerCase() : '_anon',
+        role: u && u.role ? u.role : '',
+        action: String(action),
+        target: target ? String(target) : '',
+        meta: (meta && typeof meta === 'object') ? meta : null
+      };
+      V16T_Q.push(ev);
+      v16tSchedule();
+    } catch(e){ /* never throw from a logger */ }
+  };
+
+  // Flush on tab close / hidden
+  try {
+    window.addEventListener('pagehide', v16tFlush);
+    window.addEventListener('beforeunload', v16tFlush);
+    document.addEventListener('visibilitychange', function(){
+      if (document.visibilityState === 'hidden') v16tFlush();
+    });
+  } catch(e){}
+
+  // ============================================================
+  // INSTALL HOOKS — wrap existing portal actions to emit events
+  // ============================================================
+  function v16tInstallHooks(){
+    // --- login ---
+    try {
+      if (typeof window.doLogin === 'function' && !window.__v16tLoginWrapped){
+        var origLogin = window.doLogin;
+        window.doLogin = function(){
+          var uname = (document.getElementById('loginUser') || {}).value || '';
+          var r = origLogin.apply(this, arguments);
+          // Inspect post-state to decide outcome
+          setTimeout(function(){
+            try {
+              var cu = v16tCurUser();
+              var loggedIn = cu && cu.username;
+              window.v16tLog(loggedIn ? 'login' : 'login_failed', uname.trim().toLowerCase(), {
+                role: loggedIn ? cu.role : null
+              });
+            } catch(e){}
+          }, 200);
+          return r;
+        };
+        window.__v16tLoginWrapped = true;
+      }
+    } catch(e){}
+
+    // --- logout ---
+    try {
+      if (typeof window.doLogout === 'function' && !window.__v16tLogoutWrapped){
+        var origLogout = window.doLogout;
+        window.doLogout = function(){
+          try { window.v16tLog('logout', '', null); } catch(e){}
+          v16tFlush(); // ensure event lands before state clears
+          return origLogout.apply(this, arguments);
+        };
+        window.__v16tLogoutWrapped = true;
+      }
+    } catch(e){}
+
+    // --- navigation ---
+    try {
+      if (typeof window.nav === 'function' && !window.__v16tNavWrapped){
+        var origNav = window.nav;
+        window.nav = function(page){
+          try { if (page && page !== 'login') window.v16tLog('nav', String(page), null); } catch(e){}
+          return origNav.apply(this, arguments);
+        };
+        window.__v16tNavWrapped = true;
+      }
+    } catch(e){}
+
+    // --- attendance buttons (event delegation) ---
+    try {
+      if (!window.__v16tAttDelegated){
+        document.addEventListener('click', function(e){
+          try {
+            var t = e.target;
+            if (!t || !t.closest) return;
+            // Check-in/out buttons commonly carry onclick handlers; look for known text
+            var btn = t.closest('button, a');
+            if (!btn) return;
+            var txt = (btn.textContent || '').trim().toLowerCase();
+            if (/^(check[- ]?in|punch[- ]?in|start (the )?day|mark attendance)$/i.test(txt)){
+              window.v16tLog('attendance_checkin', '', null);
+            } else if (/^(check[- ]?out|punch[- ]?out|end (the )?day)$/i.test(txt)){
+              window.v16tLog('attendance_checkout', '', null);
+            } else if (/^submit (the )?leave/i.test(txt) || /^request leave/i.test(txt) || /^apply (for )?leave/i.test(txt)){
+              window.v16tLog('leave_submit', '', null);
+            } else if (/^add (task|note|file|expense|meeting|doc)/i.test(txt)){
+              var what = (txt.match(/^add (task|note|file|expense|meeting|doc)/i)||[])[1] || '';
+              window.v16tLog('create_' + what.toLowerCase(), '', null);
+            } else if (/^save (planner|day|task)/i.test(txt)){
+              window.v16tLog('save_planner', '', null);
+            } else if (/^complete|^mark done|^finish task/i.test(txt)){
+              window.v16tLog('task_complete', '', null);
+            }
+          } catch(e){}
+        }, true);
+        window.__v16tAttDelegated = true;
+      }
+    } catch(e){}
+
+    // --- planner save (wrap savePlanner if present) ---
+    try {
+      if (typeof window.savePlanner === 'function' && !window.__v16tSavePlannerWrapped){
+        var origSavePlanner = window.savePlanner;
+        window.savePlanner = function(){
+          try { window.v16tLog('planner_save', '', { args: arguments.length }); } catch(e){}
+          return origSavePlanner.apply(this, arguments);
+        };
+        window.__v16tSavePlannerWrapped = true;
+      }
+    } catch(e){}
+
+    // --- v16s user management actions (already exposed on window) ---
+    var mgmtFns = ['v16sSubmitCreate','v16sSubmitEdit','v16sResetPassword','v16sToggleStatus','v16sDeleteUser'];
+    mgmtFns.forEach(function(fnName){
+      try {
+        if (typeof window[fnName] === 'function' && !window['__v16t_' + fnName]){
+          var orig = window[fnName];
+          window[fnName] = function(){
+            var args = Array.prototype.slice.call(arguments);
+            try { window.v16tLog('usermgmt_' + fnName.replace('v16s','').toLowerCase(), args[0] || '', null); } catch(e){}
+            return orig.apply(this, arguments);
+          };
+          window['__v16t_' + fnName] = true;
+        }
+      } catch(e){}
+    });
+
+    // --- heartbeat: emit a "session_active" every 5 min while logged in ---
+    try {
+      if (!window.__v16tHeartbeat){
+        window.__v16tHeartbeat = setInterval(function(){
+          var u = v16tCurUser();
+          if (u && u.username){
+            window.v16tLog('heartbeat', location.hash || '', null);
+          }
+        }, 5 * 60 * 1000);
+      }
+    } catch(e){}
+  }
+
+  // ============================================================
+  // ACTIVITY MONITOR PAGE
+  // ============================================================
+  // State
+  var V16T_STATE = {
+    events: [],
+    stats: null,
+    users: [],
+    actions: [],
+    filterUser: '',
+    filterAction: '',
+    filterSince: '',
+    filterUntil: '',
+    filterQ: '',
+    autoRefresh: true,
+    refreshTimer: null,
+    selectedUser: null  // for drill-down modal
+  };
+
+  function v16tFmtTs(ts){
+    if (!ts) return '—';
+    try {
+      var d = new Date(ts);
+      var now = new Date();
+      var diff = (now - d) / 1000;
+      if (diff < 60) return Math.floor(diff) + 's ago';
+      if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+      if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+      return d.toLocaleString();
+    } catch(e){ return '—'; }
+  }
+
+  function v16tFmtTsAbs(ts){
+    if (!ts) return '—';
+    try {
+      var d = new Date(ts);
+      return d.toLocaleString();
+    } catch(e){ return '—'; }
+  }
+
+  function v16tActionIcon(action){
+    var a = (action||'').toLowerCase();
+    if (a === 'login') return { icon:'fa-sign-in-alt', color:'#10b981' };
+    if (a === 'login_failed') return { icon:'fa-exclamation-triangle', color:'#ef4444' };
+    if (a === 'logout') return { icon:'fa-sign-out-alt', color:'#6b7280' };
+    if (a === 'nav') return { icon:'fa-compass', color:'#3b82f6' };
+    if (a.indexOf('attendance') !== -1) return { icon:'fa-clock', color:'#0ea5e9' };
+    if (a.indexOf('leave') !== -1) return { icon:'fa-calendar-times', color:'#f59e0b' };
+    if (a.indexOf('planner') !== -1) return { icon:'fa-list-check', color:'#8b5cf6' };
+    if (a.indexOf('task') !== -1) return { icon:'fa-tasks', color:'#06b6d4' };
+    if (a.indexOf('create') !== -1) return { icon:'fa-plus-circle', color:'#22c55e' };
+    if (a.indexOf('usermgmt') !== -1) return { icon:'fa-users-cog', color:'#ec4899' };
+    if (a.indexOf('heartbeat') !== -1) return { icon:'fa-heartbeat', color:'#94a3b8' };
+    if (a.indexOf('purge') !== -1) return { icon:'fa-trash', color:'#dc2626' };
+    return { icon:'fa-bolt', color:'#64748b' };
+  }
+
+  function v16tActionLabel(action){
+    var a = action || '';
+    return a.replace(/_/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+  }
+
+  // -------- fetch helpers ------------------------------------------------
+  function v16tFetchAll(cb){
+    var done = 0; var total = 3;
+    function chk(){ done++; if (done >= total && cb) cb(); }
+    var qp = new URLSearchParams();
+    if (V16T_STATE.filterUser)  qp.set('user', V16T_STATE.filterUser);
+    if (V16T_STATE.filterAction) qp.set('action', V16T_STATE.filterAction);
+    if (V16T_STATE.filterSince) qp.set('since', new Date(V16T_STATE.filterSince).getTime().toString());
+    if (V16T_STATE.filterUntil) qp.set('until', new Date(V16T_STATE.filterUntil).getTime().toString());
+    if (V16T_STATE.filterQ)     qp.set('q', V16T_STATE.filterQ);
+    qp.set('limit', '300');
+    fetch('/api/v16t/activity?' + qp.toString())
+      .then(function(r){ return r.json(); })
+      .then(function(d){ if (d && d.success) V16T_STATE.events = d.events || []; })
+      .catch(function(){})
+      .finally(chk);
+    fetch('/api/v16t/activity/stats')
+      .then(function(r){ return r.json(); })
+      .then(function(d){ if (d && d.success) V16T_STATE.stats = d; })
+      .catch(function(){})
+      .finally(chk);
+    fetch('/api/v16t/activity/users')
+      .then(function(r){ return r.json(); })
+      .then(function(d){ if (d && d.success) V16T_STATE.users = d.users || []; })
+      .catch(function(){})
+      .finally(chk);
+  }
+
+  // -------- render -------------------------------------------------------
+  window.v16tRenderActivityMonitor = function(){
+    var u = v16tCurUser();
+    // Permission check — CEO / COO / Super Admin / Owner only
+    var allowed = false;
+    if (u){
+      var role = (u.role||'').toLowerCase();
+      var uname = (u.username||'').toLowerCase();
+      if (uname === 'razan' || uname === 'thasbiha' || uname === 'razan.thawus' ||
+          uname === 'thasbiha.s' || uname === 'nashif.razzak' || uname === 'nafees.razzak' ||
+          uname === 'superadmin' ||
+          role.indexOf('ceo') !== -1 || role.indexOf('coo') !== -1 ||
+          role.indexOf('super admin') !== -1 || role.indexOf('owner') !== -1 ||
+          (u.level && u.level >= 90)){
+        allowed = true;
+      }
+    }
+    if (!allowed){
+      return '<div style="padding:40px;text-align:center;color:#64748b;">' +
+             '<i class="fas fa-lock" style="font-size:48px;color:#cbd5e1;"></i>' +
+             '<h2 style="margin-top:16px;color:#334155;">Access Restricted</h2>' +
+             '<p style="margin-top:8px;">The Activity Monitor is available to CEO / COO / Super Admin only.</p>' +
+             '</div>';
+    }
+
+    var stats = V16T_STATE.stats || { count24h:0, count1h:0, count7d:0, activeNow:0, mostActive:{user:'',count:0}, byUser:{}, byAction:{}, hourly:new Array(24).fill(0), stored:0, cap:2000 };
+
+    // KPI cards
+    var kpis = [
+      { label:'Active Now (5m)', value: stats.activeNow || 0, icon:'fa-circle', color:'#10b981', sub: 'Live staff sessions' },
+      { label:'Events (1h)',     value: stats.count1h  || 0, icon:'fa-bolt',   color:'#3b82f6', sub: 'Last hour' },
+      { label:'Events (24h)',    value: stats.count24h || 0, icon:'fa-chart-line', color:'#8b5cf6', sub: 'Last day' },
+      { label:'Events (7d)',     value: stats.count7d  || 0, icon:'fa-history', color:'#f59e0b', sub: 'Last week' },
+      { label:'Top User (24h)',  value: stats.mostActive && stats.mostActive.user ? stats.mostActive.user : '—', icon:'fa-trophy', color:'#ec4899', sub: stats.mostActive ? (stats.mostActive.count + ' events') : '' },
+      { label:'Stored Events',   value: (stats.stored||0) + ' / ' + (stats.cap||2000), icon:'fa-database', color:'#64748b', sub: 'KV ring buffer' }
+    ];
+    var kpiHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:20px;">' +
+      kpis.map(function(k){
+        return '<div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.05);">' +
+               '<div style="display:flex;align-items:center;gap:8px;color:#64748b;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">' +
+                 '<i class="fas '+k.icon+'" style="color:'+k.color+';"></i> '+k.label+
+               '</div>' +
+               '<div style="font-size:24px;font-weight:700;color:#0f172a;margin-top:6px;">'+k.value+'</div>' +
+               '<div style="font-size:11px;color:#94a3b8;margin-top:2px;">'+(k.sub||'')+'</div>' +
+             '</div>';
+      }).join('') + '</div>';
+
+    // Per-user staff table (most active first)
+    var userRows = '';
+    if (stats.byUser){
+      var arr = Object.keys(stats.byUser).map(function(uk){
+        return Object.assign({ user: uk }, stats.byUser[uk]);
+      }).sort(function(a,b){ return b.count24 - a.count24; });
+      if (arr.length === 0){
+        userRows = '<tr><td colspan="6" style="padding:24px;text-align:center;color:#94a3b8;">No staff activity recorded yet. Activities will appear here as staff use the portal.</td></tr>';
+      } else {
+        userRows = arr.map(function(row){
+          var isLive = stats.activeNowList && stats.activeNowList.indexOf(row.user) !== -1;
+          return '<tr style="border-bottom:1px solid #f1f5f9;">' +
+            '<td style="padding:10px 12px;">' +
+              (isLive ? '<span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;margin-right:6px;animation:pulse 2s infinite;"></span>' : '<span style="display:inline-block;width:8px;height:8px;background:#cbd5e1;border-radius:50%;margin-right:6px;"></span>') +
+              '<strong>'+row.user+'</strong>' +
+            '</td>' +
+            '<td style="padding:10px 12px;color:#64748b;font-size:13px;">'+(row.role||'—')+'</td>' +
+            '<td style="padding:10px 12px;text-align:center;font-weight:600;color:#3b82f6;">'+row.count24+'</td>' +
+            '<td style="padding:10px 12px;text-align:center;color:#64748b;">'+row.count7+'</td>' +
+            '<td style="padding:10px 12px;color:#64748b;font-size:12px;">' +
+              v16tActionLabel(row.lastAction||'') + ' · ' + v16tFmtTs(row.lastTs) +
+            '</td>' +
+            '<td style="padding:10px 12px;text-align:right;">' +
+              '<button onclick="v16tDrillDown(\''+row.user+'\')" style="background:#3b82f6;color:white;border:none;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;">' +
+                '<i class="fas fa-eye"></i> Timeline' +
+              '</button>' +
+            '</td>' +
+          '</tr>';
+        }).join('');
+      }
+    }
+    var staffTableHtml = '<div style="background:white;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:20px;">' +
+      '<div style="padding:12px 16px;border-bottom:1px solid #e5e7eb;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;">' +
+        '<div><i class="fas fa-users" style="color:#3b82f6;margin-right:8px;"></i><strong>Staff Activity Summary</strong></div>' +
+        '<div style="font-size:12px;color:#64748b;">Last 7 days · sorted by 24h activity</div>' +
+      '</div>' +
+      '<div style="overflow-x:auto;">' +
+        '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+          '<thead>' +
+            '<tr style="background:#f8fafc;border-bottom:2px solid #e5e7eb;">' +
+              '<th style="padding:10px 12px;text-align:left;font-weight:600;color:#475569;">Staff</th>' +
+              '<th style="padding:10px 12px;text-align:left;font-weight:600;color:#475569;">Role</th>' +
+              '<th style="padding:10px 12px;text-align:center;font-weight:600;color:#475569;">24h</th>' +
+              '<th style="padding:10px 12px;text-align:center;font-weight:600;color:#475569;">7d</th>' +
+              '<th style="padding:10px 12px;text-align:left;font-weight:600;color:#475569;">Last Activity</th>' +
+              '<th style="padding:10px 12px;text-align:right;font-weight:600;color:#475569;">Action</th>' +
+            '</tr>' +
+          '</thead>' +
+          '<tbody>' + userRows + '</tbody>' +
+        '</table>' +
+      '</div>' +
+    '</div>';
+
+    // Hourly bar chart (24h)
+    var hourlyHtml = '';
+    if (stats.hourly && stats.hourly.length === 24){
+      var maxH = Math.max.apply(null, stats.hourly.concat([1]));
+      hourlyHtml = '<div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:20px;">' +
+        '<div style="font-weight:600;color:#0f172a;margin-bottom:12px;"><i class="fas fa-chart-bar" style="color:#8b5cf6;margin-right:8px;"></i>Activity per Hour (last 24h)</div>' +
+        '<div style="display:flex;align-items:flex-end;gap:3px;height:100px;">' +
+          stats.hourly.map(function(v, i){
+            var h = Math.max(2, Math.round((v / maxH) * 100));
+            var color = v === 0 ? '#e5e7eb' : (v > maxH * 0.7 ? '#3b82f6' : '#93c5fd');
+            return '<div style="flex:1;background:'+color+';height:'+h+'%;border-radius:3px 3px 0 0;position:relative;" title="'+v+' events">' +
+                   (v > 0 ? '<span style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:#475569;">'+v+'</span>' : '') +
+                   '</div>';
+          }).join('') +
+        '</div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:4px;">' +
+          '<span>-24h</span><span>-18h</span><span>-12h</span><span>-6h</span><span>now</span>' +
+        '</div>' +
+      '</div>';
+    }
+
+    // Action breakdown
+    var actionBars = '';
+    if (stats.byAction){
+      var actArr = Object.keys(stats.byAction).map(function(a){ return { action:a, count:stats.byAction[a] }; }).sort(function(a,b){ return b.count - a.count; }).slice(0, 10);
+      if (actArr.length){
+        var actMax = Math.max.apply(null, actArr.map(function(a){return a.count;}).concat([1]));
+        actionBars = '<div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:20px;">' +
+          '<div style="font-weight:600;color:#0f172a;margin-bottom:12px;"><i class="fas fa-fire" style="color:#ef4444;margin-right:8px;"></i>Top Actions (24h)</div>' +
+          actArr.map(function(a){
+            var w = Math.round((a.count / actMax) * 100);
+            var ic = v16tActionIcon(a.action);
+            return '<div style="margin-bottom:8px;">' +
+              '<div style="display:flex;justify-content:space-between;font-size:12px;color:#475569;margin-bottom:2px;">' +
+                '<span><i class="fas '+ic.icon+'" style="color:'+ic.color+';margin-right:6px;"></i>'+v16tActionLabel(a.action)+'</span>' +
+                '<strong>'+a.count+'</strong>' +
+              '</div>' +
+              '<div style="background:#f1f5f9;border-radius:4px;height:6px;overflow:hidden;">' +
+                '<div style="background:'+ic.color+';height:100%;width:'+w+'%;"></div>' +
+              '</div>' +
+            '</div>';
+          }).join('') +
+        '</div>';
+      }
+    }
+
+    // Filters bar
+    var userOpts = '<option value="">All staff</option>' +
+      (V16T_STATE.users || []).map(function(u){
+        return '<option value="'+u.user+'"' + (V16T_STATE.filterUser === u.user ? ' selected' : '') + '>' + u.user + ' (' + u.count + ')</option>';
+      }).join('');
+    var actionOpts = '<option value="">All actions</option>';
+    if (stats.byAction){
+      Object.keys(stats.byAction).sort().forEach(function(a){
+        actionOpts += '<option value="'+a+'"' + (V16T_STATE.filterAction === a ? ' selected' : '') + '>'+v16tActionLabel(a)+' ('+stats.byAction[a]+')</option>';
+      });
+    }
+    var filterBar = '<div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
+      '<input id="v16tQ" type="text" placeholder="Search…" value="'+(V16T_STATE.filterQ||'').replace(/"/g,'&quot;')+'" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;" />' +
+      '<select id="v16tFUser" style="padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:white;">'+userOpts+'</select>' +
+      '<select id="v16tFAction" style="padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:white;">'+actionOpts+'</select>' +
+      '<button onclick="v16tApplyFilters()" style="background:#3b82f6;color:white;border:none;padding:7px 14px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:500;"><i class="fas fa-filter"></i> Apply</button>' +
+      '<button onclick="v16tClearFilters()" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;padding:7px 12px;border-radius:6px;font-size:13px;cursor:pointer;">Clear</button>' +
+      '<button onclick="v16tRefresh()" style="background:#10b981;color:white;border:none;padding:7px 12px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:500;"><i class="fas fa-sync"></i> Refresh</button>' +
+      '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;cursor:pointer;">' +
+        '<input type="checkbox" id="v16tAuto" '+(V16T_STATE.autoRefresh?'checked':'')+' onchange="v16tToggleAuto(this.checked)" /> Auto-refresh (15s)' +
+      '</label>' +
+      '<button onclick="v16tExportCsv()" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;padding:7px 12px;border-radius:6px;font-size:13px;cursor:pointer;"><i class="fas fa-download"></i> CSV</button>' +
+      '<button onclick="v16tPurgeOld()" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:7px 12px;border-radius:6px;font-size:13px;cursor:pointer;"><i class="fas fa-trash"></i> Purge 30d+</button>' +
+    '</div>';
+
+    // Live feed (events list)
+    var evRows = '';
+    if (!V16T_STATE.events || V16T_STATE.events.length === 0){
+      evRows = '<div style="padding:40px;text-align:center;color:#94a3b8;">' +
+        '<i class="fas fa-inbox" style="font-size:36px;"></i><br><br>' +
+        'No events match your filters. Once staff start using the portal, their actions will stream in here.' +
+      '</div>';
+    } else {
+      evRows = V16T_STATE.events.map(function(e){
+        var ic = v16tActionIcon(e.action);
+        var metaStr = '';
+        if (e.meta && Object.keys(e.meta).length){
+          try { metaStr = JSON.stringify(e.meta); } catch(_){ metaStr = ''; }
+        }
+        return '<div style="display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid #f1f5f9;align-items:flex-start;">' +
+          '<div style="width:32px;height:32px;border-radius:50%;background:'+ic.color+'22;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+            '<i class="fas '+ic.icon+'" style="color:'+ic.color+';font-size:13px;"></i>' +
+          '</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:13px;color:#0f172a;">' +
+              '<strong>'+e.user+'</strong>' +
+              (e.role ? '<span style="color:#94a3b8;font-size:11px;margin-left:6px;">'+e.role+'</span>' : '') +
+              ' <span style="color:#475569;">'+v16tActionLabel(e.action)+'</span>' +
+              (e.target ? '<span style="color:#3b82f6;margin-left:4px;">→ '+e.target+'</span>' : '') +
+            '</div>' +
+            (metaStr ? '<div style="font-size:11px;color:#64748b;margin-top:2px;font-family:ui-monospace,monospace;background:#f8fafc;padding:2px 6px;border-radius:4px;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+metaStr+'</div>' : '') +
+          '</div>' +
+          '<div style="font-size:11px;color:#94a3b8;text-align:right;flex-shrink:0;" title="'+v16tFmtTsAbs(e.ts)+'">' +
+            v16tFmtTs(e.ts) +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+    var feedHtml = '<div style="background:white;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">' +
+      '<div style="padding:12px 16px;border-bottom:1px solid #e5e7eb;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;">' +
+        '<div><i class="fas fa-stream" style="color:#10b981;margin-right:8px;"></i><strong>Live Activity Feed</strong></div>' +
+        '<div style="font-size:12px;color:#64748b;">'+(V16T_STATE.events?V16T_STATE.events.length:0)+' events</div>' +
+      '</div>' +
+      '<div style="max-height:500px;overflow-y:auto;">'+evRows+'</div>' +
+    '</div>';
+
+    // Combine
+    return '<style>@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}</style>' +
+      '<div style="padding:20px;background:#f8fafc;min-height:calc(100vh - 60px);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;">' +
+          '<div>' +
+            '<h1 style="margin:0;font-size:24px;color:#0f172a;"><i class="fas fa-satellite-dish" style="color:#8b5cf6;margin-right:10px;"></i>Activity Monitor</h1>' +
+            '<p style="margin:4px 0 0;color:#64748b;font-size:13px;">Real-time view of every staff member\'s actions in the portal. Updates auto-refresh every 15s.</p>' +
+          '</div>' +
+          '<div style="font-size:12px;color:#94a3b8;text-align:right;">' +
+            'CEO View · ' + (v16tCurUser() ? v16tCurUser().name || v16tCurUser().username : '') +
+          '</div>' +
+        '</div>' +
+        kpiHtml +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-bottom:20px;">' +
+          hourlyHtml +
+          actionBars +
+        '</div>' +
+        staffTableHtml +
+        filterBar +
+        feedHtml +
+      '</div>';
+  };
+
+  // ============================================================
+  // INTERACTIVE HANDLERS (exposed on window)
+  // ============================================================
+  function v16tRerender(){
+    var host = document.getElementById('mainContent') || document.querySelector('[id="mainContent"]') || document.querySelector('.main-content');
+    if (host){ host.innerHTML = window.v16tRenderActivityMonitor(); }
+  }
+
+  window.v16tRefresh = function(){
+    v16tFetchAll(function(){ v16tRerender(); });
+  };
+
+  window.v16tToggleAuto = function(on){
+    V16T_STATE.autoRefresh = !!on;
+    if (V16T_STATE.refreshTimer){ clearInterval(V16T_STATE.refreshTimer); V16T_STATE.refreshTimer = null; }
+    if (V16T_STATE.autoRefresh){
+      V16T_STATE.refreshTimer = setInterval(function(){
+        // Only refresh while page is visible AND user is still on the monitor view
+        if (document.visibilityState === 'visible' && location.hash.indexOf('activity') !== -1){
+          window.v16tRefresh();
+        }
+      }, 15000);
+    }
+  };
+
+  window.v16tApplyFilters = function(){
+    try {
+      V16T_STATE.filterQ      = (document.getElementById('v16tQ')||{}).value || '';
+      V16T_STATE.filterUser   = (document.getElementById('v16tFUser')||{}).value || '';
+      V16T_STATE.filterAction = (document.getElementById('v16tFAction')||{}).value || '';
+    } catch(e){}
+    window.v16tRefresh();
+  };
+
+  window.v16tClearFilters = function(){
+    V16T_STATE.filterQ = '';
+    V16T_STATE.filterUser = '';
+    V16T_STATE.filterAction = '';
+    V16T_STATE.filterSince = '';
+    V16T_STATE.filterUntil = '';
+    window.v16tRefresh();
+  };
+
+  window.v16tExportCsv = function(){
+    var rows = [['Timestamp','User','Role','Action','Target','Meta','IP','UserAgent']];
+    (V16T_STATE.events||[]).forEach(function(e){
+      rows.push([
+        v16tFmtTsAbs(e.ts),
+        e.user||'',
+        e.role||'',
+        e.action||'',
+        e.target||'',
+        e.meta ? JSON.stringify(e.meta) : '',
+        e.ip||'',
+        e.ua||''
+      ]);
+    });
+    var csv = rows.map(function(r){
+      return r.map(function(c){ var s = String(c||''); return '"' + s.replace(/"/g,'""') + '"'; }).join(',');
+    }).join('\n');
+    try {
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'activity-log-' + new Date().toISOString().slice(0,10) + '.csv';
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 1000);
+    } catch(e){ alert('CSV export failed: ' + e.message); }
+  };
+
+  window.v16tPurgeOld = function(){
+    if (!confirm('Purge all activity events older than 30 days? This cannot be undone.')) return;
+    var u = v16tCurUser();
+    fetch('/api/v16t/activity', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actor: u ? (u.username||'').toLowerCase() : 'unknown', olderThanDays: 30 })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d && d.success){
+        alert('Removed ' + d.removed + ' events. ' + d.kept + ' remain.');
+        window.v16tRefresh();
+      } else {
+        alert('Purge failed: ' + (d && d.error ? d.error : 'unknown error'));
+      }
+    });
+  };
+
+  window.v16tDrillDown = function(username){
+    if (!username) return;
+    fetch('/api/v16t/activity?user=' + encodeURIComponent(username) + '&limit=500')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var events = (d && d.events) ? d.events : [];
+        var rows = events.length === 0
+          ? '<div style="padding:30px;text-align:center;color:#94a3b8;">No recent activity for this user.</div>'
+          : events.map(function(e){
+              var ic = v16tActionIcon(e.action);
+              return '<div style="display:flex;gap:10px;padding:8px 12px;border-bottom:1px solid #f1f5f9;">' +
+                '<div style="width:26px;height:26px;border-radius:50%;background:'+ic.color+'22;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+                  '<i class="fas '+ic.icon+'" style="color:'+ic.color+';font-size:11px;"></i>' +
+                '</div>' +
+                '<div style="flex:1;font-size:12px;">' +
+                  '<div><strong>'+v16tActionLabel(e.action)+'</strong>' + (e.target ? ' → '+e.target : '') + '</div>' +
+                  (e.meta ? '<div style="color:#64748b;font-family:monospace;font-size:10px;">'+JSON.stringify(e.meta)+'</div>' : '') +
+                '</div>' +
+                '<div style="font-size:11px;color:#94a3b8;flex-shrink:0;" title="'+v16tFmtTsAbs(e.ts)+'">'+v16tFmtTs(e.ts)+'</div>' +
+              '</div>';
+            }).join('');
+
+        var modal = document.createElement('div');
+        modal.id = 'v16tDrillModal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+        modal.innerHTML =
+          '<div style="background:white;border-radius:12px;max-width:720px;width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 25px 50px rgba(0,0,0,.3);">' +
+            '<div style="padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;background:#f8fafc;">' +
+              '<div>' +
+                '<h3 style="margin:0;font-size:17px;color:#0f172a;"><i class="fas fa-user-clock" style="color:#3b82f6;margin-right:8px;"></i>Activity Timeline — '+username+'</h3>' +
+                '<p style="margin:2px 0 0;color:#64748b;font-size:12px;">'+events.length+' events · most recent first</p>' +
+              '</div>' +
+              '<button onclick="document.getElementById(\'v16tDrillModal\').remove()" style="background:none;border:none;font-size:22px;color:#64748b;cursor:pointer;padding:4px 10px;">×</button>' +
+            '</div>' +
+            '<div style="flex:1;overflow-y:auto;">'+rows+'</div>' +
+          '</div>';
+        document.body.appendChild(modal);
+        modal.addEventListener('click', function(ev){ if (ev.target === modal) modal.remove(); });
+      });
+  };
+
+  // ============================================================
+  // NAV WIRING — sidebar link + CEO CTA card
+  // ============================================================
+  function v16tInjectStyle(){
+    if (document.getElementById('v16t-styles')) return;
+    var st = document.createElement('style');
+    st.id = 'v16t-styles';
+    st.textContent =
+      '@keyframes v16tPulse {0%,100%{opacity:1;}50%{opacity:.5;}}' +
+      '.v16t-nav-link {display:flex;align-items:center;gap:10px;padding:10px 14px;color:#cbd5e1;text-decoration:none;font-size:13px;border-radius:6px;cursor:pointer;}' +
+      '.v16t-nav-link:hover {background:rgba(255,255,255,.08);color:white;}' +
+      '.v16t-nav-link.active {background:rgba(139,92,246,.25);color:white;}';
+    document.head.appendChild(st);
+  }
+
+  function v16tInjectSidebarLink(){
+    // Only show for CEO/COO/Super Admin
+    var u = v16tCurUser();
+    if (!u) return;
+    var role = (u.role||'').toLowerCase();
+    var uname = (u.username||'').toLowerCase();
+    var allowed = uname === 'razan' || uname === 'thasbiha' || uname === 'razan.thawus' ||
+                  uname === 'thasbiha.s' || uname === 'nashif.razzak' || uname === 'nafees.razzak' ||
+                  uname === 'superadmin' ||
+                  role.indexOf('ceo') !== -1 || role.indexOf('coo') !== -1 ||
+                  role.indexOf('super admin') !== -1 || role.indexOf('owner') !== -1 ||
+                  (u.level && u.level >= 90);
+    if (!allowed) return;
+
+    // Look for a v16s usermgmt link as the anchor, and insert ours right after
+    var anchor = document.querySelector('[data-v16s-nav], [onclick*="usermgmt"], [data-page="usermgmt"]');
+    var nav = anchor ? anchor.parentNode : (document.querySelector('.sidebar nav') || document.querySelector('aside nav') || document.querySelector('.sidebar'));
+    if (!nav) return;
+    if (nav.querySelector('[data-v16t-nav]')) return; // already injected
+
+    var link = document.createElement('a');
+    link.setAttribute('data-v16t-nav', '1');
+    link.className = 'v16t-nav-link';
+    link.innerHTML = '<i class="fas fa-satellite-dish" style="width:16px;color:#8b5cf6;"></i> <span>Activity Monitor</span>';
+    link.onclick = function(e){ e.preventDefault(); if (typeof window.nav === 'function') window.nav('activitymonitor'); };
+    if (anchor && anchor.nextSibling){
+      nav.insertBefore(link, anchor.nextSibling);
+    } else {
+      nav.appendChild(link);
+    }
+  }
+
+  function v16tWireNav(){
+    v16tInjectStyle();
+
+    // Intercept nav('activitymonitor')
+    try {
+      if (typeof window.nav === 'function' && !window.__v16tNavRouteWrapped){
+        var origNav = window.nav;
+        window.nav = function(page){
+          if (page === 'activitymonitor'){
+            // Fetch and render
+            v16tFetchAll(function(){
+              var host = document.getElementById('mainContent') || document.querySelector('[id="mainContent"]') || document.querySelector('.main-content');
+              if (host){
+                host.innerHTML = window.v16tRenderActivityMonitor();
+              }
+              // Update hash so auto-refresh tracker knows
+              try { location.hash = '#activitymonitor'; } catch(e){}
+              // Mark sidebar item active
+              try {
+                document.querySelectorAll('[data-v16t-nav]').forEach(function(n){ n.classList.add('active'); });
+              } catch(e){}
+              // Start auto-refresh
+              window.v16tToggleAuto(V16T_STATE.autoRefresh);
+            });
+            return;
+          } else {
+            // Stop auto-refresh when navigating away
+            if (V16T_STATE.refreshTimer){ clearInterval(V16T_STATE.refreshTimer); V16T_STATE.refreshTimer = null; }
+            try {
+              document.querySelectorAll('[data-v16t-nav]').forEach(function(n){ n.classList.remove('active'); });
+            } catch(e){}
+          }
+          return origNav.apply(this, arguments);
+        };
+        window.__v16tNavRouteWrapped = true;
+      }
+    } catch(e){}
+
+    // Inject sidebar link periodically (sidebar may render late)
+    var tries = 0;
+    var injectTimer = setInterval(function(){
+      tries++;
+      try { v16tInjectSidebarLink(); } catch(e){}
+      if (tries > 20) clearInterval(injectTimer);
+    }, 700);
+  }
+
+  // ============================================================
+  // BOOT
+  // ============================================================
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(function(){
+        v16tInstallHooks();
+        v16tWireNav();
+      }, 1500);
+    });
+  } else {
+    setTimeout(function(){
+      v16tInstallHooks();
+      v16tWireNav();
+    }, 1500);
+  }
+
+  // Re-run hooks after a longer delay too (in case other v16* modules wrap things later)
+  setTimeout(function(){
+    v16tInstallHooks();
+    v16tWireNav();
+  }, 6000);
+
+  // Log the page load itself
+  setTimeout(function(){
+    try {
+      var u = v16tCurUser();
+      if (u && u.username){
+        window.v16tLog('session_start', '', { ts: Date.now() });
+      }
+    } catch(e){}
+  }, 2500);
+
+  console.log('[v16t] Activity Monitor — loaded. Tracking staff actions; CEO can view via sidebar.');
+})();
+</script>
 <script src="/static/agent-portal.js"></script>
 <script src="/static/media-suite.js"></script>
 <script src="/static/team-comms.js"></script>
