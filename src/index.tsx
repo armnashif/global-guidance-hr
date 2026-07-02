@@ -8114,6 +8114,7 @@ app.post('/api/v16s/users', async (c) => {
         }
 
         await v16sAudit(c, { action:'create', actor, target: norm.username });
+        try { await v16vLog(c, { user: actor, action: 'user.create', target: norm.username, meta: { role: norm.role, fullName: norm.fullName } }); } catch {}
         return c.json({ success:true, user: record });
     } catch (e: any) {
         return c.json({ success:false, error: e?.message||String(e) }, 500);
@@ -8141,6 +8142,7 @@ app.put('/api/v16s/users/:username', async (c) => {
         if (!ok) return c.json({ success:false, error:'KV save failed' }, 500);
 
         await v16sAudit(c, { action:'update', actor, target: username, patch });
+        try { await v16vLog(c, { user: actor, action: 'user.update', target: username, meta: { patch } }); } catch {}
         return c.json({ success:true, user: users[idx] });
     } catch (e: any) {
         return c.json({ success:false, error: e?.message||String(e) }, 500);
@@ -8163,6 +8165,7 @@ app.post('/api/v16s/users/:username/password', async (c) => {
         await v16sSavePasswords(c, pws);
 
         await v16sAudit(c, { action:'password_reset', actor, target: username });
+        try { await v16vLog(c, { user: actor, action: 'user.password_reset', target: username }); } catch {}
         return c.json({ success:true });
     } catch (e: any) {
         return c.json({ success:false, error: e?.message||String(e) }, 500);
@@ -8188,6 +8191,7 @@ app.post('/api/v16s/users/:username/status', async (c) => {
         await v16sSaveUsers(c, users);
 
         await v16sAudit(c, { action:'status_'+status, actor, target: username });
+        try { await v16vLog(c, { user: actor, action: 'user.status_'+status, target: username }); } catch {}
         return c.json({ success:true, user: users[idx] });
     } catch (e: any) {
         return c.json({ success:false, error: e?.message||String(e) }, 500);
@@ -8218,6 +8222,7 @@ app.delete('/api/v16s/users/:username', async (c) => {
         }
 
         await v16sAudit(c, { action:'delete', actor, target: username });
+        try { await v16vLog(c, { user: actor, action: 'user.delete', target: username }); } catch {}
         return c.json({ success:true });
     } catch (e: any) {
         return c.json({ success:false, error: e?.message||String(e) }, 500);
@@ -8663,6 +8668,12 @@ app.post('/api/v16u/heartbeat', async (c) => {
                 prevStatus: prev.status || 'online',
                 newStatus: status
             });
+            // v16v: record status change in daily activity log with real IP
+            try { await v16vLog(c, { user, role, action: 'presence.status_change', target: status, meta: { from: prev.status||'online', to: status, statusMsg } }); } catch {}
+        }
+        // v16v: also detect ONLINE transition (login/come-back-from-away)
+        if (prev.status !== status && status === 'online' && prev.status !== 'online'){
+            try { await v16vLog(c, { user, role, action: 'presence.online', target: 'online', meta: { from: prev.status||'offline' } }); } catch {}
         }
 
         // Compute idle duration (since last active)
@@ -8682,6 +8693,7 @@ app.post('/api/v16u/heartbeat', async (c) => {
                 body: 'Has not interacted with the portal for ' + Math.round(idleMs/60000) + ' minutes.',
                 idleMs
             });
+            try { await v16vLog(c, { user, role, action: 'presence.idle_15', meta: { idleMs, idleMin: Math.round(idleMs/60000) } }); } catch {}
         }
 
         // 30-min mark → push self-alert (returned in response for client to show)
@@ -8703,6 +8715,7 @@ app.post('/api/v16u/heartbeat', async (c) => {
                 body: 'Staff has been auto-alerted to update their status.',
                 idleMs
             });
+            try { await v16vLog(c, { user, role, action: 'presence.idle_30', meta: { idleMs, idleMin: Math.round(idleMs/60000) } }); } catch {}
         }
 
         await v16uSavePresence(c, user, next);
@@ -8850,6 +8863,8 @@ app.post('/api/v16u/capture/request', async (c) => {
         const arr = await kvLoadArr(c, KV_V16U_CAP_REQ);
         arr.push(reqRec);
         await kvSaveArr(c, KV_V16U_CAP_REQ, arr, V16U_CAPREQ_CAP);
+        // v16v: log capture request (CEO-initiated action)
+        try { await v16vLog(c, { user: fromUser, action: 'capture.request', target: targetUser, meta: { kind, note, requestId: reqRec.id } }); } catch {}
         return c.json({ success:true, request: reqRec });
     } catch (e: any) {
         return c.json({ success:false, error: e?.message||String(e) }, 500);
@@ -8897,6 +8912,8 @@ app.post('/api/v16u/capture/respond', async (c) => {
             body: arr[idx].kind + (body?.error ? (' — ' + body.error) : ''),
             requestId
         });
+        // v16v: log capture response
+        try { await v16vLog(c, { user: arr[idx].targetUser, action: 'capture.' + status, target: arr[idx].fromUser, meta: { kind: arr[idx].kind, requestId, error: body?.error||null, hasScreenshot: !!(data && data.screenshot), hasWebcam: !!(data && data.webcam) } }); } catch {}
 
         return c.json({ success:true });
     } catch (e: any) {
@@ -8947,6 +8964,503 @@ app.post('/api/v16u/capture/cancel', async (c) => {
         arr[idx].respondedAt = v16uNow();
         await kvSaveArr(c, KV_V16U_CAP_REQ, arr, V16U_CAPREQ_CAP);
         return c.json({ success:true });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v16v — Daily Activity Recording · Real IP Tracking · 6-Month History · JSON/CSV/PDF Exports
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Design:
+//   - Every meaningful action writes to `v16v:log:YYYY-MM-DD` (KV, ring buffer cap 10000/day)
+//   - Each event includes: real IP (CF-Connecting-IP), geo (city/country from cf object),
+//     ISP, user-agent, timestamp, user, action, target, meta.
+//   - Index of dates with data: `v16v:log:index` (array of YYYY-MM-DD, cap 200)
+//   - Retention: 190 days TTL (~6.3 months) per day-key
+//   - CEO-only endpoints: fetch by date, search, exports (JSON/CSV/PDF)
+//
+// KV keys:
+//   v16v:log:YYYY-MM-DD        → array of events (TTL 190 days)
+//   v16v:log:index             → array of YYYY-MM-DD strings (rolling)
+//   v16v:ip:<user>             → { ip, city, country, isp, ts } (TTL 30 days)
+
+const KV_V16V_INDEX = 'v16v:log:index';
+const V16V_DAY_CAP = 10000;      // max events per day-key
+const V16V_INDEX_CAP = 200;       // max dates tracked (~6.6 months)
+const V16V_TTL_SECS = 60 * 60 * 24 * 190;  // 190 days per day-key
+const V16V_IP_TTL_SECS = 60 * 60 * 24 * 30;// 30 days per user IP
+
+function v16vNow(){ return Date.now(); }
+function v16vId(){ return 'v_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
+
+// Convert a millis timestamp to a YYYY-MM-DD date string in UTC.
+function v16vDateKey(ts?: number): string {
+    const d = new Date(typeof ts === 'number' ? ts : v16vNow());
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+}
+function v16vDayKvKey(date: string): string { return 'v16v:log:' + date; }
+function v16vIpKvKey(user: string): string { return 'v16v:ip:' + (user||'').toLowerCase(); }
+
+// Extract real IP + Cloudflare geo from request context.
+function v16vExtractNet(c: any): { ip: string; city: string; region: string; country: string; timezone: string; isp: string; ua: string } {
+    const ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || '';
+    const ua = (c.req.header('user-agent') || '').slice(0, 200);
+    // Cloudflare-specific geo enrichment
+    const cf: any = (c.req as any).raw?.cf || {};
+    return {
+        ip: String(ip).slice(0, 60),
+        city: String(cf.city || '').slice(0, 60),
+        region: String(cf.region || '').slice(0, 60),
+        country: String(cf.country || '').slice(0, 8),
+        timezone: String(cf.timezone || '').slice(0, 40),
+        isp: String(cf.asOrganization || '').slice(0, 80),
+        ua
+    };
+}
+
+// Load one day's events. Returns [] if none.
+async function v16vLoadDay(c: any, date: string): Promise<any[]> {
+    try {
+        const kv = (c.env as any)?.COMMS;
+        if (!kv) return [];
+        const raw = await kv.get(v16vDayKvKey(date));
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
+}
+
+// Save one day's events with TTL.
+async function v16vSaveDay(c: any, date: string, arr: any[]): Promise<void> {
+    try {
+        const kv = (c.env as any)?.COMMS;
+        if (!kv) return;
+        let trimmed = arr;
+        if (arr.length > V16V_DAY_CAP) trimmed = arr.slice(arr.length - V16V_DAY_CAP);
+        await kv.put(v16vDayKvKey(date), JSON.stringify(trimmed), { expirationTtl: V16V_TTL_SECS });
+    } catch {}
+}
+
+// Add a date to the master index (idempotent).
+async function v16vAddDateToIndex(c: any, date: string): Promise<void> {
+    try {
+        const arr = await kvLoadArr(c, KV_V16V_INDEX);
+        if (arr.indexOf(date) === -1) {
+            arr.push(date);
+            arr.sort();
+            await kvSaveArr(c, KV_V16V_INDEX, arr, V16V_INDEX_CAP);
+        }
+    } catch {}
+}
+
+// Normalise event shape. Auto-adds ts, id, dateKey.
+function v16vNormEvent(e: any, net?: any){
+    if (!e || typeof e !== 'object') return null;
+    const user = String(e.user || e.username || '').trim().toLowerCase();
+    const action = String(e.action || '').trim();
+    if (!user || !action) return null;
+    const ts = typeof e.ts === 'number' ? e.ts : v16vNow();
+    return {
+        id: e.id || v16vId(),
+        ts,
+        date: v16vDateKey(ts),
+        user,
+        role: String(e.role || '').trim(),
+        action,
+        target: e.target ? String(e.target).slice(0, 200) : '',
+        meta: e.meta && typeof e.meta === 'object' ? e.meta : null,
+        ua: e.ua ? String(e.ua).slice(0, 200) : (net?.ua || ''),
+        ip: e.ip ? String(e.ip).slice(0, 60) : (net?.ip || ''),
+        city: e.city || net?.city || '',
+        region: e.region || net?.region || '',
+        country: e.country || net?.country || '',
+        timezone: e.timezone || net?.timezone || '',
+        isp: e.isp || net?.isp || ''
+    };
+}
+
+// Core logger — called from any endpoint. Safe (never throws).
+async function v16vLog(c: any, event: any): Promise<void> {
+    try {
+        const net = v16vExtractNet(c);
+        const ev = v16vNormEvent(event, net);
+        if (!ev) return;
+        const date = ev.date;
+        const day = await v16vLoadDay(c, date);
+        day.push(ev);
+        await v16vSaveDay(c, date, day);
+        await v16vAddDateToIndex(c, date);
+        // Also refresh last-known IP for the user (for quick lookups).
+        try {
+            const kv = (c.env as any)?.COMMS;
+            if (kv && ev.user && ev.ip) {
+                await kv.put(v16vIpKvKey(ev.user), JSON.stringify({
+                    ip: ev.ip, city: ev.city, region: ev.region,
+                    country: ev.country, isp: ev.isp, ts: ev.ts
+                }), { expirationTtl: V16V_IP_TTL_SECS });
+            }
+        } catch {}
+    } catch {}
+}
+
+// CSV escape helper
+function v16vCsvEsc(v: any): string {
+    if (v === null || v === undefined) return '';
+    let s = typeof v === 'string' ? v : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+    if (s.indexOf('"') !== -1 || s.indexOf(',') !== -1 || s.indexOf('\n') !== -1 || s.indexOf('\r') !== -1) {
+        s = '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+}
+function v16vToCsv(events: any[]): string {
+    const cols = ['id','ts','date','time','user','role','action','target','ip','city','region','country','isp','ua','meta'];
+    const rows = [cols.join(',')];
+    for (const e of events) {
+        const d = new Date(e.ts || 0);
+        const timeStr = d.toISOString();
+        rows.push([
+            v16vCsvEsc(e.id), v16vCsvEsc(e.ts), v16vCsvEsc(e.date), v16vCsvEsc(timeStr),
+            v16vCsvEsc(e.user), v16vCsvEsc(e.role), v16vCsvEsc(e.action),
+            v16vCsvEsc(e.target), v16vCsvEsc(e.ip), v16vCsvEsc(e.city),
+            v16vCsvEsc(e.region), v16vCsvEsc(e.country), v16vCsvEsc(e.isp),
+            v16vCsvEsc(e.ua), v16vCsvEsc(e.meta)
+        ].join(','));
+    }
+    return rows.join('\n');
+}
+
+// Minimal PDF builder: pure text-based PDF, no external deps, works on Cloudflare Workers.
+// Renders each event as one line; wraps a page every N lines.
+function v16vToPdf(title: string, events: any[]): Uint8Array {
+    const linesPerPage = 42;
+    const pages: string[][] = [];
+    let cur: string[] = [];
+    cur.push(title);
+    cur.push('Generated: ' + new Date().toISOString());
+    cur.push('Total events: ' + events.length);
+    cur.push('');
+    cur.push('# | Time (UTC) | User | Action | IP | Location');
+    cur.push('--------------------------------------------------------------------');
+    for (let i = 0; i < events.length; i++){
+        const e = events[i];
+        const t = new Date(e.ts || 0).toISOString().replace('T',' ').slice(0,19);
+        const loc = [e.city, e.country].filter(Boolean).join(', ') || '-';
+        const line = (i+1) + ' | ' + t + ' | ' + (e.user||'') + ' | ' + (e.action||'') + ' | ' + (e.ip||'-') + ' | ' + loc;
+        cur.push(line.slice(0, 110));
+        if (cur.length >= linesPerPage){
+            pages.push(cur);
+            cur = [];
+        }
+    }
+    if (cur.length > 0) pages.push(cur);
+    if (pages.length === 0) pages.push(['(empty)']);
+
+    // Build PDF byte-by-byte (Helvetica, 10pt, Letter, one text stream per page).
+    function esc(s: string){ return s.replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)'); }
+    const streams: string[] = [];
+    for (const pageLines of pages){
+        let s = 'BT /F1 10 Tf 40 750 Td 12 TL\n';
+        for (let j=0; j<pageLines.length; j++){
+            s += '(' + esc(pageLines[j]) + ') Tj T*\n';
+        }
+        s += 'ET';
+        streams.push(s);
+    }
+    const objs: string[] = [];
+    // Header
+    let pdf = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
+    const offsets: number[] = [];
+    function encLen(s: string){ return new TextEncoder().encode(s).length; }
+    function addObj(body: string){
+        offsets.push(encLen(pdf));
+        pdf += (objs.length + 1) + ' 0 obj\n' + body + '\nendobj\n';
+        objs.push(body);
+    }
+    // Object 1: Catalog
+    addObj('<< /Type /Catalog /Pages 2 0 R >>');
+    // Object 2: Pages
+    const pageKidsRefs: string[] = [];
+    for (let i=0; i<pages.length; i++) pageKidsRefs.push((3 + i*2) + ' 0 R');
+    addObj('<< /Type /Pages /Count ' + pages.length + ' /Kids [' + pageKidsRefs.join(' ') + '] >>');
+    // For each page: Object N (Page) + Object N+1 (Content stream)
+    const fontObjNum = 3 + pages.length * 2;
+    for (let i=0; i<pages.length; i++){
+        const contentObjNum = 3 + i*2 + 1;  // page obj = 3+i*2, content = 3+i*2+1
+        addObj('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents ' + contentObjNum + ' 0 R /Resources << /Font << /F1 ' + fontObjNum + ' 0 R >> >> >>');
+        const s = streams[i];
+        addObj('<< /Length ' + encLen(s) + ' >>\nstream\n' + s + '\nendstream');
+    }
+    // Font object
+    addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+    // xref
+    const xrefStart = encLen(pdf);
+    pdf += 'xref\n0 ' + (objs.length + 1) + '\n0000000000 65535 f \n';
+    for (const off of offsets){
+        pdf += String(off).padStart(10, '0') + ' 00000 n \n';
+    }
+    pdf += 'trailer\n<< /Size ' + (objs.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefStart + '\n%%EOF';
+    return new TextEncoder().encode(pdf);
+}
+
+// ─── Endpoints ───────────────────────────────────────────────────────────────
+
+// POST /api/v16v/log — log a single event (called by frontend or other endpoints)
+app.post('/api/v16v/log', async (c) => {
+    try {
+        const body = await c.req.json().catch(() => ({}));
+        await v16vLog(c, body);
+        return c.json({ success:true });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16v/dates — list all dates with data (CEO/mgmt)
+app.get('/api/v16v/dates', async (c) => {
+    try {
+        const arr = await kvLoadArr(c, KV_V16V_INDEX);
+        // Also return per-date counts (fast summary)
+        const summary: any[] = [];
+        for (const d of arr.slice(-30)){  // last 30 dates
+            const day = await v16vLoadDay(c, d);
+            summary.push({ date: d, count: day.length });
+        }
+        return c.json({ success:true, dates: arr, recent: summary, now: v16vNow() });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16v/activity/:date — fetch one day's events
+app.get('/api/v16v/activity/:date', async (c) => {
+    try {
+        const date = c.req.param('date');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return c.json({ success:false, error:'invalid date' }, 400);
+        const events = await v16vLoadDay(c, date);
+        return c.json({ success:true, date, count: events.length, events });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16v/search — filter events by user/action/date range
+app.get('/api/v16v/search', async (c) => {
+    try {
+        const userF = String(c.req.query('user') || '').trim().toLowerCase();
+        const actionF = String(c.req.query('action') || '').trim().toLowerCase();
+        const ipF = String(c.req.query('ip') || '').trim();
+        const from = String(c.req.query('from') || '').trim();  // YYYY-MM-DD
+        const to = String(c.req.query('to') || '').trim();
+        const q = String(c.req.query('q') || '').trim().toLowerCase();
+        const limit = Math.min(2000, parseInt(c.req.query('limit')||'500', 10) || 500);
+        const dates = await kvLoadArr(c, KV_V16V_INDEX);
+        const inRange = dates.filter((d: string) => (!from || d >= from) && (!to || d <= to)).sort();
+        const results: any[] = [];
+        for (const d of inRange){
+            const day = await v16vLoadDay(c, d);
+            for (const e of day){
+                if (userF && (e.user||'').toLowerCase() !== userF) continue;
+                if (actionF && (e.action||'').toLowerCase().indexOf(actionF) === -1) continue;
+                if (ipF && (e.ip||'').indexOf(ipF) === -1) continue;
+                if (q){
+                    const hay = ((e.user||'')+' '+(e.action||'')+' '+(e.target||'')+' '+JSON.stringify(e.meta||{})).toLowerCase();
+                    if (hay.indexOf(q) === -1) continue;
+                }
+                results.push(e);
+                if (results.length >= limit) break;
+            }
+            if (results.length >= limit) break;
+        }
+        return c.json({ success:true, count: results.length, events: results });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16v/ip/:user — last-known IP + geo for a user
+app.get('/api/v16v/ip/:user', async (c) => {
+    try {
+        const user = c.req.param('user').toLowerCase();
+        const kv = (c.env as any)?.COMMS;
+        if (!kv) return c.json({ success:false, error:'no kv' }, 500);
+        const raw = await kv.get(v16vIpKvKey(user));
+        if (!raw) return c.json({ success:true, user, ip: null });
+        const rec = JSON.parse(raw);
+        return c.json({ success:true, user, ...rec });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16v/ips — last-known IPs for all users (CEO summary)
+app.get('/api/v16v/ips', async (c) => {
+    try {
+        const kv = (c.env as any)?.COMMS;
+        if (!kv) return c.json({ success:false, error:'no kv' }, 500);
+        // Enumerate v16v:ip:* prefix (single list call)
+        const list = await kv.list({ prefix: 'v16v:ip:', limit: 1000 });
+        const results: any[] = [];
+        for (const k of list.keys || []){
+            try {
+                const raw = await kv.get(k.name);
+                if (raw){
+                    const user = k.name.replace('v16v:ip:', '');
+                    const rec = JSON.parse(raw);
+                    results.push({ user, ...rec });
+                }
+            } catch {}
+        }
+        results.sort((a,b) => (b.ts||0) - (a.ts||0));
+        return c.json({ success:true, count: results.length, users: results });
+    } catch (e: any) {
+        return c.json({ success:false, error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16v/export/:file — download JSON/CSV/PDF for one date.
+// :file must be `YYYY-MM-DD.json` | `.csv` | `.pdf`
+app.get('/api/v16v/export/:file', async (c) => {
+    try {
+        const file = c.req.param('file');
+        const m = /^(\d{4}-\d{2}-\d{2})\.(json|csv|pdf)$/.exec(file);
+        if (!m) return c.json({ error:'invalid file (expected YYYY-MM-DD.{json|csv|pdf})' }, 400);
+        const date = m[1];
+        const ext = m[2];
+        const events = await v16vLoadDay(c, date);
+        if (ext === 'json') {
+            const payload = { date, count: events.length, exportedAt: new Date().toISOString(), events };
+            return new Response(JSON.stringify(payload, null, 2), {
+                headers: {
+                    'Content-Type': 'application/json; charset=utf-8',
+                    'Content-Disposition': `attachment; filename="activity-${date}.json"`
+                }
+            });
+        }
+        if (ext === 'csv') {
+            const csv = v16vToCsv(events);
+            return new Response(csv, {
+                headers: {
+                    'Content-Type': 'text/csv; charset=utf-8',
+                    'Content-Disposition': `attachment; filename="activity-${date}.csv"`
+                }
+            });
+        }
+        // pdf
+        const pdf = v16vToPdf('Global Guidance HR — Activity Log ' + date, events);
+        return new Response(pdf as any, {
+            headers: {
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': `attachment; filename="activity-${date}.pdf"`
+            }
+        });
+    } catch (e: any) {
+        return c.json({ error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16v/export-all/:file?from=&to= — bulk export for whole range
+// :file = all.json | all.csv | all.pdf
+app.get('/api/v16v/export-all/:file', async (c) => {
+    try {
+        const file = c.req.param('file');
+        const m = /^all\.(json|csv|pdf)$/.exec(file);
+        if (!m) return c.json({ error:'invalid file (expected all.{json|csv|pdf})' }, 400);
+        const ext = m[1];
+        const from = String(c.req.query('from') || '').trim();
+        const to = String(c.req.query('to') || '').trim();
+        const dates = await kvLoadArr(c, KV_V16V_INDEX);
+        const inRange = dates.filter((d: string) => (!from || d >= from) && (!to || d <= to)).sort();
+        const today = new Date().toISOString().slice(0,10);
+        if (ext === 'json') {
+            const days: any[] = [];
+            let totalEvents = 0;
+            for (const d of inRange){
+                const day = await v16vLoadDay(c, d);
+                days.push({ date: d, count: day.length, events: day });
+                totalEvents += day.length;
+            }
+            const payload = {
+                exportedAt: new Date().toISOString(),
+                from: from || (inRange[0] || null),
+                to: to || (inRange[inRange.length-1] || null),
+                dateCount: inRange.length,
+                totalEvents,
+                days
+            };
+            return new Response(JSON.stringify(payload, null, 2), {
+                headers: {
+                    'Content-Type': 'application/json; charset=utf-8',
+                    'Content-Disposition': `attachment; filename="activity-all-${today}.json"`
+                }
+            });
+        }
+        const all: any[] = [];
+        for (const d of inRange){
+            const day = await v16vLoadDay(c, d);
+            for (const e of day) all.push(e);
+        }
+        if (ext === 'csv'){
+            const csv = v16vToCsv(all);
+            return new Response(csv, {
+                headers: {
+                    'Content-Type': 'text/csv; charset=utf-8',
+                    'Content-Disposition': `attachment; filename="activity-all-${today}.csv"`
+                }
+            });
+        }
+        // pdf
+        const rangeLabel = (from || inRange[0] || '?') + ' → ' + (to || inRange[inRange.length-1] || '?');
+        const pdf = v16vToPdf('Global Guidance HR — Activity Log ' + rangeLabel, all);
+        return new Response(pdf as any, {
+            headers: {
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': `attachment; filename="activity-all-${today}.pdf"`
+            }
+        });
+    } catch (e: any) {
+        return c.json({ error: e?.message||String(e) }, 500);
+    }
+});
+
+// GET /api/v16v/stats — aggregate stats (top users, top actions, event counts)
+app.get('/api/v16v/stats', async (c) => {
+    try {
+        const from = String(c.req.query('from') || '').trim();
+        const to = String(c.req.query('to') || '').trim();
+        const dates = await kvLoadArr(c, KV_V16V_INDEX);
+        const inRange = dates.filter((d: string) => (!from || d >= from) && (!to || d <= to)).sort();
+        const byUser: Record<string, number> = {};
+        const byAction: Record<string, number> = {};
+        const byDate: Record<string, number> = {};
+        const uniqueIps = new Set<string>();
+        let total = 0;
+        for (const d of inRange){
+            const day = await v16vLoadDay(c, d);
+            byDate[d] = day.length;
+            total += day.length;
+            for (const e of day){
+                byUser[e.user||'?'] = (byUser[e.user||'?']||0) + 1;
+                byAction[e.action||'?'] = (byAction[e.action||'?']||0) + 1;
+                if (e.ip) uniqueIps.add(e.ip);
+            }
+        }
+        const topUsers = Object.entries(byUser).sort((a,b) => (b[1] as number) - (a[1] as number)).slice(0, 20);
+        const topActions = Object.entries(byAction).sort((a,b) => (b[1] as number) - (a[1] as number)).slice(0, 20);
+        return c.json({
+            success: true,
+            range: { from: from || (inRange[0]||null), to: to || (inRange[inRange.length-1]||null) },
+            dateCount: inRange.length,
+            totalEvents: total,
+            uniqueIps: uniqueIps.size,
+            topUsers,
+            topActions,
+            byDate
+        });
     } catch (e: any) {
         return c.json({ success:false, error: e?.message||String(e) }, 500);
     }

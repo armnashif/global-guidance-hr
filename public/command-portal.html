@@ -30711,6 +30711,482 @@ else _tbBoot();
   console.log('[v16u] Idle detection + status notifications + remote capture + salary shake — loaded.');
 })();
 </script>
+<script>
+/*
+ * v16w — Daily Activity History · IP Tracking · JSON/CSV/PDF Exports (frontend)
+ * CEO-only "Activity History" panel accessible via the notification tray button.
+ * All actions go through /api/v16v/*. No dependencies except existing v16u helpers.
+ */
+(function(){
+    'use strict';
+    if (window.__v16w_loaded) return;
+    window.__v16w_loaded = true;
+    try { console.log('[v16w] Activity History + IP tracking + JSON/CSV/PDF exports — loaded.'); } catch {}
+
+    // ── Utils ──
+    function curUser(){
+        try { return (0, eval)('typeof currentUser !== "undefined" ? currentUser : null'); } catch { return null; }
+    }
+    function isCeo(){
+        const u = curUser(); if (!u) return false;
+        const name = String(u.username||'').toLowerCase();
+        const role = String(u.role||'').toLowerCase();
+        return name === 'nashif.razzak' || name === 'superadmin' ||
+               role.indexOf('ceo') !== -1 || role.indexOf('owner') !== -1;
+    }
+    function isManagement(){
+        const u = curUser(); if (!u) return false;
+        const name = String(u.username||'').toLowerCase();
+        const role = String(u.role||'').toLowerCase();
+        return isCeo() || name === 'razan.thawus' || name === 'thasbiha.s' ||
+               role.indexOf('coo') !== -1 || role.indexOf('manager') !== -1 ||
+               role.indexOf('director') !== -1 || role.indexOf('head') !== -1 ||
+               role.indexOf('super admin') !== -1;
+    }
+    function todayStr(){
+        const d = new Date();
+        return d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0');
+    }
+    function daysAgo(n){
+        const d = new Date(Date.now() - n*86400000);
+        return d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0');
+    }
+    function fmtDate(ts){
+        try {
+            const d = new Date(ts);
+            return d.toISOString().replace('T',' ').slice(0,19) + ' UTC';
+        } catch { return String(ts); }
+    }
+    function esc(s){
+        s = String(s == null ? '' : s);
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Auto-log frontend page-visible events (throttled: only meaningful transitions) ──
+    let lastLoginLoggedAt = 0;
+    async function logEvent(action, target, meta){
+        try {
+            const u = curUser(); if (!u) return;
+            await fetch('/api/v16v/log', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    user: u.username, role: u.role || '',
+                    action, target: target||'', meta: meta||null
+                })
+            });
+        } catch {}
+    }
+    // Log login-session start once per fresh page load (throttled)
+    function logSessionStart(){
+        const u = curUser(); if (!u) return;
+        const now = Date.now();
+        if (now - lastLoginLoggedAt < 300000) return;  // once per 5 min
+        lastLoginLoggedAt = now;
+        try {
+            logEvent('session.start', location.pathname, {
+                ua: (navigator.userAgent||'').slice(0,120),
+                platform: navigator.platform || '',
+                lang: navigator.language || ''
+            });
+        } catch {}
+    }
+    // Retry until currentUser is set (up to 30s after page load)
+    let sessionLoggedTries = 0;
+    const _sessionCheckInterval = setInterval(function(){
+        sessionLoggedTries++;
+        if (sessionLoggedTries > 30 || lastLoginLoggedAt > 0){ clearInterval(_sessionCheckInterval); return; }
+        if (curUser()){ logSessionStart(); }
+    }, 1000);
+
+    // ── Panel ──
+    let panelState = {
+        mode: 'daily',       // 'daily' | 'search'
+        date: todayStr(),
+        userFilter: '',
+        actionFilter: '',
+        ipFilter: '',
+        q: '',
+        from: daysAgo(30),
+        to: todayStr(),
+        events: [],
+        loading: false
+    };
+
+    function ensurePanel(){
+        if (document.getElementById('v16wPanel')) return document.getElementById('v16wPanel');
+        // Styles
+        if (!document.getElementById('v16wStyles')){
+            const s = document.createElement('style');
+            s.id = 'v16wStyles';
+            s.textContent = `
+                #v16wPanel { position: fixed; inset: 40px; background:#fff; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.35); z-index: 999998; display:none; overflow:hidden; }
+                #v16wPanel.v16w-open { display:flex; flex-direction:column; }
+                #v16wPanel .v16w-header { display:flex; align-items:center; gap:8px; padding:14px 18px; border-bottom:1px solid #e5e7eb; background:linear-gradient(90deg,#0ea5e9,#6366f1); color:#fff; }
+                #v16wPanel .v16w-header h2 { font-size:18px; font-weight:600; flex:1; margin:0; }
+                #v16wPanel .v16w-header button.v16w-close { background:rgba(255,255,255,0.2); border:none; color:#fff; width:32px; height:32px; border-radius:8px; cursor:pointer; font-size:18px; }
+                #v16wPanel .v16w-header button.v16w-close:hover { background:rgba(255,255,255,0.35); }
+                #v16wPanel .v16w-tabs { display:flex; gap:4px; padding:8px 12px; border-bottom:1px solid #f3f4f6; background:#f9fafb; }
+                #v16wPanel .v16w-tabs button { padding:6px 14px; border:none; background:transparent; border-radius:6px; cursor:pointer; font-size:13px; font-weight:500; color:#374151; }
+                #v16wPanel .v16w-tabs button.active { background:#0ea5e9; color:#fff; }
+                #v16wPanel .v16w-filters { display:flex; flex-wrap:wrap; gap:8px; padding:10px 14px; border-bottom:1px solid #f3f4f6; background:#fafbfc; align-items:center; font-size:12px; }
+                #v16wPanel .v16w-filters label { color:#6b7280; margin-right:4px; }
+                #v16wPanel .v16w-filters input, #v16wPanel .v16w-filters select { border:1px solid #d1d5db; border-radius:6px; padding:5px 8px; font-size:12px; background:#fff; }
+                #v16wPanel .v16w-filters button { padding:5px 12px; border-radius:6px; font-size:12px; font-weight:500; cursor:pointer; border:1px solid transparent; }
+                #v16wPanel .v16w-filters button.primary { background:#0ea5e9; color:#fff; }
+                #v16wPanel .v16w-filters button.primary:hover { background:#0284c7; }
+                #v16wPanel .v16w-filters button.secondary { background:#fff; color:#374151; border-color:#d1d5db; }
+                #v16wPanel .v16w-filters button.export { background:#10b981; color:#fff; }
+                #v16wPanel .v16w-filters button.export:hover { background:#059669; }
+                #v16wPanel .v16w-stats { padding:8px 16px; background:#f0f9ff; border-bottom:1px solid #bae6fd; font-size:12px; color:#075985; display:flex; gap:16px; flex-wrap:wrap; }
+                #v16wPanel .v16w-stats b { font-weight:600; color:#0c4a6e; }
+                #v16wPanel .v16w-body { flex:1; overflow:auto; }
+                #v16wPanel table { width:100%; border-collapse:collapse; font-size:12px; }
+                #v16wPanel thead th { position:sticky; top:0; background:#f9fafb; z-index:1; padding:8px 10px; border-bottom:2px solid #e5e7eb; text-align:left; font-weight:600; color:#374151; text-transform:uppercase; font-size:10px; letter-spacing:0.05em; }
+                #v16wPanel tbody td { padding:6px 10px; border-bottom:1px solid #f3f4f6; vertical-align:top; color:#111827; }
+                #v16wPanel tbody tr:hover { background:#f9fafb; }
+                #v16wPanel .v16w-action-badge { display:inline-block; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:500; background:#eef2ff; color:#3730a3; }
+                #v16wPanel .v16w-ip { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; color:#065f46; }
+                #v16wPanel .v16w-loc { color:#6b7280; font-size:11px; }
+                #v16wPanel .v16w-empty { padding:60px 20px; text-align:center; color:#6b7280; }
+                #v16wPanel .v16w-meta { color:#6b7280; font-size:11px; font-family:ui-monospace,monospace; max-width:250px; word-break:break-all; }
+                #v16wBtn { position:fixed; bottom:88px; right:20px; z-index:999997; background:linear-gradient(135deg,#0ea5e9,#6366f1); color:#fff; border:none; padding:10px 14px; border-radius:10px; box-shadow:0 4px 14px rgba(14,165,233,0.4); cursor:pointer; font-weight:500; font-size:13px; display:none; }
+                #v16wBtn.v16w-visible { display:flex; align-items:center; gap:6px; }
+                #v16wBtn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(14,165,233,0.5); }
+                @media (max-width:640px){
+                    #v16wPanel { inset: 10px; }
+                    #v16wPanel .v16w-filters { padding:8px; gap:6px; }
+                    #v16wPanel .v16w-filters input, #v16wPanel .v16w-filters select { min-width:0; }
+                    #v16wPanel thead th, #v16wPanel tbody td { padding:6px 5px; font-size:11px; }
+                    #v16wBtn { bottom:74px; right:10px; padding:8px 12px; font-size:12px; }
+                }
+            `;
+            document.head.appendChild(s);
+        }
+
+        const panel = document.createElement('div');
+        panel.id = 'v16wPanel';
+        panel.innerHTML = `
+            <div class="v16w-header">
+                <i class="fas fa-history"></i>
+                <h2>Activity History &amp; Audit Log</h2>
+                <button class="v16w-close" onclick="v16wClose()" title="Close">&times;</button>
+            </div>
+            <div class="v16w-tabs">
+                <button class="v16w-tab active" data-mode="daily" onclick="v16wSetMode('daily')"><i class="fas fa-calendar-day"></i> Daily View</button>
+                <button class="v16w-tab" data-mode="search" onclick="v16wSetMode('search')"><i class="fas fa-search"></i> Search &amp; Range</button>
+                <button class="v16w-tab" data-mode="ips" onclick="v16wSetMode('ips')"><i class="fas fa-network-wired"></i> IP Addresses</button>
+                <button class="v16w-tab" data-mode="stats" onclick="v16wSetMode('stats')"><i class="fas fa-chart-bar"></i> Stats</button>
+            </div>
+            <div id="v16wFilters" class="v16w-filters"></div>
+            <div id="v16wStatsBar" class="v16w-stats" style="display:none;"></div>
+            <div id="v16wBody" class="v16w-body"></div>
+        `;
+        document.body.appendChild(panel);
+        return panel;
+    }
+
+    function renderFilters(){
+        const el = document.getElementById('v16wFilters');
+        if (!el) return;
+        if (panelState.mode === 'daily'){
+            el.innerHTML = `
+                <label>Date:</label>
+                <input type="date" id="v16wDate" value="${panelState.date}" max="${todayStr()}" onchange="v16wSetDate(this.value)"/>
+                <button class="secondary" onclick="v16wShiftDay(-1)"><i class="fas fa-chevron-left"></i></button>
+                <button class="secondary" onclick="v16wShiftDay(1)"><i class="fas fa-chevron-right"></i></button>
+                <button class="secondary" onclick="v16wSetDate('${todayStr()}')">Today</button>
+                <button class="primary" onclick="v16wReload()"><i class="fas fa-sync"></i> Reload</button>
+                <span style="flex:1;"></span>
+                <button class="export" onclick="v16wDownload('json')"><i class="fas fa-file-code"></i> JSON</button>
+                <button class="export" onclick="v16wDownload('csv')"><i class="fas fa-file-csv"></i> CSV</button>
+                <button class="export" onclick="v16wDownload('pdf')"><i class="fas fa-file-pdf"></i> PDF</button>
+            `;
+        } else if (panelState.mode === 'search'){
+            el.innerHTML = `
+                <label>From:</label>
+                <input type="date" id="v16wFrom" value="${panelState.from}" onchange="v16wUpd('from',this.value)"/>
+                <label>To:</label>
+                <input type="date" id="v16wTo" value="${panelState.to}" onchange="v16wUpd('to',this.value)"/>
+                <label>User:</label>
+                <input type="text" placeholder="username" value="${esc(panelState.userFilter)}" oninput="v16wUpd('userFilter',this.value)" style="width:110px;"/>
+                <label>Action:</label>
+                <input type="text" placeholder="e.g. capture" value="${esc(panelState.actionFilter)}" oninput="v16wUpd('actionFilter',this.value)" style="width:110px;"/>
+                <label>IP:</label>
+                <input type="text" placeholder="1.2.3." value="${esc(panelState.ipFilter)}" oninput="v16wUpd('ipFilter',this.value)" style="width:110px;"/>
+                <label>Q:</label>
+                <input type="text" placeholder="text search" value="${esc(panelState.q)}" oninput="v16wUpd('q',this.value)" style="width:140px;"/>
+                <button class="primary" onclick="v16wSearch()"><i class="fas fa-search"></i> Search</button>
+                <span style="flex:1;"></span>
+                <button class="export" onclick="v16wDownloadAll('json')"><i class="fas fa-file-code"></i> All JSON</button>
+                <button class="export" onclick="v16wDownloadAll('csv')"><i class="fas fa-file-csv"></i> All CSV</button>
+                <button class="export" onclick="v16wDownloadAll('pdf')"><i class="fas fa-file-pdf"></i> All PDF</button>
+            `;
+        } else if (panelState.mode === 'ips'){
+            el.innerHTML = `
+                <button class="primary" onclick="v16wLoadIps()"><i class="fas fa-sync"></i> Reload</button>
+                <span style="color:#6b7280;font-size:11px;">Last-known IP addresses per staff (retained 30 days).</span>
+            `;
+        } else if (panelState.mode === 'stats'){
+            el.innerHTML = `
+                <label>From:</label>
+                <input type="date" id="v16wStatsFrom" value="${panelState.from}" onchange="v16wUpd('from',this.value)"/>
+                <label>To:</label>
+                <input type="date" id="v16wStatsTo" value="${panelState.to}" onchange="v16wUpd('to',this.value)"/>
+                <button class="primary" onclick="v16wLoadStats()"><i class="fas fa-chart-bar"></i> Compute</button>
+            `;
+        }
+    }
+
+    function renderStats(payload){
+        const el = document.getElementById('v16wStatsBar');
+        if (!el) return;
+        if (!payload || !payload.success){ el.style.display='none'; return; }
+        el.style.display='flex';
+        el.innerHTML = `
+            <span><b>Range:</b> ${esc(payload.range?.from||'-')} → ${esc(payload.range?.to||'-')}</span>
+            <span><b>Days:</b> ${payload.dateCount}</span>
+            <span><b>Events:</b> ${payload.totalEvents.toLocaleString()}</span>
+            <span><b>Unique IPs:</b> ${payload.uniqueIps}</span>
+        `;
+    }
+
+    function renderTable(events){
+        const el = document.getElementById('v16wBody');
+        if (!el) return;
+        if (!events || events.length === 0){
+            el.innerHTML = `<div class="v16w-empty"><i class="fas fa-inbox" style="font-size:32px;color:#d1d5db;"></i><br/><br/>No events for this selection.</div>`;
+            return;
+        }
+        const rows = events.slice(0, 2000).map((e,i) => {
+            const loc = [e.city, e.country].filter(Boolean).join(', ') || '';
+            const meta = e.meta ? JSON.stringify(e.meta) : '';
+            return `
+                <tr>
+                    <td style="color:#6b7280;">${i+1}</td>
+                    <td>${esc(fmtDate(e.ts))}</td>
+                    <td><b>${esc(e.user||'')}</b>${e.role ? '<br/><span style="color:#6b7280;font-size:11px;">'+esc(e.role)+'</span>' : ''}</td>
+                    <td><span class="v16w-action-badge">${esc(e.action)}</span>${e.target ? '<br/><span style="color:#6b7280;font-size:11px;">→ '+esc(e.target)+'</span>' : ''}</td>
+                    <td class="v16w-ip">${esc(e.ip||'-')}</td>
+                    <td class="v16w-loc">${esc(loc)}${e.isp ? '<br/>'+esc(e.isp) : ''}</td>
+                    <td class="v16w-meta">${esc(meta)}</td>
+                </tr>
+            `;
+        }).join('');
+        el.innerHTML = `
+            <table>
+                <thead><tr>
+                    <th>#</th><th>Time (UTC)</th><th>User</th><th>Action</th><th>IP</th><th>Location / ISP</th><th>Details</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+    }
+
+    function renderIps(users){
+        const el = document.getElementById('v16wBody');
+        if (!el) return;
+        if (!users || users.length === 0){
+            el.innerHTML = `<div class="v16w-empty">No IP records yet.</div>`;
+            return;
+        }
+        const rows = users.map((u,i) => {
+            const loc = [u.city, u.country].filter(Boolean).join(', ') || '-';
+            return `
+                <tr>
+                    <td style="color:#6b7280;">${i+1}</td>
+                    <td><b>${esc(u.user)}</b></td>
+                    <td class="v16w-ip">${esc(u.ip||'-')}</td>
+                    <td class="v16w-loc">${esc(loc)}</td>
+                    <td class="v16w-loc">${esc(u.isp||'')}</td>
+                    <td>${esc(fmtDate(u.ts))}</td>
+                </tr>
+            `;
+        }).join('');
+        el.innerHTML = `
+            <table>
+                <thead><tr><th>#</th><th>User</th><th>IP</th><th>Location</th><th>ISP</th><th>Last seen</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+    }
+
+    function renderStatsFull(payload){
+        const el = document.getElementById('v16wBody');
+        if (!el) return;
+        if (!payload || !payload.success){ el.innerHTML='<div class="v16w-empty">No stats.</div>'; return; }
+        const topUsersRows = (payload.topUsers||[]).map(([u,n],i) => `<tr><td>${i+1}</td><td><b>${esc(u)}</b></td><td>${n}</td></tr>`).join('');
+        const topActionsRows = (payload.topActions||[]).map(([a,n],i) => `<tr><td>${i+1}</td><td><span class="v16w-action-badge">${esc(a)}</span></td><td>${n}</td></tr>`).join('');
+        const byDateRows = Object.entries(payload.byDate||{}).sort().reverse().slice(0,60).map(([d,n]) => `<tr><td>${esc(d)}</td><td>${n}</td></tr>`).join('');
+        el.innerHTML = `
+            <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+                <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                    <div style="padding:10px 12px;background:#fff;border-bottom:1px solid #e5e7eb;font-weight:600;font-size:13px;">Top Users</div>
+                    <table><thead><tr><th>#</th><th>User</th><th>Events</th></tr></thead><tbody>${topUsersRows||'<tr><td colspan="3" style="text-align:center;color:#9ca3af;padding:20px;">No data</td></tr>'}</tbody></table>
+                </div>
+                <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                    <div style="padding:10px 12px;background:#fff;border-bottom:1px solid #e5e7eb;font-weight:600;font-size:13px;">Top Actions</div>
+                    <table><thead><tr><th>#</th><th>Action</th><th>Count</th></tr></thead><tbody>${topActionsRows||'<tr><td colspan="3" style="text-align:center;color:#9ca3af;padding:20px;">No data</td></tr>'}</tbody></table>
+                </div>
+                <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                    <div style="padding:10px 12px;background:#fff;border-bottom:1px solid #e5e7eb;font-weight:600;font-size:13px;">Daily Volume</div>
+                    <table><thead><tr><th>Date</th><th>Events</th></tr></thead><tbody>${byDateRows||'<tr><td colspan="2" style="text-align:center;color:#9ca3af;padding:20px;">No data</td></tr>'}</tbody></table>
+                </div>
+            </div>
+        `;
+    }
+
+    // ── API ──
+    async function loadDaily(){
+        panelState.loading = true;
+        try {
+            const r = await fetch('/api/v16v/activity/' + panelState.date);
+            const j = await r.json();
+            if (j.success){
+                panelState.events = j.events || [];
+                renderTable(panelState.events);
+            } else {
+                document.getElementById('v16wBody').innerHTML = `<div class="v16w-empty">Error: ${esc(j.error||'unknown')}</div>`;
+            }
+        } catch (e){
+            document.getElementById('v16wBody').innerHTML = `<div class="v16w-empty">Network error: ${esc(e.message||e)}</div>`;
+        }
+        panelState.loading = false;
+    }
+
+    async function search(){
+        panelState.loading = true;
+        const q = new URLSearchParams();
+        if (panelState.userFilter) q.set('user', panelState.userFilter);
+        if (panelState.actionFilter) q.set('action', panelState.actionFilter);
+        if (panelState.ipFilter) q.set('ip', panelState.ipFilter);
+        if (panelState.q) q.set('q', panelState.q);
+        if (panelState.from) q.set('from', panelState.from);
+        if (panelState.to) q.set('to', panelState.to);
+        q.set('limit', '2000');
+        try {
+            const r = await fetch('/api/v16v/search?' + q.toString());
+            const j = await r.json();
+            if (j.success){
+                panelState.events = j.events || [];
+                renderTable(panelState.events);
+            } else {
+                document.getElementById('v16wBody').innerHTML = `<div class="v16w-empty">Error: ${esc(j.error||'unknown')}</div>`;
+            }
+        } catch (e){
+            document.getElementById('v16wBody').innerHTML = `<div class="v16w-empty">Network error: ${esc(e.message||e)}</div>`;
+        }
+        panelState.loading = false;
+    }
+
+    async function loadIps(){
+        try {
+            const r = await fetch('/api/v16v/ips');
+            const j = await r.json();
+            if (j.success){ renderIps(j.users||[]); }
+            else document.getElementById('v16wBody').innerHTML = `<div class="v16w-empty">Error: ${esc(j.error||'unknown')}</div>`;
+        } catch (e){
+            document.getElementById('v16wBody').innerHTML = `<div class="v16w-empty">Network error: ${esc(e.message||e)}</div>`;
+        }
+    }
+
+    async function loadStats(){
+        try {
+            const q = new URLSearchParams();
+            if (panelState.from) q.set('from', panelState.from);
+            if (panelState.to) q.set('to', panelState.to);
+            const r = await fetch('/api/v16v/stats?' + q.toString());
+            const j = await r.json();
+            renderStats(j);
+            renderStatsFull(j);
+        } catch (e){
+            document.getElementById('v16wBody').innerHTML = `<div class="v16w-empty">Network error: ${esc(e.message||e)}</div>`;
+        }
+    }
+
+    // ── Public actions ──
+    window.v16wOpen = function(){
+        if (!isManagement()){
+            alert('Activity History is available to CEO / management only.');
+            return;
+        }
+        const p = ensurePanel();
+        p.classList.add('v16w-open');
+        applyMode();
+    };
+    window.v16wClose = function(){
+        const p = document.getElementById('v16wPanel');
+        if (p) p.classList.remove('v16w-open');
+    };
+    window.v16wSetMode = function(m){
+        panelState.mode = m;
+        document.querySelectorAll('#v16wPanel .v16w-tab').forEach(b => {
+            b.classList.toggle('active', b.dataset.mode === m);
+        });
+        applyMode();
+    };
+    function applyMode(){
+        renderFilters();
+        const sb = document.getElementById('v16wStatsBar'); if (sb) sb.style.display='none';
+        if (panelState.mode === 'daily'){ loadDaily(); }
+        else if (panelState.mode === 'search'){ document.getElementById('v16wBody').innerHTML = `<div class="v16w-empty">Choose filters and click <b>Search</b>.</div>`; }
+        else if (panelState.mode === 'ips'){ loadIps(); }
+        else if (panelState.mode === 'stats'){ loadStats(); }
+    }
+    window.v16wSetDate = function(d){ panelState.date = d; loadDaily(); };
+    window.v16wShiftDay = function(delta){
+        const d = new Date(panelState.date + 'T00:00:00Z');
+        d.setUTCDate(d.getUTCDate() + delta);
+        const s = d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0');
+        panelState.date = s;
+        const inp = document.getElementById('v16wDate'); if (inp) inp.value = s;
+        loadDaily();
+    };
+    window.v16wUpd = function(k, v){ panelState[k] = v; };
+    window.v16wReload = function(){ if (panelState.mode==='daily') loadDaily(); else if (panelState.mode==='search') search(); else if (panelState.mode==='ips') loadIps(); else if (panelState.mode==='stats') loadStats(); };
+    window.v16wSearch = search;
+    window.v16wLoadIps = loadIps;
+    window.v16wLoadStats = loadStats;
+    window.v16wDownload = function(ext){
+        const url = '/api/v16v/export/' + panelState.date + '.' + ext;
+        window.open(url, '_blank');
+    };
+    window.v16wDownloadAll = function(ext){
+        const q = new URLSearchParams();
+        if (panelState.from) q.set('from', panelState.from);
+        if (panelState.to) q.set('to', panelState.to);
+        const url = '/api/v16v/export-all/all.' + ext + (q.toString() ? '?' + q.toString() : '');
+        window.open(url, '_blank');
+    };
+
+    // ── Launcher button (bottom-right, CEO/mgmt only) ──
+    function ensureButton(){
+        if (document.getElementById('v16wBtn')) return;
+        const b = document.createElement('button');
+        b.id = 'v16wBtn';
+        b.innerHTML = '<i class="fas fa-history"></i> Activity History';
+        b.onclick = window.v16wOpen;
+        document.body.appendChild(b);
+    }
+    function maybeShowButton(){
+        const b = document.getElementById('v16wBtn');
+        if (!b) return;
+        if (isManagement()){ b.classList.add('v16w-visible'); }
+        else { b.classList.remove('v16w-visible'); }
+    }
+
+    function init(){
+        ensureButton();
+        maybeShowButton();
+        setInterval(maybeShowButton, 3000);
+    }
+    if (document.readyState === 'complete' || document.readyState === 'interactive'){
+        setTimeout(init, 300);
+    } else {
+        document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 300); });
+    }
+})();
+</script>
 <script src="/static/agent-portal.js"></script>
 <script src="/static/media-suite.js"></script>
 <script src="/static/team-comms.js"></script>
