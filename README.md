@@ -6,10 +6,66 @@
 - **Stack**: Hono on Cloudflare Pages · Vanilla JS SPA · Cloudflare KV (binding `COMMS`)
 
 ## URLs
-- **Production**: https://26262f30.webapp-2il.pages.dev (v16v/v16w, deployed 2026-07-01)
-- **Previous**: https://aad9c459.webapp-2il.pages.dev (v16u)
+- **Production**: https://6c3e1f61.webapp-2il.pages.dev (v16x, deployed 2026-07-02)
+- **Previous**: https://26262f30.webapp-2il.pages.dev (v16v/v16w, deployed 2026-07-01)
 - **Alias**: https://webapp-2il.pages.dev (always points to latest)
 - **Local dev**: http://localhost:3000 (PM2)
+## v16x — Attendance Status View · My Tasks · Staff Reports Drill-Down · CEO Gating (2026-07-02)
+
+**User request** (v16x round): Fix 5 bugs/enhancements:
+1. Non-CEO users (Shiran) were seeing the green "Staff Reports" button in the top bar — should be CEO-only
+2. When staff clicked "My Attendance" AFTER already checking in, the wizard re-appeared instead of showing their attendance status
+3. Post-check-in view must show check-in time, live working hours, and mode
+4. Add a "My Tasks / My Daily To-Dos" page separate from the dashboard
+5. Staff Reports for CEO must allow per-staff drill-down with daily/weekly/monthly/history + JSON/CSV/PDF downloads
+
+### Fixes (v16x — frontend-only IIFE, ~970 lines spliced after v16w)
+
+- **Attendance re-flow fixed** — `renderV16lAttendance` is now wrapped to check `attendanceState.checkinDone`. When true, staff see a beautiful status card: check-in time, **live working-hours timer** (updates every 30s), mode chip, tasks-done ratio + P1/P2 checklist rows, and a big "Check out & file EOD" button. `v16lAttInit` is also wrapped to skip GPS/form init when showing the status view.
+
+- **Staff Reports gating hardened** — `v16xEnforceStaffReportsBtn()` runs at 0.8s / 2s / 4s and then every 3s. Removes `#v16iAdminBtn` (top-bar) and `#v16jNavStaffReports` (side-nav) for any user who is not CEO. Also scans `[onclick*="adminreports"]` and `[data-page="adminreports"]` for defensive removal.
+
+- **Activity History button visibility** — `v16xEnsureActivityBtn()` runs every 3s and force-sets `display:inline-flex` on `#v16wBtn` for management users (fights CSS override issues).
+
+### New pages
+
+- **`nav('mytasks')` — My Tasks / My Daily To-Dos**
+  - Personal to-do list (backed by `attendanceState.tasks` so it syncs with attendance flow)
+  - Add form with priority selector (P1/P2/P3), inline edit + delete
+  - Progress bar + grouped by priority
+  - Nav item auto-injected in side-nav after "My Attendance"
+
+- **`nav('staffreports')` — CEO Staff Reports drill-down** (CEO-only)
+  - Range picker: 7d / 30d / 90d / **6 months**
+  - Grid of per-staff cards showing days logged, avg completion, task rate, latest date
+  - Click any card → modal with 4 tabs:
+    - **Daily** — full EOD reports with achievements, issues, tomorrow's plan, all tasks
+    - **Weekly** — ISO-week buckets with avg completion + task rate
+    - **Monthly** — YYYY-MM buckets with avg completion + task rate
+    - **History** — compact table of every date with check-in / out / mode / % / tasks
+  - **Per-staff downloads**: JSON, CSV, PDF (pure-JS PDF-1.4 builder — no fs/Node APIs, Workers-compatible)
+  - **Bulk downloads** for all staff: JSON, CSV, PDF
+  - Data source: existing `/api/v16g/daily-reports/range?days=N` endpoint (no backend changes needed)
+  - CEO top-bar Staff Reports button rewired to open this new page
+
+### Tests (Playwright — v16x_test.mjs)
+- **T1**: Shiran (staff, level 40) → logged in, top-bar Staff Reports button removed, side-nav Staff Reports removed
+- **T2**: After setting `checkinDone`, attendance page shows status view (no wizard)
+- **T3**: My Tasks page renders with add form; `v16xTaskAdd` adds a task; nav item "My Tasks" injected
+- **T4**: CEO (nashif.razzak) → Staff Reports + Activity History both visible; render functions loaded
+- **T5**: Staff Reports drill-down page renders staff cards with real userIds (e.g. GG003)
+- **T6**: JSON/CSV/PDF download functions loaded (`v16xSrDownload`, `v16xSrDownloadUser`, `v16xSrDrilldown`)
+- **T7**: v16v backend endpoints (`/api/v16v/stats`, `/api/v16v/dates`) still 200
+- **Result: 15/15 PASS, 0 JS errors**
+
+### Deployment
+- **Production**: https://6c3e1f61.webapp-2il.pages.dev (deployed 2026-07-02, main branch alias)
+- **Alias**: https://webapp-2il.pages.dev
+- **Build size**: 4362.90 kB
+- **Total lines**: `public/command-portal.html` 32,163 lines (+969 from v16w)
+- **Commit**: `73bbdeb`
+
+
 
 ## v16v / v16w — Daily Activity Recording · Real IP Tracking · 6-Month History · JSON/CSV/PDF Exports (latest, shipped 2026-07-01)
 
