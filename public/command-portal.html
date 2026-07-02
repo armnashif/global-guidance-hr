@@ -31187,6 +31187,975 @@ else _tbBoot();
     }
 })();
 </script>
+<script>
+/* ============================================================
+ * v16x — Bug fixes and enhancements (2026-07-02)
+ * ------------------------------------------------------------
+ *  1) Post-check-in "My Attendance" status view (no more re-flow)
+ *  2) "My Tasks / My Daily To-Dos" — new page + nav item for staff
+ *  3) Staff Reports button — CEO-only + defensive removal for non-CEO
+ *  4) Activity History button — verified visibility for management
+ *  5) CEO Staff Reports drill-down — per-staff daily/weekly/monthly/history
+ *     with JSON+CSV+PDF downloads
+ * All additive; runs after v16w.
+ * ============================================================ */
+(function v16xBoot(){
+    'use strict';
+
+    // ---- helpers ---------------------------------------------------------
+    function curUser(){
+        try { return (0, eval)('typeof currentUser !== "undefined" ? currentUser : null'); }
+        catch(e){ return null; }
+    }
+    function attState(){
+        try { return (0, eval)('typeof attendanceState !== "undefined" ? attendanceState : null'); }
+        catch(e){ return null; }
+    }
+    function ESC(s){
+        return String(s == null ? '' : s)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+    function isCeo(u){
+        u = u || curUser(); if (!u) return false;
+        const name = String(u.username || '').toLowerCase();
+        const role = String(u.role || '').toLowerCase();
+        return name === 'nashif.razzak' || name === 'superadmin' ||
+               role.indexOf('ceo') !== -1 || role.indexOf('owner') !== -1 ||
+               (u.level && u.level >= 100);
+    }
+    function isManagement(u){
+        u = u || curUser(); if (!u) return false;
+        if (isCeo(u)) return true;
+        const name = String(u.username || '').toLowerCase();
+        const role = String(u.role || '').toLowerCase();
+        return name === 'razan.thawus' || name === 'thasbiha.s' ||
+               role.indexOf('coo') !== -1 || role.indexOf('manager') !== -1 ||
+               role.indexOf('director') !== -1 || role.indexOf('head') !== -1 ||
+               role.indexOf('super admin') !== -1 || (u.level && u.level >= 80);
+    }
+    function todayStr(){
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+
+    // ============================================================
+    // FIX #3 — Staff Reports button: defensive REMOVAL for non-CEO
+    // ============================================================
+    function v16xEnforceStaffReportsBtn(){
+        try {
+            const u = curUser();
+            const showCEO = isCeo(u);
+            // Top-bar button (injected by v16i)
+            const topBtn = document.getElementById('v16iAdminBtn');
+            if (topBtn && !showCEO) topBtn.remove();
+            // Side-nav item (injected by v16j)
+            const navLink = document.getElementById('v16jNavStaffReports');
+            if (navLink && !showCEO) navLink.remove();
+            // Also scan for any element containing "Staff Reports" text and remove for non-CEO
+            if (!showCEO) {
+                document.querySelectorAll('[onclick*="adminreports"], [data-page="adminreports"]').forEach(function(el){
+                    // Only remove if it's clearly the standalone staff-reports quick-link (not part of a big block)
+                    const txt = (el.textContent || '').toLowerCase();
+                    if (txt.indexOf('staff report') !== -1 && el.tagName !== 'BODY' && el.tagName !== 'MAIN') {
+                        // Skip modal titles / big containers — only remove small link/button elements
+                        if (el.tagName === 'BUTTON' || el.tagName === 'A' || (el.tagName === 'DIV' && el.children.length <= 3)) {
+                            el.remove();
+                        }
+                    }
+                });
+            }
+        } catch(e){}
+    }
+    // Run early + repeatedly to catch late injections
+    setTimeout(v16xEnforceStaffReportsBtn, 800);
+    setTimeout(v16xEnforceStaffReportsBtn, 2000);
+    setTimeout(v16xEnforceStaffReportsBtn, 4000);
+    setInterval(v16xEnforceStaffReportsBtn, 3000);
+
+    // ============================================================
+    // FIX #1 — Post-check-in "My Attendance" status view
+    // Wrap renderV16lAttendance so if attendanceState.checkinDone,
+    // we skip the wizard and show the working-hours status page.
+    // ============================================================
+    function workingHoursLabel(att){
+        if (!att || !att.checkinDone || !att.checkinSubmittedAt) return '—';
+        try {
+            const m = String(att.checkinSubmittedAt).trim().match(/^(\d{1,2}):(\d{2})/);
+            if (!m) return '—';
+            let h = parseInt(m[1],10), mm = parseInt(m[2],10);
+            if (!Number.isFinite(h) || !Number.isFinite(mm)) return '—';
+            const now = new Date();
+            const checkIn = new Date(); checkIn.setHours(h, mm, 0, 0);
+            let end = now;
+            if (att.eodDone && att.eodSubmittedAt) {
+                const em = String(att.eodSubmittedAt).trim().match(/^(\d{1,2}):(\d{2})/);
+                if (em) {
+                    const eh = parseInt(em[1],10), emin = parseInt(em[2],10);
+                    end = new Date(); end.setHours(eh, emin, 0, 0);
+                }
+            }
+            let diff = Math.max(0, (end - checkIn) / 60000);
+            const hh = Math.floor(diff / 60), mn = Math.floor(diff % 60);
+            return hh + 'h ' + String(mn).padStart(2,'0') + 'm';
+        } catch(e){ return '—'; }
+    }
+
+    function renderV16xAttendanceStatus(){
+        const u = curUser() || {};
+        const att = attState() || {};
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+        const wh = workingHoursLabel(att);
+        const mode = att.mode || 'Office';
+        const inTime = att.checkinSubmittedAt || '—';
+        const outTime = att.eodSubmittedAt || '';
+        const dayComplete = !!att.eodDone;
+        const statusPill = dayComplete
+            ? '<span style="display:inline-flex;align-items:center;gap:6px;background:#dbeafe;color:#1e40af;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600"><i class="fas fa-flag-checkered"></i> Day complete</span>'
+            : '<span style="display:inline-flex;align-items:center;gap:6px;background:#dcfce7;color:#166534;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600"><i class="fas fa-circle" style="font-size:8px"></i> Working now</span>';
+
+        // Tasks summary
+        const tasks = Array.isArray(att.tasks) ? att.tasks : [];
+        const doneN = tasks.filter(t => t && t.done).length;
+        const totalN = tasks.length;
+        const p1Rows = tasks.filter(t => t && t.p === 'P1').slice(0, 20);
+        const p2Rows = tasks.filter(t => t && t.p === 'P2').slice(0, 20);
+
+        const tasksBlock = (totalN === 0) ? '' : (
+            '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-top:14px">'
+          +   '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+          +     '<div style="font-size:14px;font-weight:700;color:var(--text)"><i class="fas fa-list-check"></i> Today\'s Tasks</div>'
+          +     '<div style="font-size:12px;color:var(--muted);font-weight:600">' + doneN + ' / ' + totalN + ' complete</div>'
+          +   '</div>'
+          +   '<div style="background:var(--surface2);height:6px;border-radius:3px;overflow:hidden;margin-bottom:12px">'
+          +     '<div style="height:100%;width:' + (totalN ? Math.round(doneN*100/totalN) : 0) + '%;background:linear-gradient(90deg,#16a34a,#22c55e);transition:width 0.5s"></div>'
+          +   '</div>'
+          +   (p1Rows.length ? '<div style="font-size:11px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.05em;margin:8px 0 6px">P1 · Critical</div>' : '')
+          +   p1Rows.map(function(t, i){
+                const idx = tasks.indexOf(t);
+                return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px">'
+                    + '<input type="checkbox" ' + (t.done?'checked':'') + ' onchange="try{attendanceState.tasks[' + idx + '].done=this.checked;saveAtt();nav(\'attendance\');}catch(e){}" style="width:16px;height:16px;cursor:pointer;accent-color:#16a34a">'
+                    + '<span style="flex:1;color:var(--text);' + (t.done?'text-decoration:line-through;color:var(--muted)':'') + '">' + ESC(t.text||'') + '</span>'
+                  + '</div>';
+            }).join('')
+          +   (p2Rows.length ? '<div style="font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.05em;margin:12px 0 6px">P2 · Important</div>' : '')
+          +   p2Rows.map(function(t, i){
+                const idx = tasks.indexOf(t);
+                return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px">'
+                    + '<input type="checkbox" ' + (t.done?'checked':'') + ' onchange="try{attendanceState.tasks[' + idx + '].done=this.checked;saveAtt();nav(\'attendance\');}catch(e){}" style="width:16px;height:16px;cursor:pointer;accent-color:#16a34a">'
+                    + '<span style="flex:1;color:var(--text);' + (t.done?'text-decoration:line-through;color:var(--muted)':'') + '">' + ESC(t.text||'') + '</span>'
+                  + '</div>';
+            }).join('')
+          + '</div>'
+        );
+
+        // Action row
+        let actionBtns = '';
+        if (!dayComplete) {
+            actionBtns = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">'
+                + '<button onclick="try{quickCheckOut&&quickCheckOut();}catch(e){}" style="flex:1;min-width:200px;background:linear-gradient(135deg,#6378ff,#4f46e5);color:#fff;border:0;padding:14px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(99,120,255,0.4)"><i class="fas fa-sign-out-alt"></i> Check out & file EOD</button>'
+                + '<button onclick="nav(\'mytasks\')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:14px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer"><i class="fas fa-clipboard-list"></i> My Tasks</button>'
+              + '</div>';
+        } else {
+            actionBtns = '<div style="display:flex;gap:10px;margin-top:16px">'
+                + '<button onclick="nav(\'mytasks\')" style="flex:1;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:14px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer"><i class="fas fa-clipboard-list"></i> View My Tasks</button>'
+              + '</div>';
+        }
+
+        return '<div id="v16xAttStatus" class="fade-in" style="max-width:980px;margin:0 auto;padding:6px 4px 30px">'
+          + '<div style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);border:1px solid #86efac;border-radius:14px;padding:20px 22px;margin-bottom:14px">'
+          +   '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">'
+          +     '<div>'
+          +       '<div style="font-size:22px;font-weight:700;color:#166534"><i class="fas fa-check-circle"></i> Attendance marked</div>'
+          +       '<div style="font-size:12.5px;color:#166534;margin-top:4px;opacity:0.8">' + ESC(dateStr) + ' · ' + ESC(u.name || u.username || '') + '</div>'
+          +     '</div>'
+          +     '<div>' + statusPill + '</div>'
+          +   '</div>'
+          + '</div>'
+          + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,0.03)">'
+          +   '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px">'
+          +     '<div>'
+          +       '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:600">Check-in</div>'
+          +       '<div style="font-size:26px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;margin-top:4px">' + ESC(inTime) + '</div>'
+          +     '</div>'
+          +     '<div>'
+          +       '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:600">Working hours</div>'
+          +       '<div id="v16xWhTimer" style="font-size:26px;font-weight:700;color:#16a34a;font-variant-numeric:tabular-nums;margin-top:4px">' + ESC(wh) + '</div>'
+          +     '</div>'
+          +     '<div>'
+          +       '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:600">Mode</div>'
+          +       '<div style="font-size:20px;font-weight:600;color:var(--text);margin-top:6px">'
+          +         (mode === 'Office' ? '<i class="fas fa-building" style="color:#6378ff"></i>' : mode === 'Remote' ? '<i class="fas fa-house" style="color:#0891b2"></i>' : mode === 'Field' ? '<i class="fas fa-car" style="color:#f59e0b"></i>' : '<i class="fas fa-notes-medical" style="color:#dc2626"></i>')
+          +         ' ' + ESC(mode)
+          +       '</div>'
+          +     '</div>'
+          +     (dayComplete ? '<div>'
+          +       '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:600">Check-out</div>'
+          +       '<div style="font-size:26px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;margin-top:4px">' + ESC(outTime) + '</div>'
+          +     '</div>' : '')
+          +   '</div>'
+          +   actionBtns
+          + '</div>'
+          + tasksBlock
+          + '</div>';
+    }
+
+    // Wrap renderV16lAttendance to gate on checkinDone
+    function v16xWrapAttendance(){
+        if (window.__v16xAttWrapped) return;
+        if (typeof window.renderV16lAttendance !== 'function') return;
+        window.__v16xAttWrapped = true;
+        const orig = window.renderV16lAttendance;
+        window.renderV16lAttendance = function(){
+            try {
+                const att = attState() || {};
+                if (att.checkinDone) {
+                    // Skip wizard init — status view has no form to init
+                    window.__v16xSkipAttInit = true;
+                    return renderV16xAttendanceStatus();
+                }
+            } catch(e){}
+            window.__v16xSkipAttInit = false;
+            return orig.apply(this, arguments);
+        };
+        // Wrap v16lAttInit to skip GPS/form init when we're showing the status view
+        if (typeof window.v16lAttInit === 'function') {
+            const origInit = window.v16lAttInit;
+            window.v16lAttInit = async function(){
+                if (window.__v16xSkipAttInit) {
+                    // Start the working-hours timer
+                    v16xStartWhTimer();
+                    return;
+                }
+                return origInit.apply(this, arguments);
+            };
+        }
+    }
+
+    // Working-hours live timer
+    function v16xStartWhTimer(){
+        if (window.__v16xWhTimerId) { clearInterval(window.__v16xWhTimerId); }
+        window.__v16xWhTimerId = setInterval(function(){
+            const el = document.getElementById('v16xWhTimer');
+            if (!el) { clearInterval(window.__v16xWhTimerId); window.__v16xWhTimerId = null; return; }
+            const att = attState() || {};
+            el.textContent = workingHoursLabel(att);
+        }, 30000); // update every 30s
+    }
+
+    // Wait for renderV16lAttendance to be defined
+    (function waitForAtt(){
+        if (typeof window.renderV16lAttendance === 'function') { v16xWrapAttendance(); return; }
+        setTimeout(waitForAtt, 300);
+    })();
+
+    // ============================================================
+    // FIX #2 — My Tasks / My Daily To-Dos page
+    // ============================================================
+    function renderMyTasks(){
+        const u = curUser() || {};
+        const att = attState() || {};
+        const tasks = Array.isArray(att.tasks) ? att.tasks.slice() : [];
+
+        // Group tasks
+        const p1 = tasks.filter(t => t && t.p === 'P1');
+        const p2 = tasks.filter(t => t && t.p === 'P2');
+        const p3 = tasks.filter(t => t && t.p !== 'P1' && t.p !== 'P2');
+        const total = tasks.length, done = tasks.filter(t => t && t.done).length;
+        const pct = total ? Math.round(done*100/total) : 0;
+
+        function taskRow(t){
+            const idx = tasks.indexOf(t);
+            const realIdx = (attState() && attState().tasks) ? attState().tasks.indexOf(t) : idx;
+            const pri = t.p || 'P3';
+            const priCol = pri === 'P1' ? '#dc2626' : pri === 'P2' ? '#f59e0b' : '#6b7280';
+            return '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px">'
+                + '<input type="checkbox" ' + (t.done?'checked':'') + ' onchange="try{attendanceState.tasks[' + realIdx + '].done=this.checked;saveAtt();nav(\'mytasks\');}catch(e){}" style="width:18px;height:18px;cursor:pointer;accent-color:#16a34a">'
+                + '<span style="flex:1;font-size:13.5px;color:var(--text);' + (t.done?'text-decoration:line-through;color:var(--muted)':'') + '">' + ESC(t.text||'') + '</span>'
+                + '<span style="background:' + priCol + ';color:#fff;padding:3px 8px;border-radius:5px;font-size:10.5px;font-weight:700">' + ESC(pri) + '</span>'
+                + '<button onclick="v16xTaskEdit(' + realIdx + ')" title="Edit" style="background:transparent;border:0;color:var(--muted);cursor:pointer;padding:4px 6px"><i class="fas fa-pen"></i></button>'
+                + '<button onclick="v16xTaskDelete(' + realIdx + ')" title="Delete" style="background:transparent;border:0;color:var(--muted);cursor:pointer;padding:4px 6px"><i class="fas fa-trash"></i></button>'
+              + '</div>';
+        }
+
+        return '<div class="fade-in" style="max-width:980px;margin:0 auto;padding:6px 4px 30px">'
+          + '<div style="background:linear-gradient(135deg,rgba(99,120,255,0.10),rgba(56,217,169,0.06));border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-bottom:16px">'
+          +   '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'
+          +     '<div>'
+          +       '<div style="font-size:22px;font-weight:700;color:var(--text)"><i class="fas fa-clipboard-list"></i> My Tasks · Daily To-Dos</div>'
+          +       '<div style="font-size:12.5px;color:var(--muted);margin-top:3px">' + ESC(todayStr()) + ' · ' + ESC(u.name || u.username || '') + '</div>'
+          +     '</div>'
+          +     '<div style="text-align:right">'
+          +       '<div style="font-size:26px;font-weight:700;color:#16a34a;font-variant-numeric:tabular-nums">' + done + ' / ' + total + '</div>'
+          +       '<div style="font-size:11.5px;color:var(--muted)">' + pct + '% complete</div>'
+          +     '</div>'
+          +   '</div>'
+          +   '<div style="background:rgba(255,255,255,0.5);height:8px;border-radius:4px;overflow:hidden;margin-top:14px">'
+          +     '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#16a34a,#22c55e);transition:width 0.5s"></div>'
+          +   '</div>'
+          + '</div>'
+          // Add task form
+          + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">'
+          +   '<input id="v16xNewTask" type="text" placeholder="Add a new to-do…" style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13.5px" onkeydown="if(event.key===\'Enter\')v16xTaskAdd();">'
+          +   '<select id="v16xNewPri" style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13.5px">'
+          +     '<option value="P1">P1 · Critical</option>'
+          +     '<option value="P2" selected>P2 · Important</option>'
+          +     '<option value="P3">P3 · Normal</option>'
+          +   '</select>'
+          +   '<button onclick="v16xTaskAdd()" style="background:#16a34a;color:#fff;border:0;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer"><i class="fas fa-plus"></i> Add task</button>'
+          + '</div>'
+          // Task lists
+          + (p1.length ? '<div style="font-size:12px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 8px"><i class="fas fa-fire"></i> P1 · Critical (' + p1.length + ')</div>' + p1.map(taskRow).join('') : '')
+          + (p2.length ? '<div style="font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 8px"><i class="fas fa-bolt"></i> P2 · Important (' + p2.length + ')</div>' + p2.map(taskRow).join('') : '')
+          + (p3.length ? '<div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 8px"><i class="fas fa-circle"></i> P3 · Normal (' + p3.length + ')</div>' + p3.map(taskRow).join('') : '')
+          + (total === 0 ? '<div style="background:var(--surface);border:1px dashed var(--border);border-radius:12px;padding:40px 20px;text-align:center;color:var(--muted)"><i class="fas fa-inbox" style="font-size:34px;display:block;margin-bottom:10px;opacity:0.5"></i>No tasks yet. Add one above to get started.</div>' : '')
+          + '</div>';
+    }
+    window.renderMyTasks = renderMyTasks;
+
+    // Task CRUD
+    window.v16xTaskAdd = function(){
+        const inp = document.getElementById('v16xNewTask');
+        const pri = document.getElementById('v16xNewPri');
+        if (!inp || !inp.value.trim()) return;
+        const att = attState(); if (!att) return;
+        if (!Array.isArray(att.tasks)) att.tasks = [];
+        att.tasks.push({ text: inp.value.trim(), done: false, p: (pri && pri.value) || 'P2', addedAt: Date.now() });
+        try { window.saveAtt && window.saveAtt(); } catch(e){}
+        try { window.nav && window.nav('mytasks'); } catch(e){}
+    };
+    window.v16xTaskDelete = function(idx){
+        const att = attState(); if (!att || !Array.isArray(att.tasks)) return;
+        if (idx < 0 || idx >= att.tasks.length) return;
+        if (!confirm('Delete this task?')) return;
+        att.tasks.splice(idx, 1);
+        try { window.saveAtt && window.saveAtt(); } catch(e){}
+        try { window.nav && window.nav('mytasks'); } catch(e){}
+    };
+    window.v16xTaskEdit = function(idx){
+        const att = attState(); if (!att || !Array.isArray(att.tasks)) return;
+        if (idx < 0 || idx >= att.tasks.length) return;
+        const cur = att.tasks[idx];
+        const nv = prompt('Edit task:', cur.text || '');
+        if (nv === null) return;
+        const nt = nv.trim(); if (!nt) return;
+        cur.text = nt;
+        try { window.saveAtt && window.saveAtt(); } catch(e){}
+        try { window.nav && window.nav('mytasks'); } catch(e){}
+    };
+
+    // Hook mytasks page into nav
+    function v16xInstallMyTasksNav(){
+        if (window.__v16xNavWrapped) return;
+        if (typeof window.nav !== 'function') return;
+        window.__v16xNavWrapped = true;
+        const orig = window.nav;
+        window.nav = function(page){
+            if (page === 'mytasks') {
+                try {
+                    const mc = document.getElementById('mainContent');
+                    if (mc) {
+                        mc.innerHTML = '<div class="page active" id="page-mytasks">' + renderMyTasks() + '</div>';
+                        // Update side-nav highlight
+                        try {
+                            document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+                            const nb = document.getElementById('v16xNavMyTasks');
+                            if (nb) nb.classList.add('active');
+                        } catch(e){}
+                        // Update page title
+                        try {
+                            const t = document.getElementById('pageTitle');
+                            if (t) t.textContent = 'My Tasks';
+                        } catch(e){}
+                        return;
+                    }
+                } catch(e){}
+            }
+            return orig.apply(this, arguments);
+        };
+    }
+    (function waitForNav(){
+        if (typeof window.nav === 'function') { v16xInstallMyTasksNav(); return; }
+        setTimeout(waitForNav, 300);
+    })();
+
+    // Add "My Tasks" nav item to side-nav (after My Attendance)
+    function v16xInjectMyTasksNavItem(){
+        try {
+            if (document.getElementById('v16xNavMyTasks')) return;
+            // Find any nav item that points to attendance
+            const attNav = document.querySelector('[data-page="attendance"], [onclick*="\'attendance\'"], [onclick*="cbNav(\'attendance\')"]');
+            if (!attNav || !attNav.parentNode) return;
+            const clone = attNav.cloneNode(true);
+            clone.id = 'v16xNavMyTasks';
+            clone.setAttribute('data-page', 'mytasks');
+            // Rewire onclick
+            const oc = clone.getAttribute('onclick') || '';
+            if (oc) clone.setAttribute('onclick', oc.replace(/'attendance'/g, "'mytasks'"));
+            else clone.setAttribute('onclick', "nav('mytasks')");
+            // Also rewire any href
+            if (clone.getAttribute('href')) clone.setAttribute('href', "javascript:void(0)");
+            // Update icon + label
+            const ico = clone.querySelector('i');
+            if (ico) { ico.className = 'fas fa-clipboard-list'; }
+            // Replace text nodes / spans
+            const spans = clone.querySelectorAll('span');
+            let labelSet = false;
+            spans.forEach(function(s){
+                if (labelSet) return;
+                if (s.children.length === 0 && s.textContent && s.textContent.trim().length > 0) {
+                    s.textContent = 'My Tasks';
+                    labelSet = true;
+                }
+            });
+            if (!labelSet) {
+                // Fallback: find text nodes directly in clone
+                for (let i = 0; i < clone.childNodes.length; i++) {
+                    const n = clone.childNodes[i];
+                    if (n.nodeType === 3 && n.textContent && n.textContent.trim().length > 0) {
+                        n.textContent = ' My Tasks';
+                        labelSet = true;
+                        break;
+                    }
+                }
+            }
+            // Insert after attendance nav item
+            attNav.parentNode.insertBefore(clone, attNav.nextSibling);
+        } catch(e){}
+    }
+    setTimeout(v16xInjectMyTasksNavItem, 1500);
+    setTimeout(v16xInjectMyTasksNavItem, 3000);
+    setInterval(v16xInjectMyTasksNavItem, 5000);
+
+    // ============================================================
+    // FIX #4 — Ensure Activity History button visibility for management
+    // (already handled by v16w, but re-verify and boost z-index if hidden)
+    // ============================================================
+    function v16xEnsureActivityBtn(){
+        try {
+            const btn = document.getElementById('v16wBtn');
+            if (!btn) return;
+            const u = curUser();
+            if (isManagement(u)) {
+                btn.classList.add('v16w-visible');
+                // Force style if display was overridden
+                if (getComputedStyle(btn).display === 'none') {
+                    btn.style.display = 'inline-flex';
+                    btn.style.alignItems = 'center';
+                    btn.style.gap = '6px';
+                }
+            } else {
+                btn.classList.remove('v16w-visible');
+                btn.style.display = 'none';
+            }
+        } catch(e){}
+    }
+    setInterval(v16xEnsureActivityBtn, 3000);
+
+    // ============================================================
+    // FIX #5 — CEO Staff Reports drill-down (per-staff daily/weekly/monthly/history)
+    // Adds a new page 'staffreports' with per-staff drill-down + JSON/CSV/PDF
+    // ============================================================
+
+    // Data model — pulled from /api/v16g/daily-reports/range (existing)
+    async function v16xLoadReports(days){
+        try {
+            const r = await fetch('/api/v16g/daily-reports/range?days=' + days, { cache:'no-store' });
+            if (!r.ok) return [];
+            const j = await r.json();
+            return (j && Array.isArray(j.items)) ? j.items : [];
+        } catch(e){ return []; }
+    }
+
+    function v16xGroupByUser(items){
+        const map = {};
+        (items || []).forEach(function(it){
+            const uid = it.userId || it.username || 'unknown';
+            const uname = it.userName || it.name || uid;
+            if (!map[uid]) map[uid] = { userId: uid, userName: uname, reports: [] };
+            map[uid].reports.push(it);
+        });
+        // Sort each user's reports by date desc
+        Object.keys(map).forEach(function(k){
+            map[k].reports.sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
+        });
+        return map;
+    }
+
+    function v16xAggregate(reports){
+        // Aggregate metrics
+        let sumCompletion = 0, count = 0, sumTasks = 0, sumDone = 0;
+        (reports || []).forEach(function(r){
+            if (typeof r.completion === 'number') { sumCompletion += r.completion; count++; }
+            const tasks = Array.isArray(r.tasks) ? r.tasks : [];
+            sumTasks += tasks.length;
+            sumDone += tasks.filter(function(t){ return t && t.done; }).length;
+        });
+        return {
+            days: reports.length,
+            avgCompletion: count ? Math.round(sumCompletion/count) : 0,
+            totalTasks: sumTasks,
+            completedTasks: sumDone,
+            taskRate: sumTasks ? Math.round(sumDone*100/sumTasks) : 0
+        };
+    }
+
+    function v16xWeeklyBuckets(reports){
+        // Group by ISO week (YYYY-Www)
+        function isoWeek(d){
+            const dt = new Date(d + 'T00:00:00Z');
+            if (isNaN(dt.getTime())) return 'unknown';
+            const target = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate()));
+            const dayNr = (target.getUTCDay() + 6) % 7;
+            target.setUTCDate(target.getUTCDate() - dayNr + 3);
+            const firstThursday = target.valueOf();
+            target.setUTCMonth(0, 1);
+            if (target.getUTCDay() !== 4) target.setUTCMonth(0, 1 + ((4 - target.getUTCDay()) + 7) % 7);
+            const week = 1 + Math.ceil((firstThursday - target) / 604800000);
+            return dt.getUTCFullYear() + '-W' + String(week).padStart(2,'0');
+        }
+        const buckets = {};
+        (reports || []).forEach(function(r){
+            const w = isoWeek((r.date || '').slice(0,10));
+            if (!buckets[w]) buckets[w] = [];
+            buckets[w].push(r);
+        });
+        return buckets;
+    }
+
+    function v16xMonthlyBuckets(reports){
+        const buckets = {};
+        (reports || []).forEach(function(r){
+            const m = (r.date || '').slice(0, 7); // YYYY-MM
+            if (!m) return;
+            if (!buckets[m]) buckets[m] = [];
+            buckets[m].push(r);
+        });
+        return buckets;
+    }
+
+    function v16xToCsv(rows){
+        const cols = ['date','userId','userName','checkinTime','checkoutTime','mode','completion','status','tasksTotal','tasksDone','achievement','issues','tomorrow','selfDeclaration'];
+        function esc(s){ s = String(s == null ? '' : s); if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g,'""') + '"'; return s; }
+        const lines = [cols.join(',')];
+        (rows || []).forEach(function(r){
+            const tasks = Array.isArray(r.tasks) ? r.tasks : [];
+            const done = tasks.filter(function(t){ return t && t.done; }).length;
+            const row = {
+                date: (r.date || '').slice(0,10),
+                userId: r.userId || '', userName: r.userName || '',
+                checkinTime: r.checkinTime || '', checkoutTime: r.checkoutTime || '',
+                mode: r.mode || '', completion: r.completion || 0, status: r.status || '',
+                tasksTotal: tasks.length, tasksDone: done,
+                achievement: r.achievement || '', issues: r.issues || '',
+                tomorrow: r.tomorrow || '', selfDeclaration: r.selfDeclaration || ''
+            };
+            lines.push(cols.map(function(c){ return esc(row[c]); }).join(','));
+        });
+        return lines.join('\n');
+    }
+
+    function v16xDownloadFile(name, mime, content){
+        const blob = new Blob([content], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+    }
+
+    // Pure-JS PDF-1.4 builder (Workers-compatible; text-only)
+    function v16xToPdf(title, rows){
+        function esc(s){ return String(s == null ? '' : s).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)'); }
+        function nowIso(){ try { return new Date().toISOString(); } catch(e){ return ''; } }
+
+        // Build page-content lines: title, meta, then rows in a compact list
+        const pageWidth = 612, pageHeight = 792;
+        const marginL = 40, marginR = 40, marginT = 40;
+        const lineHeight = 14;
+        const linesPerPage = Math.floor((pageHeight - marginT - 40) / lineHeight);
+
+        const allLines = [];
+        allLines.push({ text: title, size: 16, bold: true });
+        allLines.push({ text: 'Generated ' + nowIso(), size: 9, bold: false });
+        allLines.push({ text: '', size: 10, bold: false });
+        (rows || []).forEach(function(r, i){
+            const tasks = Array.isArray(r.tasks) ? r.tasks : [];
+            const done = tasks.filter(function(t){ return t && t.done; }).length;
+            allLines.push({ text: '─── ' + (r.date || '').slice(0,10) + ' · ' + (r.userName || r.userId || '—') + ' ───', size: 11, bold: true });
+            allLines.push({ text: 'Check-in: ' + (r.checkinTime || '—') + '   Check-out: ' + (r.checkoutTime || '—') + '   Mode: ' + (r.mode || '—'), size: 9, bold: false });
+            allLines.push({ text: 'Completion: ' + (r.completion || 0) + '%   Tasks: ' + done + '/' + tasks.length, size: 9, bold: false });
+            if (r.achievement) allLines.push({ text: 'Achievements: ' + String(r.achievement).slice(0, 180), size: 9, bold: false });
+            if (r.issues) allLines.push({ text: 'Issues: ' + String(r.issues).slice(0, 180), size: 9, bold: false });
+            if (r.tomorrow) allLines.push({ text: 'Tomorrow: ' + String(r.tomorrow).slice(0, 180), size: 9, bold: false });
+            if (r.selfDeclaration) allLines.push({ text: 'Self-declaration: ' + String(r.selfDeclaration).slice(0, 120), size: 9, bold: false });
+            allLines.push({ text: '', size: 8, bold: false });
+        });
+
+        // Break into pages
+        const pages = [];
+        for (let i = 0; i < allLines.length; i += linesPerPage) {
+            pages.push(allLines.slice(i, i + linesPerPage));
+        }
+        if (pages.length === 0) pages.push([{ text: '(no data)', size: 10, bold: false }]);
+
+        // Build PDF
+        const objs = [];
+        // 1 = Catalog, 2 = Pages, 3 = Font-Regular, 4 = Font-Bold, then per-page content+page pairs
+        const nRegular = 3, nBold = 4;
+        const pageContentsStart = 5;
+        const pageObjIdxs = [];
+        const contentObjIdxs = [];
+        let objIdx = pageContentsStart;
+        pages.forEach(function(){ contentObjIdxs.push(objIdx++); pageObjIdxs.push(objIdx++); });
+
+        objs.push('<< /Type /Catalog /Pages 2 0 R >>');
+        objs.push('<< /Type /Pages /Kids [' + pageObjIdxs.map(function(i){ return i + ' 0 R'; }).join(' ') + '] /Count ' + pages.length + ' >>');
+        objs.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+        objs.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+
+        pages.forEach(function(pageLines, pi){
+            // Build content stream
+            let stream = 'BT\n';
+            let y = pageHeight - marginT;
+            pageLines.forEach(function(line){
+                const font = line.bold ? '/F2' : '/F1';
+                stream += font + ' ' + (line.size || 10) + ' Tf\n';
+                stream += '1 0 0 1 ' + marginL + ' ' + y + ' Tm\n';
+                stream += '(' + esc(line.text || '') + ') Tj\n';
+                y -= lineHeight;
+            });
+            stream += 'ET';
+            const streamBytes = new TextEncoder().encode(stream);
+            objs.push('<< /Length ' + streamBytes.length + ' >>\nstream\n' + stream + '\nendstream');
+            objs.push('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pageWidth + ' ' + pageHeight + '] /Resources << /Font << /F1 ' + nRegular + ' 0 R /F2 ' + nBold + ' 0 R >> >> /Contents ' + contentObjIdxs[pi] + ' 0 R >>');
+        });
+
+        // Assemble PDF
+        let pdf = '%PDF-1.4\n';
+        const offsets = [];
+        objs.forEach(function(o, i){
+            offsets.push(pdf.length);
+            pdf += (i+1) + ' 0 obj\n' + o + '\nendobj\n';
+        });
+        const xrefOffset = pdf.length;
+        pdf += 'xref\n0 ' + (objs.length + 1) + '\n';
+        pdf += '0000000000 65535 f \n';
+        offsets.forEach(function(off){
+            pdf += String(off).padStart(10, '0') + ' 00000 n \n';
+        });
+        pdf += 'trailer\n<< /Size ' + (objs.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefOffset + '\n%%EOF';
+        return pdf;
+    }
+
+    // === Staff Reports Page ===
+    function renderStaffReports(){
+        const u = curUser() || {};
+        if (!isCeo(u)) {
+            return '<div class="card" style="padding:40px;text-align:center;max-width:520px;margin:60px auto"><i class="fas fa-lock" style="font-size:38px;color:#dc2626;margin-bottom:12px"></i><div style="font-size:16px;font-weight:700;color:var(--text)">CEO / Super Admin only</div><div style="color:var(--muted);font-size:13px;margin-top:6px">This page is restricted to executive access.</div></div>';
+        }
+        return '<div class="fade-in" style="max-width:1280px;margin:0 auto;padding:6px 4px 30px" id="v16xStaffReportsRoot">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">'
+          +   '<div>'
+          +     '<div style="font-size:22px;font-weight:700;color:var(--text)"><i class="fas fa-users-viewfinder"></i> Staff Reports · Full Drill-Down</div>'
+          +     '<div style="font-size:12.5px;color:var(--muted);margin-top:3px">Per-staff daily tasks, EOD reports, weekly &amp; monthly aggregates, full history · JSON &middot; CSV &middot; PDF</div>'
+          +   '</div>'
+          +   '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+          +     '<select id="v16xSrRange" onchange="v16xSrLoad()" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:12.5px;font-weight:600">'
+          +       '<option value="7">Last 7 days</option>'
+          +       '<option value="30" selected>Last 30 days</option>'
+          +       '<option value="90">Last 90 days</option>'
+          +       '<option value="180">Last 6 months</option>'
+          +     '</select>'
+          +     '<button onclick="v16xSrLoad()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-sync"></i> Refresh</button>'
+          +     '<button onclick="v16xSrDownload(\'json\')" style="background:#0891b2;color:#fff;border:0;padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-file-code"></i> All JSON</button>'
+          +     '<button onclick="v16xSrDownload(\'csv\')" style="background:#16a34a;color:#fff;border:0;padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-file-csv"></i> All CSV</button>'
+          +     '<button onclick="v16xSrDownload(\'pdf\')" style="background:#dc2626;color:#fff;border:0;padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="fas fa-file-pdf"></i> All PDF</button>'
+          +   '</div>'
+          + '</div>'
+          + '<div id="v16xSrBody"><div class="card" style="padding:32px;text-align:center;color:var(--muted)"><i class="fas fa-spinner fa-spin" style="font-size:24px;display:block;margin-bottom:10px"></i>Loading staff reports…</div></div>'
+          + '</div>';
+    }
+    window.renderStaffReports = renderStaffReports;
+
+    window.v16xSrLoad = async function(){
+        const host = document.getElementById('v16xSrBody'); if (!host) return;
+        const range = parseInt((document.getElementById('v16xSrRange') || {}).value || '30', 10) || 30;
+        host.innerHTML = '<div class="card" style="padding:32px;text-align:center;color:var(--muted)"><i class="fas fa-spinner fa-spin" style="font-size:24px;display:block;margin-bottom:10px"></i>Loading…</div>';
+        const items = await v16xLoadReports(range);
+        window._v16xSrItems = items;
+        const grouped = v16xGroupByUser(items);
+        window._v16xSrGrouped = grouped;
+        const userIds = Object.keys(grouped).sort(function(a,b){
+            return (grouped[b].reports.length - grouped[a].reports.length);
+        });
+        if (userIds.length === 0) {
+            host.innerHTML = '<div class="card" style="padding:40px;text-align:center;color:var(--muted)"><i class="fas fa-inbox" style="font-size:36px;display:block;margin-bottom:12px;opacity:0.5"></i>No reports in this range.</div>';
+            return;
+        }
+
+        // Staff grid
+        let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">';
+        userIds.forEach(function(uid){
+            const g = grouped[uid];
+            const agg = v16xAggregate(g.reports);
+            const lastRep = g.reports[0];
+            const lastDate = lastRep ? (lastRep.date || '').slice(0,10) : '—';
+            html += '<div class="card" style="padding:16px 18px;border-radius:12px;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s" onclick="v16xSrDrilldown(\'' + ESC(uid).replace(/'/g, "\\'") + '\')" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 8px 24px rgba(0,0,0,0.08)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">'
+              + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
+              +   '<div>'
+              +     '<div style="font-size:15px;font-weight:700;color:var(--text)">' + ESC(g.userName) + '</div>'
+              +     '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + ESC(uid) + '</div>'
+              +   '</div>'
+              +   '<div style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700">' + agg.days + ' days</div>'
+              + '</div>'
+              + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">'
+              +   '<div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600">Avg completion</div><div style="font-size:18px;font-weight:700;color:#16a34a;font-variant-numeric:tabular-nums">' + agg.avgCompletion + '%</div></div>'
+              +   '<div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600">Tasks done</div><div style="font-size:18px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums">' + agg.completedTasks + '/' + agg.totalTasks + '</div></div>'
+              + '</div>'
+              + '<div style="font-size:11px;color:var(--muted);margin-top:10px">Latest: ' + ESC(lastDate) + '</div>'
+              + '<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">'
+              +   '<button onclick="event.stopPropagation();v16xSrDownloadUser(\'' + ESC(uid).replace(/'/g, "\\'") + '\',\'json\')" style="flex:1;background:#0891b2;color:#fff;border:0;padding:6px 8px;border-radius:6px;font-size:10.5px;font-weight:600;cursor:pointer"><i class="fas fa-file-code"></i> JSON</button>'
+              +   '<button onclick="event.stopPropagation();v16xSrDownloadUser(\'' + ESC(uid).replace(/'/g, "\\'") + '\',\'csv\')" style="flex:1;background:#16a34a;color:#fff;border:0;padding:6px 8px;border-radius:6px;font-size:10.5px;font-weight:600;cursor:pointer"><i class="fas fa-file-csv"></i> CSV</button>'
+              +   '<button onclick="event.stopPropagation();v16xSrDownloadUser(\'' + ESC(uid).replace(/'/g, "\\'") + '\',\'pdf\')" style="flex:1;background:#dc2626;color:#fff;border:0;padding:6px 8px;border-radius:6px;font-size:10.5px;font-weight:600;cursor:pointer"><i class="fas fa-file-pdf"></i> PDF</button>'
+              + '</div>'
+              + '</div>';
+        });
+        html += '</div>';
+        host.innerHTML = html;
+    };
+
+    window.v16xSrDrilldown = function(uid){
+        const grouped = window._v16xSrGrouped || {};
+        const g = grouped[uid]; if (!g) return;
+        const reports = g.reports || [];
+        const agg = v16xAggregate(reports);
+        const weekly = v16xWeeklyBuckets(reports);
+        const monthly = v16xMonthlyBuckets(reports);
+
+        // Modal
+        let m = document.getElementById('v16xSrModal'); if (m) m.remove();
+        m = document.createElement('div');
+        m.id = 'v16xSrModal';
+        m.style.cssText = 'position:fixed;inset:0;z-index:999998;background:rgba(15,23,42,0.72);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)';
+
+        // Tab content
+        function tabDaily(){
+            if (!reports.length) return '<div style="padding:30px;text-align:center;color:var(--muted)">No daily reports.</div>';
+            return '<div style="max-height:60vh;overflow-y:auto">' + reports.map(function(r){
+                const tasks = Array.isArray(r.tasks) ? r.tasks : [];
+                const done = tasks.filter(function(t){ return t && t.done; }).length;
+                return '<div style="border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;background:var(--surface)">'
+                  + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+                  +   '<div style="font-weight:700;color:var(--text)">' + ESC((r.date || '').slice(0,10)) + '</div>'
+                  +   '<div style="display:flex;gap:6px;align-items:center">'
+                  +     '<span style="background:#dcfce7;color:#166534;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600">' + ESC(r.mode || '—') + '</span>'
+                  +     '<span style="background:#dbeafe;color:#1e40af;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600">' + (r.completion || 0) + '%</span>'
+                  +   '</div>'
+                  + '</div>'
+                  + '<div style="font-size:12px;color:var(--muted);margin-bottom:8px"><i class="far fa-clock"></i> In: ' + ESC(r.checkinTime || '—') + ' · Out: ' + ESC(r.checkoutTime || '—') + ' · Tasks: ' + done + '/' + tasks.length + '</div>'
+                  + (r.achievement ? '<div style="font-size:12px;color:var(--text);margin-top:6px"><strong style="color:#16a34a">✓ Achievements:</strong> ' + ESC(r.achievement) + '</div>' : '')
+                  + (r.issues ? '<div style="font-size:12px;color:var(--text);margin-top:6px"><strong style="color:#dc2626">! Issues:</strong> ' + ESC(r.issues) + '</div>' : '')
+                  + (r.tomorrow ? '<div style="font-size:12px;color:var(--text);margin-top:6px"><strong style="color:#6378ff">→ Tomorrow:</strong> ' + ESC(r.tomorrow) + '</div>' : '')
+                  + (tasks.length ? '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--muted);font-weight:600">' + tasks.length + ' task' + (tasks.length===1?'':'s') + '</summary><div style="margin-top:6px">'
+                    + tasks.map(function(t){
+                        return '<div style="font-size:12px;padding:3px 0;color:' + (t.done ? 'var(--muted)' : 'var(--text)') + ';' + (t.done ? 'text-decoration:line-through' : '') + '"><i class="fas ' + (t.done?'fa-check-circle" style="color:#16a34a':'fa-circle" style="color:var(--muted)') + '"></i> ' + ESC(t.text || '') + ' <span style="font-size:10px;background:var(--surface2);padding:1px 5px;border-radius:3px;color:var(--muted)">' + ESC(t.p || 'P3') + '</span></div>';
+                      }).join('')
+                    + '</div></details>' : '')
+                + '</div>';
+            }).join('') + '</div>';
+        }
+
+        function tabWeekly(){
+            const keys = Object.keys(weekly).sort().reverse();
+            if (!keys.length) return '<div style="padding:30px;text-align:center;color:var(--muted)">No data.</div>';
+            return '<div style="max-height:60vh;overflow-y:auto">' + keys.map(function(k){
+                const rows = weekly[k]; const a = v16xAggregate(rows);
+                return '<div style="border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;background:var(--surface)">'
+                  + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+                  +   '<div style="font-weight:700;color:var(--text)"><i class="far fa-calendar-week"></i> Week ' + ESC(k) + '</div>'
+                  +   '<div style="font-size:11px;color:var(--muted)">' + rows.length + ' day' + (rows.length===1?'':'s') + '</div>'
+                  + '</div>'
+                  + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">'
+                  +   '<div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;font-weight:600">Avg completion</div><div style="font-size:17px;font-weight:700;color:#16a34a">' + a.avgCompletion + '%</div></div>'
+                  +   '<div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;font-weight:600">Tasks done</div><div style="font-size:17px;font-weight:700;color:var(--text)">' + a.completedTasks + '/' + a.totalTasks + '</div></div>'
+                  +   '<div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;font-weight:600">Task rate</div><div style="font-size:17px;font-weight:700;color:#6378ff">' + a.taskRate + '%</div></div>'
+                  + '</div>'
+                + '</div>';
+            }).join('') + '</div>';
+        }
+
+        function tabMonthly(){
+            const keys = Object.keys(monthly).sort().reverse();
+            if (!keys.length) return '<div style="padding:30px;text-align:center;color:var(--muted)">No data.</div>';
+            return '<div style="max-height:60vh;overflow-y:auto">' + keys.map(function(k){
+                const rows = monthly[k]; const a = v16xAggregate(rows);
+                const label = (function(){ try { return new Date(k + '-01').toLocaleDateString('en-GB', { month:'long', year:'numeric' }); } catch(e){ return k; } })();
+                return '<div style="border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;background:var(--surface)">'
+                  + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+                  +   '<div style="font-weight:700;color:var(--text)"><i class="far fa-calendar-alt"></i> ' + ESC(label) + '</div>'
+                  +   '<div style="font-size:11px;color:var(--muted)">' + rows.length + ' day' + (rows.length===1?'':'s') + ' logged</div>'
+                  + '</div>'
+                  + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">'
+                  +   '<div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;font-weight:600">Avg completion</div><div style="font-size:17px;font-weight:700;color:#16a34a">' + a.avgCompletion + '%</div></div>'
+                  +   '<div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;font-weight:600">Tasks done</div><div style="font-size:17px;font-weight:700;color:var(--text)">' + a.completedTasks + '/' + a.totalTasks + '</div></div>'
+                  +   '<div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;font-weight:600">Task rate</div><div style="font-size:17px;font-weight:700;color:#6378ff">' + a.taskRate + '%</div></div>'
+                  + '</div>'
+                + '</div>';
+            }).join('') + '</div>';
+        }
+
+        function tabHistory(){
+            if (!reports.length) return '<div style="padding:30px;text-align:center;color:var(--muted)">No history.</div>';
+            return '<div style="max-height:60vh;overflow-y:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'
+                + '<thead><tr style="background:var(--surface2);position:sticky;top:0">'
+                +   '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)">Date</th>'
+                +   '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)">In</th>'
+                +   '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)">Out</th>'
+                +   '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)">Mode</th>'
+                +   '<th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border)">%</th>'
+                +   '<th style="padding:8px 10px;text-align:right;border-bottom:1px solid var(--border)">Tasks</th>'
+                + '</tr></thead><tbody>'
+                + reports.map(function(r){
+                    const tasks = Array.isArray(r.tasks) ? r.tasks : [];
+                    const done = tasks.filter(function(t){ return t && t.done; }).length;
+                    return '<tr style="border-bottom:1px solid var(--border)">'
+                      + '<td style="padding:6px 10px;color:var(--text);font-family:DM Mono,monospace">' + ESC((r.date || '').slice(0,10)) + '</td>'
+                      + '<td style="padding:6px 10px;color:var(--text);font-family:DM Mono,monospace">' + ESC(r.checkinTime || '—') + '</td>'
+                      + '<td style="padding:6px 10px;color:var(--text);font-family:DM Mono,monospace">' + ESC(r.checkoutTime || '—') + '</td>'
+                      + '<td style="padding:6px 10px;color:var(--muted)">' + ESC(r.mode || '—') + '</td>'
+                      + '<td style="padding:6px 10px;text-align:right;color:var(--text);font-weight:600">' + (r.completion || 0) + '%</td>'
+                      + '<td style="padding:6px 10px;text-align:right;color:var(--muted)">' + done + '/' + tasks.length + '</td>'
+                    + '</tr>';
+                  }).join('')
+                + '</tbody></table></div>';
+        }
+
+        m.innerHTML = '<div style="background:var(--surface);border-radius:14px;max-width:980px;width:100%;max-height:92vh;overflow:auto;box-shadow:0 32px 90px rgba(0,0,0,0.5);color:var(--text)">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2">'
+          +   '<div>'
+          +     '<div style="font-size:18px;font-weight:700">' + ESC(g.userName) + ' <span style="font-size:12px;color:var(--muted);font-weight:500">· ' + ESC(uid) + '</span></div>'
+          +     '<div style="font-size:11.5px;color:var(--muted);margin-top:2px">' + agg.days + ' days · avg ' + agg.avgCompletion + '% · ' + agg.completedTasks + '/' + agg.totalTasks + ' tasks (' + agg.taskRate + '% rate)</div>'
+          +   '</div>'
+          +   '<div style="display:flex;gap:6px">'
+          +     '<button onclick="v16xSrDownloadUser(\'' + ESC(uid).replace(/'/g, "\\'") + '\',\'json\')" style="background:#0891b2;color:#fff;border:0;padding:7px 12px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer"><i class="fas fa-file-code"></i> JSON</button>'
+          +     '<button onclick="v16xSrDownloadUser(\'' + ESC(uid).replace(/'/g, "\\'") + '\',\'csv\')" style="background:#16a34a;color:#fff;border:0;padding:7px 12px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer"><i class="fas fa-file-csv"></i> CSV</button>'
+          +     '<button onclick="v16xSrDownloadUser(\'' + ESC(uid).replace(/'/g, "\\'") + '\',\'pdf\')" style="background:#dc2626;color:#fff;border:0;padding:7px 12px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer"><i class="fas fa-file-pdf"></i> PDF</button>'
+          +     '<button onclick="document.getElementById(\'v16xSrModal\').remove()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 12px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer"><i class="fas fa-times"></i></button>'
+          +   '</div>'
+          + '</div>'
+          + '<div style="display:flex;border-bottom:1px solid var(--border);padding:0 22px;background:var(--surface);position:sticky;top:64px;z-index:1">'
+          +   '<div class="v16xSrTab active" data-tab="daily" onclick="v16xSrSwitchTab(\'daily\')" style="padding:10px 18px;cursor:pointer;border-bottom:2px solid #6378ff;color:#6378ff;font-weight:700;font-size:13px"><i class="fas fa-calendar-day"></i> Daily</div>'
+          +   '<div class="v16xSrTab" data-tab="weekly" onclick="v16xSrSwitchTab(\'weekly\')" style="padding:10px 18px;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);font-weight:600;font-size:13px"><i class="fas fa-calendar-week"></i> Weekly</div>'
+          +   '<div class="v16xSrTab" data-tab="monthly" onclick="v16xSrSwitchTab(\'monthly\')" style="padding:10px 18px;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);font-weight:600;font-size:13px"><i class="fas fa-calendar-alt"></i> Monthly</div>'
+          +   '<div class="v16xSrTab" data-tab="history" onclick="v16xSrSwitchTab(\'history\')" style="padding:10px 18px;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);font-weight:600;font-size:13px"><i class="fas fa-history"></i> History</div>'
+          + '</div>'
+          + '<div style="padding:18px 22px">'
+          +   '<div id="v16xSrTab-daily" data-tab="daily">' + tabDaily() + '</div>'
+          +   '<div id="v16xSrTab-weekly" data-tab="weekly" style="display:none">' + tabWeekly() + '</div>'
+          +   '<div id="v16xSrTab-monthly" data-tab="monthly" style="display:none">' + tabMonthly() + '</div>'
+          +   '<div id="v16xSrTab-history" data-tab="history" style="display:none">' + tabHistory() + '</div>'
+          + '</div>'
+          + '</div>';
+        document.body.appendChild(m);
+    };
+
+    window.v16xSrSwitchTab = function(name){
+        try {
+            document.querySelectorAll('.v16xSrTab').forEach(function(t){
+                if (t.getAttribute('data-tab') === name) {
+                    t.style.borderBottomColor = '#6378ff'; t.style.color = '#6378ff'; t.style.fontWeight = '700';
+                } else {
+                    t.style.borderBottomColor = 'transparent'; t.style.color = 'var(--muted)'; t.style.fontWeight = '600';
+                }
+            });
+            document.querySelectorAll('[data-tab]').forEach(function(el){
+                if (el.id && el.id.indexOf('v16xSrTab-') === 0) {
+                    el.style.display = (el.getAttribute('data-tab') === name) ? 'block' : 'none';
+                }
+            });
+        } catch(e){}
+    };
+
+    window.v16xSrDownload = function(ext){
+        const items = window._v16xSrItems || [];
+        if (!items.length) { alert('No data to export.'); return; }
+        const stamp = todayStr();
+        if (ext === 'json') {
+            v16xDownloadFile('all-staff-reports-' + stamp + '.json', 'application/json', JSON.stringify(items, null, 2));
+        } else if (ext === 'csv') {
+            v16xDownloadFile('all-staff-reports-' + stamp + '.csv', 'text/csv', v16xToCsv(items));
+        } else if (ext === 'pdf') {
+            v16xDownloadFile('all-staff-reports-' + stamp + '.pdf', 'application/pdf', v16xToPdf('All Staff Reports · ' + stamp, items));
+        }
+    };
+
+    window.v16xSrDownloadUser = function(uid, ext){
+        const grouped = window._v16xSrGrouped || {};
+        const g = grouped[uid]; if (!g) { alert('User not found.'); return; }
+        const stamp = todayStr();
+        const safe = String(g.userName || uid).replace(/[^\w-]+/g,'_');
+        if (ext === 'json') {
+            v16xDownloadFile(safe + '-reports-' + stamp + '.json', 'application/json', JSON.stringify({ userId: uid, userName: g.userName, reports: g.reports, aggregate: v16xAggregate(g.reports) }, null, 2));
+        } else if (ext === 'csv') {
+            v16xDownloadFile(safe + '-reports-' + stamp + '.csv', 'text/csv', v16xToCsv(g.reports));
+        } else if (ext === 'pdf') {
+            v16xDownloadFile(safe + '-reports-' + stamp + '.pdf', 'application/pdf', v16xToPdf(g.userName + ' · Staff Report · ' + stamp, g.reports));
+        }
+    };
+
+    // Install nav route for staffreports
+    function v16xInstallStaffReportsNav(){
+        if (window.__v16xSrNavWrapped) return;
+        if (typeof window.nav !== 'function') return;
+        window.__v16xSrNavWrapped = true;
+        const orig = window.nav;
+        window.nav = function(page){
+            if (page === 'staffreports' || page === 'adminreports2') {
+                try {
+                    const mc = document.getElementById('mainContent');
+                    if (mc) {
+                        mc.innerHTML = '<div class="page active" id="page-staffreports">' + renderStaffReports() + '</div>';
+                        setTimeout(function(){ if (typeof v16xSrLoad === 'function') v16xSrLoad(); }, 80);
+                        try { const t = document.getElementById('pageTitle'); if (t) t.textContent = 'Staff Reports'; } catch(e){}
+                        return;
+                    }
+                } catch(e){}
+            }
+            return orig.apply(this, arguments);
+        };
+    }
+    (function waitForNav2(){
+        if (typeof window.nav === 'function') { v16xInstallStaffReportsNav(); return; }
+        setTimeout(waitForNav2, 300);
+    })();
+
+    // Rewire the top-bar Staff Reports button to open the NEW drilldown page
+    // (only for CEO; non-CEO removal happens in v16xEnforceStaffReportsBtn)
+    function v16xUpgradeTopBarBtn(){
+        try {
+            if (!isCeo()) return;
+            const btn = document.getElementById('v16iAdminBtn');
+            if (btn && !btn.__v16xUpgraded) {
+                btn.__v16xUpgraded = true;
+                btn.onclick = function(){ try { window.nav && window.nav('staffreports'); } catch(e){} };
+                btn.title = 'Staff Reports (drilldown)';
+            }
+            // Side-nav item
+            const nl = document.getElementById('v16jNavStaffReports');
+            if (nl && !nl.__v16xUpgraded) {
+                nl.__v16xUpgraded = true;
+                nl.setAttribute('onclick', "nav('staffreports')");
+                nl.onclick = function(e){ if (e) e.preventDefault(); try { window.nav && window.nav('staffreports'); } catch(err){} return false; };
+            }
+        } catch(e){}
+    }
+    setInterval(v16xUpgradeTopBarBtn, 2500);
+
+    console.log('[v16x] Loaded — attendance status view + My Tasks page + Staff Reports drilldown + CEO gating enforced.');
+})();
+</script>
 <script src="/static/agent-portal.js"></script>
 <script src="/static/media-suite.js"></script>
 <script src="/static/team-comms.js"></script>
