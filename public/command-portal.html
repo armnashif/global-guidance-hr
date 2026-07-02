@@ -32156,6 +32156,313 @@ else _tbBoot();
     console.log('[v16x] Loaded — attendance status view + My Tasks page + Staff Reports drilldown + CEO gating enforced.');
 })();
 </script>
+<script>
+/* ============================================================
+ * v16y — Role-correct tasks + GPS gate fix (2026-07-02)
+ * ------------------------------------------------------------
+ * Bugs fixed:
+ *  A) Shiran (Graphic Designer) was seeing 17 visa/CAS tasks
+ *     because quickCheckIn() falls back to categories
+ *     ['visa','cas','offers'] for anyone who isn't 'razan.thawus'.
+ *     That produced the entire visa+cas+offers AUTO_TASKS list
+ *     (Anushan Amarasivam, Hari, Aasif Nafeer, etc.) — which are
+ *     Razan's actual visa portfolio, unrelated to a designer.
+ *  B) Location (GPS) prompt kept firing on check-in for every
+ *     staff even when their mode = Remote/Field/Sick, their
+ *     gpsRequired setting was OFF, or their role has nothing to
+ *     do with on-site attendance (Designer / Comms / Intern).
+ *
+ * Additional hardening:
+ *  - One-time purge of ALREADY-CORRUPTED sessionStorage where
+ *    a designer/comms/intern/hr user has visa/CAS tasks stuck
+ *    in their attendanceState.tasks from a previous session.
+ *  - "Reset my tasks" button on My Tasks page.
+ * ============================================================ */
+(function v16yBoot(){
+    'use strict';
+
+    // ---- helpers ---------------------------------------------------------
+    function curUser(){
+        try { return (0, eval)('typeof currentUser !== "undefined" ? currentUser : null'); }
+        catch(e){ return null; }
+    }
+    function attState(){
+        try { return (0, eval)('typeof attendanceState !== "undefined" ? attendanceState : null'); }
+        catch(e){ return null; }
+    }
+    function primaryRoleFor(u){
+        u = u || curUser(); if (!u) return 'counsellor';
+        try {
+            if (typeof window._primaryRole === 'function') return window._primaryRole(u);
+        } catch(e){}
+        return 'counsellor';
+    }
+
+    // ============================================================
+    // Role → AUTO_TASKS category mapping (safe, correct defaults)
+    // ============================================================
+    // Roles that should NOT auto-generate visa/CAS/offers tasks:
+    // designer, hr_exec, counsellor_intern (light role), coo/ceo (mgmt).
+    // These roles start with an EMPTY task list — user adds their own
+    // via My Tasks page, or the morning-planner wizard on Attendance.
+    const V16Y_ROLE_CATEGORIES = {
+        'ceo':               [],
+        'coo':               [],
+        'admissions_head':   ['visa','cas','offers'],
+        'bd_finance':        ['razan_visa','razan_apps'],
+        'admissions_exec':   ['cas','offers'],
+        'counsellor':        ['offers','followups'],
+        'counsellor_jr':     ['offers'],
+        'counsellor_intern': [],
+        'designer':          [],
+        'hr_exec':           ['hr']
+    };
+
+    // Roles that should NOT trigger GPS prompt automatically on check-in
+    // (Remote / Field / Sick modes also skip GPS regardless of role.)
+    const V16Y_GPS_OPTIONAL_ROLES = new Set([
+        'designer', 'counsellor_intern', 'coo', 'ceo'
+    ]);
+
+    // ============================================================
+    // FIX A — Wrap quickCheckIn to inject role-correct categories
+    // and short-circuit GPS when it's not needed
+    // ============================================================
+    function v16yWrapCheckin(){
+        if (window.__v16yCheckinWrapped) return;
+        if (typeof window.quickCheckIn !== 'function' && typeof quickCheckIn !== 'function') {
+            setTimeout(v16yWrapCheckin, 400); return;
+        }
+        window.__v16yCheckinWrapped = true;
+
+        // Wrap captureLocation so it can be short-circuited by v16y
+        // Only wrap if it hasn't already been wrapped.
+        if (typeof window.captureLocation === 'function' && !window.__v16yCaptureWrapped) {
+            window.__v16yCaptureWrapped = true;
+            const origCapture = window.captureLocation;
+            window.captureLocation = async function(options){
+                try {
+                    // Check the v16y skip flag
+                    if (window.__v16ySkipGps) {
+                        window.__v16ySkipGps = false; // one-shot
+                        console.log('[v16y] captureLocation skipped (mode/role not requiring GPS)');
+                        return { ok: false, error: 'skipped-by-v16y', capturedAt: new Date().toISOString(), skipped: true };
+                    }
+                } catch(e){}
+                return origCapture.apply(this, arguments);
+            };
+        }
+
+        // Wrap quickCheckIn
+        const origCheckin = window.quickCheckIn;
+        window.quickCheckIn = async function v16yQuickCheckIn(mode){
+            try {
+                const u = curUser() || {};
+                const att = attState();
+                if (!att) return origCheckin.apply(this, arguments);
+
+                // (a) Fix task seeding — override empty selectedCategories with role-correct list
+                //
+                // CRITICAL: the original quickCheckIn body has a fallback:
+                //   if (!selectedCategories || !selectedCategories.length) => ['visa','cas','offers']
+                // So an empty array [] would still trigger that fallback and re-seed Razan's tasks.
+                // Fix: for roles that legitimately have NO categories (designer, coo, ceo, intern, hr),
+                // set a sentinel non-empty value ['__v16y_none__'] so .length > 0 skips the fallback.
+                // We also register window.AUTO_TASKS['__v16y_none__'] = [] so no tasks get generated.
+                try {
+                    if (typeof window.AUTO_TASKS === 'object' && window.AUTO_TASKS && !window.AUTO_TASKS['__v16y_none__']) {
+                        window.AUTO_TASKS['__v16y_none__'] = [];
+                    }
+                } catch(e){}
+                if (!att.selectedCategories || !att.selectedCategories.length) {
+                    const role = primaryRoleFor(u);
+                    const cats = V16Y_ROLE_CATEGORIES[role];
+                    // Only override if we have a specific mapping for this role.
+                    // Undefined roles fall through to the original quickCheckIn default (which is safe for admissions).
+                    if (Array.isArray(cats)) {
+                        if (cats.length === 0) {
+                            att.selectedCategories = ['__v16y_none__'];
+                            console.log('[v16y] role=' + role + ' → selectedCategories=[__v16y_none__] (sentinel, no tasks)');
+                        } else {
+                            att.selectedCategories = cats.slice();
+                            console.log('[v16y] role=' + role + ' → selectedCategories=' + JSON.stringify(cats));
+                        }
+                    }
+                }
+
+                // (b) Decide whether to skip GPS
+                const effectiveMode = mode || att.mode || 'Office';
+                const role = primaryRoleFor(u);
+                const gpsReq = v16yGpsRequired(u);
+                const skip =
+                    effectiveMode === 'Remote' ||
+                    effectiveMode === 'Field' ||
+                    effectiveMode === 'Sick' ||
+                    gpsReq === false ||
+                    V16Y_GPS_OPTIONAL_ROLES.has(role);
+                if (skip) {
+                    window.__v16ySkipGps = true;
+                    console.log('[v16y] GPS skipped: mode=' + effectiveMode + ', role=' + role + ', gpsReq=' + gpsReq);
+                }
+            } catch(e){ console.warn('[v16y] wrap failed', e); }
+            return origCheckin.apply(this, arguments);
+        };
+
+        // Similarly wrap quickCheckOut for the checkout GPS
+        if (typeof window.quickCheckOut === 'function') {
+            const origCheckout = window.quickCheckOut;
+            window.quickCheckOut = async function v16yQuickCheckOut(){
+                try {
+                    const u = curUser() || {};
+                    const att = attState() || {};
+                    const effectiveMode = att.mode || 'Office';
+                    const role = primaryRoleFor(u);
+                    const gpsReq = v16yGpsRequired(u);
+                    if (effectiveMode === 'Remote' || effectiveMode === 'Field' || effectiveMode === 'Sick' ||
+                        gpsReq === false || V16Y_GPS_OPTIONAL_ROLES.has(role)) {
+                        window.__v16ySkipGps = true;
+                    }
+                } catch(e){}
+                return origCheckout.apply(this, arguments);
+            };
+        }
+        console.log('[v16y] Check-in / check-out wrapped with role-correct tasks + GPS gate.');
+    }
+
+    // Read gpsRequired from Staff Controls (falls back to true for on-site roles, false for others)
+    function v16yGpsRequired(u){
+        u = u || curUser(); if (!u) return true;
+        try {
+            const ctrl = (0, eval)('typeof _v16hStaffControls !== "undefined" ? _v16hStaffControls : null');
+            if (ctrl && typeof ctrl.gpsRequired === 'boolean') return ctrl.gpsRequired;
+        } catch(e){}
+        // Fallback: designers / interns / comms → false
+        const role = primaryRoleFor(u);
+        if (V16Y_GPS_OPTIONAL_ROLES.has(role)) return false;
+        return true;
+    }
+
+    (function waitCheckin(){
+        if (typeof window.quickCheckIn === 'function') { v16yWrapCheckin(); return; }
+        setTimeout(waitCheckin, 400);
+    })();
+
+    // ============================================================
+    // FIX B — One-time purge of stale visa/CAS tasks stuck in
+    // sessionStorage for users whose role doesn't match the tasks
+    // ============================================================
+    function v16yPurgeStaleTasks(){
+        try {
+            const u = curUser(); if (!u) return;
+            const att = attState(); if (!att || !Array.isArray(att.tasks)) return;
+            const role = primaryRoleFor(u);
+
+            // Only purge for roles that should not have visa/CAS/offers tasks.
+            const purgeRoles = new Set(['designer','hr_exec','counsellor_intern','ceo','coo']);
+            if (!purgeRoles.has(role)) return;
+
+            // Detect visa-portfolio tasks by their tell-tale text patterns
+            const visaMarkers = [
+                'Anushan Amarasivam', 'Hari (Visa', 'Aasif Nafeer',
+                'Akeel Hussain', 'Kasun Bandara', 'Osura Perera',
+                'Kawsiya', 'Kavithira', 'Arulthas Casin',
+                'Rihab Kamil', 'Sithumini Sankalpani', 'Nadeera Perera',
+                'Thamilnilavan', 'Sankeethan', 'Miflan Yakoob',
+                'Kabinath', 'Akeel Ameer', 'CAS ', ' visa', 'refund',
+                'DMU', 'UCLAN', 'Coventry', 'Aston', 'Wolverhampton',
+                'Sunderland', 'Northumbria', 'Hertfordshire'
+            ];
+            function looksLikeVisaTask(text){
+                if (!text) return false;
+                const t = String(text);
+                let hits = 0;
+                for (const m of visaMarkers) {
+                    if (t.indexOf(m) !== -1) hits++;
+                    if (hits >= 1) return true;
+                }
+                return false;
+            }
+
+            const before = att.tasks.length;
+            const kept = att.tasks.filter(function(t){
+                // Keep manually-added tasks (source = 'manual' or missing/user-added recently)
+                if (t.source === 'manual') return true;
+                // Purge only auto-seeded visa tasks
+                if (t.source === 'auto' && looksLikeVisaTask(t.text)) return false;
+                // Also purge non-source-tagged visa tasks (legacy state)
+                if (!t.source && looksLikeVisaTask(t.text)) return false;
+                return true;
+            });
+
+            if (kept.length !== before) {
+                att.tasks = kept;
+                // Also clear the selectedCategories so next check-in doesn't re-seed them
+                if (Array.isArray(att.selectedCategories)) {
+                    const bad = new Set(['visa','cas','offers','razan_visa','razan_apps']);
+                    att.selectedCategories = att.selectedCategories.filter(function(c){ return !bad.has(c); });
+                }
+                try { if (typeof window.saveAtt === 'function') window.saveAtt(); } catch(e){}
+                console.log('[v16y] Purged ' + (before - kept.length) + ' stale visa/CAS tasks for role=' + role + ' user=' + u.username);
+                // Re-render if visible
+                try {
+                    if (document.getElementById('v16xAttStatus') && typeof window.nav === 'function') {
+                        window.nav('attendance');
+                    } else if (document.getElementById('page-mytasks') && typeof window.nav === 'function') {
+                        window.nav('mytasks');
+                    }
+                } catch(e){}
+            }
+        } catch(e){ console.warn('[v16y] purge failed', e); }
+    }
+    // Run purge shortly after login + on every attendance render
+    setTimeout(v16yPurgeStaleTasks, 1500);
+    setTimeout(v16yPurgeStaleTasks, 3500);
+    setInterval(v16yPurgeStaleTasks, 15000);
+
+    // ============================================================
+    // FIX C — Add "Reset my tasks" button on My Tasks page
+    // Injects into the page after render.
+    // ============================================================
+    function v16yEnhanceMyTasks(){
+        try {
+            const page = document.getElementById('page-mytasks');
+            if (!page || page.querySelector('#v16yResetBtn')) return;
+            // Find the "Add" button host row
+            const btn = document.createElement('button');
+            btn.id = 'v16yResetBtn';
+            btn.style.cssText = 'background:#dc2626;color:#fff;border:0;padding:10px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;margin-left:8px';
+            btn.innerHTML = '<i class="fas fa-trash-alt"></i> Reset all tasks';
+            btn.title = 'Delete every task and start fresh';
+            btn.onclick = function(){
+                if (!confirm('This will DELETE every task in your list.\n\nStart fresh?')) return;
+                try {
+                    const att = attState(); if (!att) return;
+                    att.tasks = [];
+                    if (Array.isArray(att.selectedCategories)) {
+                        const bad = new Set(['visa','cas','offers','razan_visa','razan_apps']);
+                        att.selectedCategories = att.selectedCategories.filter(function(c){ return !bad.has(c); });
+                    }
+                    if (typeof window.saveAtt === 'function') window.saveAtt();
+                    if (typeof window.nav === 'function') window.nav('mytasks');
+                } catch(e){ alert('Reset failed: ' + (e.message||e)); }
+            };
+            // Insert next to the Add button
+            const addBtn = page.querySelector('button[onclick*="v16xTaskAdd"]');
+            if (addBtn && addBtn.parentNode) {
+                addBtn.parentNode.appendChild(btn);
+            } else {
+                // Fallback: append near the top
+                const header = page.querySelector('div[style*="Add a new to-do"]');
+                if (header && header.parentNode) header.parentNode.appendChild(btn);
+                else page.insertBefore(btn, page.firstChild);
+            }
+        } catch(e){}
+    }
+    setInterval(v16yEnhanceMyTasks, 1500);
+
+    console.log('[v16y] Loaded — role-correct tasks + GPS gate + stale task purge.');
+})();
+</script>
 <script src="/static/agent-portal.js"></script>
 <script src="/static/media-suite.js"></script>
 <script src="/static/team-comms.js"></script>
