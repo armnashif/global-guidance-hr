@@ -6,12 +6,87 @@
 - **Stack**: Hono on Cloudflare Pages · Vanilla JS SPA · Cloudflare KV (binding `COMMS`)
 
 ## URLs
-- **Production**: https://aad9c459.webapp-2il.pages.dev (v16u, deployed 2026-06-27)
-- **Previous**: https://969f2071.webapp-2il.pages.dev (v16t)
+- **Production**: https://26262f30.webapp-2il.pages.dev (v16v/v16w, deployed 2026-07-01)
+- **Previous**: https://aad9c459.webapp-2il.pages.dev (v16u)
 - **Alias**: https://webapp-2il.pages.dev (always points to latest)
 - **Local dev**: http://localhost:3000 (PM2)
 
-## v16u — Idle Detection · Status Notifications · Remote Capture · Salary Shake (latest, shipped 2026-06-27)
+## v16v / v16w — Daily Activity Recording · Real IP Tracking · 6-Month History · JSON/CSV/PDF Exports (latest, shipped 2026-07-01)
+
+**User request**: Record every activity every day with real IP addresses, keep 6 months of history, let CEO review yesterday / day-before-yesterday activity, and download daily backups as JSON + CSV + PDF.
+
+### Backend (v16v) — day-partitioned KV, 190-day TTL
+- **Every activity written to `v16v:log:YYYY-MM-DD`** (one KV key per day, ring buffer cap 10,000 events/day, 190-day TTL for auto-expiry)
+- **Real IP captured** via `CF-Connecting-IP` header on every request
+- **Geo enrichment** from Cloudflare edge: `city`, `region`, `country`, `timezone`, `isp`
+- **Per-user last-known IP** cached at `v16v:ip:<user>` (30-day TTL) for fast lookups
+- **Date index** at `v16v:log:index` (cap 200 dates ≈ 6.6 months)
+- Instrumented endpoints auto-log: v16u heartbeat (status changes, idle 15/30), v16u capture request/respond, v16s user create/update/delete/password_reset/status
+- **v16v endpoints (11 total)**:
+  | Endpoint | Purpose |
+  |---|---|
+  | `POST /api/v16v/log` | Log a single event (called by frontend + other endpoints) |
+  | `GET /api/v16v/dates` | List all dates with data + recent-30 summary |
+  | `GET /api/v16v/activity/:date` | Fetch one day's events (up to 10,000) |
+  | `GET /api/v16v/search?user=&action=&ip=&q=&from=&to=&limit=` | Filter events |
+  | `GET /api/v16v/ip/:user` | Last-known IP + geo for one user |
+  | `GET /api/v16v/ips` | All users' last-known IPs |
+  | `GET /api/v16v/stats?from=&to=` | Top users, top actions, byDate, unique IPs |
+  | `GET /api/v16v/export/:date.json` | Download JSON for one day |
+  | `GET /api/v16v/export/:date.csv` | Download CSV for one day |
+  | `GET /api/v16v/export/:date.pdf` | Download PDF for one day |
+  | `GET /api/v16v/export-all/all.{json\|csv\|pdf}?from=&to=` | Bulk export |
+
+### Frontend (v16w) — CEO Activity History panel
+- **Launcher button** at bottom-right of portal (CEO / management only, purple gradient)
+- **Full-screen modal panel** with 4 tabs:
+  1. **Daily View** — date picker + prev/next-day nav + "Today" shortcut, JSON/CSV/PDF export buttons
+  2. **Search & Range** — filter by user, action, IP, free-text query, date range; bulk JSON/CSV/PDF export
+  3. **IP Addresses** — table of last-known IP per user + location + ISP + last-seen time
+  4. **Stats** — top users, top actions, daily event volume for selected range
+- **Auto-logs `session.start`** once per fresh page load (throttled to 5 min)
+- **Mobile responsive** (≤640px breakpoint)
+
+### Data captured per event
+```
+id, ts, date, user, role, action, target, meta,
+ip (CF-Connecting-IP), city, region, country, timezone, isp, ua
+```
+
+### Retention math
+- ~200 users × ~50 events/day × ~300 bytes = ~3 MB/day
+- 180 days × 3 MB = ~540 MB total (KV free tier is 25 GB — well within budget)
+- Old day-keys auto-expire via KV TTL — no cleanup cron needed
+
+### PDF generation
+Pure-text PDF built byte-by-byte in Cloudflare Workers (Helvetica 10pt, Letter, ~42 lines/page). No dependencies — works on the edge with no `fs` or Node.js APIs.
+
+### Test results (18/18 Playwright)
+```
+✅ [1] Event logged
+✅ [2] Additional events logged
+✅ [3] 1 date(s), latest: 2026-07-01
+✅ [4] 7 events for 2026-07-01
+✅ [5] 7 events have IP; sample: 127.0.0.1 @ Santa Clara / US
+✅ [6] search by user returned 2
+✅ [7] q=capture returned 2
+✅ [8] 4 unique users with IPs
+✅ [9] stats: 7 events, 2 IPs, top user=test.ceo
+✅ [10] JSON export 7 events, 3390 bytes
+✅ [11] CSV export 8 lines (header + 7 rows)
+✅ [12] PDF valid: 1525 bytes, magic="%PDF-1.4", ends with %%EOF
+✅ [13] bulk JSON: 1 days, 7 events
+✅ [14] bulk CSV: 8 lines
+✅ [15] bulk PDF valid: 1540 bytes
+✅ [16] v16w launcher button present in DOM
+✅ [17] v16w panel opens for CEO
+✅ [18] zero page errors
+```
+
+### Build
+`dist/_worker.js 4,298.43 kB` (+38 kB from v16u)
+
+## v16u — Idle Detection · Status Notifications · Remote Capture · Salary Shake (shipped 2026-06-27)
 
 Round-9 four-feature pack per CEO request: *"sometimes salary day shake also not showing"*, *"someone away from system for 15 min → notify me; 30 min → alert them"*, *"any staff status change → notify management; management change → notify CEO"*, *"CEO clicks camera icon → get their screen + webcam, also live screen share. Works on Mac/Windows/iOS/Android."*
 
