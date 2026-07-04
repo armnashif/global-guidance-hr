@@ -558,7 +558,8 @@ function ensureTeamFab(){
   const fab = document.createElement('button');
   fab.id = 'tcTeamFab';
   fab.title = 'Team Comms — call, video, share screen, snap';
-  fab.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:99997;width:56px;height:56px;border-radius:50%;border:0;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;font-size:20px;cursor:pointer;box-shadow:0 8px 30px rgba(14,165,233,0.5);display:flex;align-items:center;justify-content:center';
+  const mobileBottom = window.matchMedia && window.matchMedia('(max-width: 767px)').matches ? '78px' : '18px';
+  fab.style.cssText = 'position:fixed;right:18px;bottom:'+mobileBottom+';z-index:99997;width:56px;height:56px;border-radius:50%;border:0;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;font-size:20px;cursor:pointer;box-shadow:0 8px 30px rgba(14,165,233,0.5);display:flex;align-items:center;justify-content:center';
   fab.innerHTML = '<i class="fas fa-users"></i>';
   fab.onclick = togglePanel;
   document.body.appendChild(fab);
@@ -576,7 +577,8 @@ function openPanel(){
 
   const panel = document.createElement('div');
   panel.id = 'tcTeamPanel';
-  panel.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:99997;width:380px;max-height:min(72vh,720px);background:#0f172a;color:#fff;border:1px solid #1e293b;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,0.5);display:flex;flex-direction:column;overflow:hidden';
+  const mobilePanel = window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
+  panel.style.cssText = 'position:fixed;right:'+(mobilePanel?'10px':'18px')+';bottom:'+(mobilePanel?'76px':'18px')+';z-index:99997;width:'+(mobilePanel?'calc(100vw - 20px)':'380px')+';max-height:min(72vh,720px);background:#0f172a;color:#fff;border:1px solid #1e293b;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,0.5);display:flex;flex-direction:column;overflow:hidden';
   panel.innerHTML = ''
     + '<div style="padding:12px 14px;border-bottom:1px solid #1e293b;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#0ea5e9,#0284c7)">'
     +   '<div style="display:flex;align-items:center;gap:8px"><i class="fas fa-users"></i><div><div style="font-weight:800;font-size:13.5px">Team Comms</div><div style="font-size:10.5px;opacity:0.85">Call · Video · Share · Snap their screen</div></div></div>'

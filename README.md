@@ -1,5 +1,20 @@
 # Global Guidance — Operations Command Portal
 
+## v16z — Reliability Baseline (2026-07-04)
+
+- Replaced the obsolete local launcher path with the current Hono/Vite application.
+- Added one-command first-run dependency installation on macOS, Linux, and Windows.
+- Added `GET /api/health` with service, version, runtime, and timestamp metadata.
+- Added request correlation IDs and baseline browser security headers.
+- Made `npm test` a deterministic production-build verification.
+- Updated local-run and deployment guidance to match the supported Cloudflare runtime.
+- Consolidated attendance and daily tasks into one short **Today** workflow.
+- Removed duplicate **Attend** and legacy **My Tasks** entry points for staff.
+- Restored compatibility with documented staff credentials (`password123` and `Staff@Global2026`).
+- Removed demo operational records and old browser task/attendance state.
+- Consolidated notifications into the top-bar bell on every screen size.
+- Prepared the Hono entry point for Vercel's zero-configuration deployment.
+
 ## Project Overview
 - **Name**: webapp (Global Guidance Operations Portal)
 - **Goal**: AI-powered enterprise operational command center for a modern global education consultancy. Every user sees a personalized workspace tuned to their role.

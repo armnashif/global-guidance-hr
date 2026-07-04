@@ -1,6 +1,6 @@
 @echo off
 echo.
-echo  Global Guidance HR System v4.0
+echo  Global Guidance Operations Portal v16z
 echo  ================================
 echo.
 node --version >nul 2>&1
@@ -11,6 +11,11 @@ if errorlevel 1 (
   pause
   exit
 )
-echo  Starting server...
-node server.js
+if not exist node_modules\ (
+  echo  Installing dependencies ^(first run only^)...
+  call npm ci
+  if errorlevel 1 exit /b 1
+)
+echo  Starting portal at http://localhost:3000 ...
+call npm start
 pause

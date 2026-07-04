@@ -1,5 +1,5 @@
 ═══════════════════════════════════════════════════
- GLOBAL GUIDANCE HR SYSTEM v4.0 — HOW TO RUN
+ GLOBAL GUIDANCE OPERATIONS PORTAL v16z — HOW TO RUN
 ═══════════════════════════════════════════════════
 
 STEP 1: Install Node.js (ONE TIME ONLY)
@@ -15,7 +15,7 @@ STEP 3: Open your browser
   → Go to http://localhost:3000
 
 STEP 4: Login
-  CEO:   nashif.razzak   /  password123
+  CEO:   nashif.razzak   /  CEO@Global2026
   HR:    thasbiha.s      /  password123
   Visa:  razan.thawus    /  password123
   Admin: umair           /  password123
@@ -33,24 +33,12 @@ STEP 4: Login
 ═══════════════════════════════════════════════════
  FREE ONLINE HOSTING (accessible from anywhere):
 ═══════════════════════════════════════════════════
-  Option A — Render.com (100% FREE):
-    1. Go to https://github.com → create free account
-    2. Upload this folder to a new repository
-    3. Go to https://render.com → create free account
-    4. New Web Service → connect your GitHub repo
-    5. Build command: (leave blank)
-    6. Start command: node server.js
-    7. Click Deploy → you get a free URL!
-
-  Option B — Railway.app (FREE $5/month credit):
-    1. Go to https://railway.app
-    2. Login with GitHub
-    3. New Project → Deploy from GitHub
-    4. Done — free URL given instantly
-
-  Option C — Cloudflare Pages (FREE, requires build):
+  Cloudflare Pages (the supported production runtime):
     npm install && npm run deploy
     (Needs wrangler login first)
+
+HEALTH CHECK:
+  http://localhost:3000/api/health
 
 ═══════════════════════════════════════════════════
  ALL LOGINS:
@@ -64,6 +52,6 @@ STEP 4: Login
   sukaina         → Student Counsellor
   binupa          → Jr. Counsellor
   shiran          → Graphic Designer
-  Password for ALL: password123
+  Staff password: password123 (Staff@Global2026 also works)
 
 ═══════════════════════════════════════════════════

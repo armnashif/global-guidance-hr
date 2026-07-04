@@ -108,8 +108,39 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-// Allow CORS for any future API endpoints (optional but safe)
-app.use('*', cors())
+const APP_VERSION = '16z'
+const APP_NAME = 'Global Guidance Operations Command Portal'
+
+// Baseline operational and browser-security middleware. API clients can use the
+// request ID when reporting an error, while browsers receive conservative
+// defaults without changing the portal's existing inline-script architecture.
+app.use('*', async (c, next) => {
+    const requestId = c.req.header('x-request-id') || crypto.randomUUID()
+    c.header('X-Request-Id', requestId)
+    c.header('X-Content-Type-Options', 'nosniff')
+    c.header('Referrer-Policy', 'strict-origin-when-cross-origin')
+    c.header('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self), display-capture=(self)')
+    c.header('X-Frame-Options', 'SAMEORIGIN')
+    await next()
+})
+
+// The portal is used by standalone companion pages, so retain CORS while
+// explicitly limiting it to the methods and headers the application uses.
+app.use('/api/*', cors({
+    origin: '*',
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+    exposeHeaders: ['X-Request-Id'],
+    maxAge: 86400
+}))
+
+app.get('/api/health', (c) => c.json({
+    ok: true,
+    service: APP_NAME,
+    version: APP_VERSION,
+    runtime: 'cloudflare-pages',
+    timestamp: new Date().toISOString()
+}))
 
 // --- SERVER-SIDE IN-MEMORY STATE (for Live Demo across devices) ---
 // Note: In production (Cloudflare Workers), this state resets on redeploy.
@@ -2079,6 +2110,20 @@ let GLOBAL_VISITORS = [
     { id: 1, name: 'Sarah Johnson', purpose: 'Document Submission', checkIn: '14:00', checkOut: null, date: new Date().toISOString().split('T')[0], host: 'Sukaina', status: 'checked-in' },
     { id: 2, name: 'Ahmed Ali', purpose: 'Consultation', checkIn: '10:15', checkOut: '11:00', date: new Date().toISOString().split('T')[0], host: 'Nashif A. Razzak', status: 'checked-out' }
 ];
+
+// v16z clean-start release: retain account/configuration records, but ship
+// without demo operational data. Real records can now be entered from day one.
+ADMISSIONS_DB_DATA.length = 0;
+GLOBAL_MESSAGES.length = 0;
+GLOBAL_NOTIFICATIONS.length = 0;
+GLOBAL_LEADS.length = 0;
+GLOBAL_EMAILS.length = 0;
+GLOBAL_DAILY_REPORTS.length = 0;
+GLOBAL_TASKS.length = 0;
+GLOBAL_KPIS.length = 0;
+GLOBAL_RED_FLAGS.length = 0;
+GLOBAL_MEETINGS.length = 0;
+GLOBAL_VISITORS.length = 0;
 
 // Get all meetings
 app.get('/api/meetings', (c) => {

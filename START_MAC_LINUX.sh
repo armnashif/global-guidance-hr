@@ -1,6 +1,6 @@
 #!/bin/bash
 echo ""
-echo " Global Guidance HR System v4.0"
+echo " Global Guidance Operations Portal v16z"
 echo " ================================"
 echo ""
 if ! command -v node &> /dev/null; then
@@ -9,5 +9,9 @@ if ! command -v node &> /dev/null; then
   echo " Then run this script again."
   exit 1
 fi
-echo " Starting server..."
-node server.js
+if [ ! -d node_modules ]; then
+  echo " Installing dependencies (first run only)..."
+  npm ci || exit 1
+fi
+echo " Starting portal at http://localhost:3000 ..."
+npm start

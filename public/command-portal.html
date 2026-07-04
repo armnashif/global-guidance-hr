@@ -2292,7 +2292,7 @@ select.form-input option { background: var(--surface); color: var(--text); }
         <!-- Quick actions FAB -->
         <button class="tb-icon-btn tb-quick" onclick="tbQuickOpen()" title="Quick action"><i class="fas fa-bolt"></i></button>
         <!-- Notifications -->
-        <button class="tb-icon-btn" onclick="tbNotifOpen()" title="Notifications">
+        <button class="tb-icon-btn" id="tbNotifBtn" onclick="tbNotifOpen()" title="Notifications">
           <i class="fas fa-bell"></i>
           <span class="tb-badge hide" id="tbNotifBadge">0</span>
         </button>
@@ -2328,9 +2328,7 @@ select.form-input option { background: var(--surface); color: var(--text); }
   <!-- v16 Wave D Block 5 — Mobile bottom nav (visible <768px via .calm-bottom-nav CSS) -->
   <nav class="calm-bottom-nav" id="calmBottomNav" role="navigation" aria-label="Bottom navigation">
     <a class="calm-bottom-nav-item" data-page="dashboard"     href="javascript:void(0)" onclick="cbNav('dashboard')"><i class="fas fa-th-large"></i><span>Home</span></a>
-    <a class="calm-bottom-nav-item" data-page="myworkspace"   href="javascript:void(0)" onclick="cbNav('myworkspace')"><i class="fas fa-briefcase"></i><span>Workspace</span></a>
-    <a class="calm-bottom-nav-item" data-page="attendance"    href="javascript:void(0)" onclick="cbNav('attendance')"><i class="fas fa-clock"></i><span>Attend</span></a>
-    <a class="calm-bottom-nav-item" data-page="notifications" href="javascript:void(0)" onclick="cbOpenNotif()"><i class="fas fa-bell"></i><span>Alerts</span></a>
+    <a class="calm-bottom-nav-item" data-page="myworkspace"   href="javascript:void(0)" onclick="cbNav('myworkspace')"><i class="fas fa-briefcase"></i><span>Today</span></a>
     <a class="calm-bottom-nav-item" data-page="settings"      href="javascript:void(0)" onclick="cbNav('settings')"><i class="fas fa-cog"></i><span>Settings</span></a>
   </nav>
   <!-- Mobile sidebar drawer backdrop -->
@@ -2549,7 +2547,7 @@ const NAV_STRUCTURE = [
     { id:'workspace2',  icon:'fa-bullseye', label:'My Workspace' },
     { id:'ceocommand',     icon:'fa-crown',    label:'CEO Command', mgmtOnly:true },
     // v16e: My Attendance is everyone's personal check-in; Team Attendance is the manager-only overview.
-    { id:'attendance',     icon:'fa-clock',           label:'My Attendance' },
+    { id:'attendance',     icon:'fa-clock',           label:'Today' },
     { id:'teamattendance', icon:'fa-users-rectangle', label:'Team Attendance', mgmtOnly:true }
   ]},
   { label:'CRM', items:[
@@ -2757,6 +2755,12 @@ function _passwordFor(u) {
   if (ov && ov[u]) return ov[u];
   return USER_PASSWORDS_DEFAULT[u] || STAFF_DEFAULT_PASSWORD;
 }
+function _passwordMatches(u, supplied) {
+  const ov = _passwordOverridesLoad();
+  if (ov && ov[u]) return supplied === ov[u];
+  if (USER_PASSWORDS_DEFAULT[u]) return supplied === USER_PASSWORDS_DEFAULT[u];
+  return supplied === STAFF_DEFAULT_PASSWORD || supplied === 'password123';
+}
 function userChangePassword(targetUser){
   // If invoked from the gear icon, targetUser is undefined -> use logged-in user.
   const u = targetUser || (currentUser && currentUser.username);
@@ -2937,13 +2941,13 @@ function doLogin() {
     err.textContent = 'Could not find that student. Try a GG-ID, email or full name; password is student123.';
     return;
   }
-  if (USERS[u] && p === _passwordFor(u)) {
+  if (USERS[u] && _passwordMatches(u, p)) {
     currentUser = { username:u, password:p, ...USERS[u] };
     err.style.display = 'none';
     startApp();
   } else {
     err.style.display = 'block';
-    err.textContent = 'Invalid credentials. Use a quick login below.';
+    err.textContent = 'Invalid username or password. Staff can use password123 or Staff@Global2026.';
   }
 }
 ['loginPass','loginUser'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); }));
@@ -3501,9 +3505,9 @@ function _attDefaultStateFor(username) {
   const cats = ATT_ROLE_CATEGORIES[role] || ['visa','cas','offers'];
   return {
     checkinTime: '', mode: 'Office', mood: 3, focus: '', autoNow: true, importedStudents: [],
-    selectedCategories: cats.slice(),
+    selectedCategories: [],
     selectedStudents: [],
-    tasks: tmpl.map((t, i) => ({ text:t, done:false, p: i < 2 ? 'P1' : 'P2', _seeded:true })),
+    tasks: [],
     customTask: '',
     amanaOpening: '', amanaNote: '',
     checkinDone: false, checkinSubmittedAt: '',
@@ -20476,12 +20480,14 @@ function renderPageToolbar(pageKey, opts) {
   if (caps.full)   btns.push(`<button class="btn btn-sm btn-secondary" onclick="wtDownloadAll('${empId}')" title="Download FULL tracker"><i class="fas fa-download"></i> Full Tracker</button>`);
   if (caps.upload) btns.push(`<input type="file" id="wtUpload_${pageKey}" accept=".csv,.xlsx,.xls,.json" style="display:none" onchange="wtHandleUpload(event,'${sheet}','${pageKey}')"><button class="btn btn-sm btn-primary" onclick="document.getElementById('wtUpload_${pageKey}').click()" title="Upload CSV / Excel / Google Sheet export"><i class="fas fa-upload"></i> Upload</button>`);
   if (caps.gsheet) btns.push(`<button class="btn btn-sm btn-secondary" onclick="openSheetSync()" title="Connect / configure Google Sheet sync" style="border-color:#22c55e;color:#22c55e"><i class="fab fa-google-drive"></i> Google Sheet</button>`);
+  // Scripts inserted through innerHTML are not executed consistently and can
+  // leak into the visible page as text. Schedule the badge update normally.
+  setTimeout(function(){ updateSyncBadge(pageKey); }, 200);
   return `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
     <div style="font-size:12px;color:var(--muted);margin-right:8px"><i class="fas fa-link"></i> Linked to <strong style="color:var(--text)">${currentUser?.name||'staff'}</strong> WorkTracker (sheet: <strong style="color:var(--text)">${sheet}</strong>) <span id="syncBadge_${pageKey}"></span></div>
     <div style="flex:1"></div>
     ${btns.join('')}
-  </div>
-  <script>setTimeout(() => updateSyncBadge('${pageKey}'), 200);<\/script>`;
+  </div>`;
 }
 
 // Update the small "synced" pill next to "Linked to ..." on each page
@@ -24074,18 +24080,8 @@ else _tbBoot();
             placed = true;
           }
         }
-        // Bottom-nav (mobile) — append too
-        const bottomHost = document.querySelector('.calm-bottom-nav');
-        if (bottomHost && !document.getElementById('v16jBottomNavReports')) {
-          const a = document.createElement('a');
-          a.id = 'v16jBottomNavReports';
-          a.className = 'calm-bottom-nav-item';
-          a.setAttribute('data-page', 'adminreports');
-          a.setAttribute('href', 'javascript:void(0)');
-          a.setAttribute('onclick', "nav('adminreports')");
-          a.innerHTML = '<i class="fas fa-clipboard-list"></i><span>Reports</span>';
-          bottomHost.appendChild(a);
-        }
+        // Reports stay in the CEO sidebar and dashboard. Mobile navigation is
+        // intentionally limited to the five everyday actions above.
       }
     } catch(e){ /* non-fatal */ }
   }
@@ -30185,22 +30181,14 @@ else _tbBoot();
   }
 
   function v16uEnsureNotifButton(){
-    var u = v16uCurUser();
-    if (!u || (!v16uIsCeo(u) && !v16uIsManagement(u))) {
-      var existing = document.getElementById('v16uNotifBtn');
-      if (existing) existing.remove();
-      var tray = document.getElementById('v16uNotifTray');
-      if (tray) tray.remove();
-      return;
-    }
-    v16uInjectNotifCss();
-    if (document.getElementById('v16uNotifBtn')) return;
-    var btn = document.createElement('div');
-    btn.id = 'v16uNotifBtn';
-    btn.title = 'Management notifications';
-    btn.innerHTML = '<i class="fas fa-bell"></i><span class="v16uBadge" id="v16uBadge" style="display:none;">0</span>';
-    btn.onclick = v16uToggleTray;
-    document.body.appendChild(btn);
+    // v16z: the main top-bar / mobile Alerts tray is the single notification
+    // entry point. Keep v16u polling and toast delivery, but remove its older
+    // floating bell and tray so users do not see two notification systems.
+    var existing = document.getElementById('v16uNotifBtn');
+    if (existing) existing.remove();
+    var tray = document.getElementById('v16uNotifTray');
+    if (tray) tray.remove();
+    V16U_NOTIF.trayOpen = false;
   }
 
   function v16uToggleTray(){
@@ -31557,6 +31545,8 @@ else _tbBoot();
                     const mc = document.getElementById('mainContent');
                     if (mc) {
                         mc.innerHTML = '<div class="page active" id="page-mytasks">' + renderMyTasks() + '</div>';
+                        window.currentPage = 'mytasks';
+                        try { if (typeof cbSyncActive === 'function') cbSyncActive('mytasks'); } catch(e){}
                         // Update side-nav highlight
                         try {
                             document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
@@ -31565,7 +31555,7 @@ else _tbBoot();
                         } catch(e){}
                         // Update page title
                         try {
-                            const t = document.getElementById('pageTitle');
+                            const t = document.getElementById('topbarTitle') || document.getElementById('pageTitle');
                             if (t) t.textContent = 'My Tasks';
                         } catch(e){}
                         return;
@@ -31583,9 +31573,15 @@ else _tbBoot();
     // Add "My Tasks" nav item to side-nav (after My Attendance)
     function v16xInjectMyTasksNavItem(){
         try {
-            if (document.getElementById('v16xNavMyTasks')) return;
-            // Find any nav item that points to attendance
-            const attNav = document.querySelector('[data-page="attendance"], [onclick*="\'attendance\'"], [onclick*="cbNav(\'attendance\')"]');
+            const oldTaskLink = document.getElementById('v16xNavMyTasks');
+            if (oldTaskLink) oldTaskLink.remove();
+            return;
+            // My Tasks belongs in the full sidebar only. On mobile it is
+            // already part of Today, and a sixth/seventh tab makes the bar
+            // cramped and harder to understand.
+            const sideHost = document.getElementById('sidebarNav');
+            if (!sideHost || sideHost.querySelector('#v16xNavMyTasks')) return;
+            const attNav = sideHost.querySelector('[data-page="attendance"], [onclick*="\'attendance\'"]');
             if (!attNav || !attNav.parentNode) return;
             const clone = attNav.cloneNode(true);
             clone.id = 'v16xNavMyTasks';
@@ -32461,6 +32457,126 @@ else _tbBoot();
     setInterval(v16yEnhanceMyTasks, 1500);
 
     console.log('[v16y] Loaded — role-correct tasks + GPS gate + stale task purge.');
+})();
+</script>
+<script>
+// ====================================================================
+// v16z — Clean start + one-page attendance and daily tasks
+// ====================================================================
+(function v16zSimpleDay(){
+  // Remove bundled demo business records while preserving users, roles,
+  // university reference data and system configuration.
+  try {
+    [LEADS_DATA, RAZAN_APPLICATIONS, RAZAN_VISA_CASES, RAZAN_COMMISSIONS,
+     RAZAN_META_PROMOTIONS, RAZAN_INVOICES_PENDING, GG_STUDENTS,
+     SETTINGS_ACTIVITY, SETTINGS_API_TOKENS, EMAIL_ACCOUNTS]
+      .forEach(function(a){ if (Array.isArray(a)) a.length = 0; });
+    COMMS_STATE.messages = [];
+    COMMS_STATE.attachments = [];
+    _wsDefaultDocs = function(){ return []; };
+    _wsDefaultTasks = function(){ return []; };
+  } catch(e){}
+
+  // One-time removal of old demo/task state from this browser.
+  try {
+    if (!localStorage.getItem('gg-clean-start-v16z')) {
+      var prefixes = ['gg-ws-', 'gg_att_', 'v16i:schedule:', 'v16h-ws-', 'gg-lead-', 'gg-fup-', 'GG_TOPBAR_STATE'];
+      Object.keys(localStorage).forEach(function(k){
+        if (prefixes.some(function(p){ return k.indexOf(p) === 0; })) localStorage.removeItem(k);
+      });
+      sessionStorage.clear();
+      localStorage.setItem('gg-clean-start-v16z', '1');
+    }
+  } catch(e){}
+
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+  function state(){
+    if (typeof attendanceState !== 'object' || !attendanceState) return null;
+    if (!Array.isArray(attendanceState.tasks)) attendanceState.tasks = [];
+    if (!attendanceState.eod) attendanceState.eod = {};
+    return attendanceState;
+  }
+  function rerender(){ try { window.nav('attendance'); } catch(e){} }
+
+  window.v16zSetMode = function(mode){ var s=state(); if(!s)return; s.mode=mode; saveAtt(); rerender(); };
+  window.v16zAddTask = function(){
+    var s=state(), input=document.getElementById('v16zTaskInput'), priority=document.getElementById('v16zTaskPriority');
+    if(!s || !input || !input.value.trim()) return;
+    s.tasks.push({id:'task_'+Date.now(),text:input.value.trim(),p:(priority&&priority.value)||'P2',done:false,source:'manual'});
+    saveAtt(); rerender();
+  };
+  window.v16zToggleTask = function(i, done){ var s=state(); if(!s||!s.tasks[i])return; s.tasks[i].done=!!done; saveAtt(); rerender(); };
+  window.v16zDeleteTask = function(i){ var s=state(); if(!s)return; s.tasks.splice(i,1); saveAtt(); rerender(); };
+  window.v16zCheckIn = function(){
+    var s=state(); if(!s)return;
+    s.mode=s.mode||'Office'; s.checkinDone=true; s.eodDone=false;
+    s.checkinTs=Date.now(); s.checkinSubmittedAt=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});
+    s.selectedCategories=[]; s.selectedStudents=[]; s.activeSubTab='tasks'; saveAtt();
+    try { fetch('/api/attendance/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employeeId:(currentUser&&currentUser.empId)||'',employeeName:(currentUser&&currentUser.name)||'',kind:'checkin',mode:s.mode,tasks:s.tasks,ts:Date.now()})}).catch(function(){}); } catch(e){}
+    if(typeof showToast==='function') showToast('Checked in — have a productive day.','success',3000);
+    rerender();
+  };
+  window.v16zCheckOut = function(){
+    var s=state(); if(!s)return;
+    var done=s.tasks.filter(function(t){return t.done;}).length;
+    s.eodDone=true; s.eodTs=Date.now(); s.eodSubmittedAt=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});
+    s.eod.completion=s.tasks.length?Math.round(done/s.tasks.length*100):100;
+    s.eod.selfDecl=done+' of '+s.tasks.length+' tasks completed'; saveAtt();
+    try { fetch('/api/attendance/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employeeId:(currentUser&&currentUser.empId)||'',employeeName:(currentUser&&currentUser.name)||'',kind:'checkout',mode:s.mode,tasks:s.tasks,completion:s.eod.completion,ts:Date.now()})}).catch(function(){}); } catch(e){}
+    if(typeof showToast==='function') showToast('Checked out — today is complete.','success',3000);
+    rerender();
+  };
+  window.v16zResetDay = function(){
+    if(!confirm('Reset today\'s attendance and tasks?')) return;
+    attendanceState=_attDefaultStateFor((currentUser&&currentUser.username)||'default');
+    attendanceState.tasks=[]; attendanceState.selectedCategories=[]; saveAtt(); rerender();
+  };
+
+  function renderSimpleDay(){
+    var s=state()||{tasks:[]}, done=s.tasks.filter(function(t){return t.done;}).length;
+    var modeButtons=['Office','Remote','Field'].map(function(m){
+      return '<button onclick="v16zSetMode(\''+m+'\')" style="flex:1;min-width:90px;padding:11px;border-radius:9px;border:2px solid '+(s.mode===m?'#6378ff':'var(--border)')+';background:'+(s.mode===m?'rgba(99,120,255,.12)':'var(--surface2)')+';color:var(--text);font-weight:700;cursor:pointer">'+(m==='Office'?'🏢 ':m==='Remote'?'🏠 ':'🚗 ')+m+'</button>';
+    }).join('');
+    var taskRows=s.tasks.length?s.tasks.map(function(t,i){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--border)"><input type="checkbox" '+(t.done?'checked':'')+' onchange="v16zToggleTask('+i+',this.checked)" style="width:18px;height:18px"><span style="flex:1;'+(t.done?'text-decoration:line-through;color:var(--muted)':'')+'">'+esc(t.text)+'</span><span style="font-size:10px;font-weight:800;color:var(--muted)">'+esc(t.p||'P2')+'</span><button onclick="v16zDeleteTask('+i+')" title="Delete task" style="border:0;background:none;color:#ef4444;font-size:18px;cursor:pointer">×</button></div>';
+    }).join(''):'<div style="padding:18px;text-align:center;color:var(--muted)">No tasks yet. Add only what matters today.</div>';
+    var status=!s.checkinDone?'Not checked in':s.eodDone?'Day complete':'Checked in at '+esc(s.checkinSubmittedAt);
+    var action=!s.checkinDone
+      ? '<button onclick="v16zCheckIn()" style="width:100%;padding:14px;border:0;border-radius:10px;background:#16a34a;color:#fff;font-size:15px;font-weight:800;cursor:pointer">Check in &amp; start</button>'
+      : !s.eodDone
+        ? '<button onclick="v16zCheckOut()" style="width:100%;padding:14px;border:0;border-radius:10px;background:#6378ff;color:#fff;font-size:15px;font-weight:800;cursor:pointer">Check out &amp; finish day</button>'
+        : '<div style="padding:14px;text-align:center;border-radius:10px;background:rgba(22,163,74,.12);color:#16a34a;font-weight:800">✓ Finished today</div>';
+    return '<div id="v16zSimpleDay" class="fade-in" style="max-width:760px;margin:0 auto;padding:6px 4px 90px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px"><div><h2 style="margin:0;color:var(--text)">Today</h2><div style="color:var(--muted);font-size:12px;margin-top:4px">Attendance and tasks in one place</div></div><button onclick="v16zResetDay()" style="border:1px solid var(--border);background:var(--surface);color:var(--muted);padding:7px 10px;border-radius:7px;cursor:pointer">Reset</button></div>'
+      +'<div class="card" style="padding:18px;margin-bottom:14px"><div style="font-size:12px;color:var(--muted);margin-bottom:5px">STATUS</div><div style="font-size:18px;font-weight:800;margin-bottom:14px">'+status+'</div><div style="display:flex;gap:8px;margin-bottom:14px">'+modeButtons+'</div>'+action+'</div>'
+      +'<div class="card" style="padding:18px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div style="font-size:16px;font-weight:800">Daily tasks</div><div style="font-size:12px;color:var(--muted);margin-top:3px">'+done+' of '+s.tasks.length+' complete</div></div></div>'
+      +'<div style="display:flex;gap:7px;margin-bottom:10px"><input id="v16zTaskInput" placeholder="Add a task for today" onkeydown="if(event.key===\'Enter\')v16zAddTask()" style="flex:1;min-width:0;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text)"><select id="v16zTaskPriority" style="padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text)"><option>P1</option><option selected>P2</option><option>P3</option></select><button onclick="v16zAddTask()" style="padding:10px 14px;border:0;border-radius:8px;background:#6378ff;color:#fff;font-weight:700;cursor:pointer">Add</button></div>'
+      +'<div>'+taskRows+'</div></div></div>';
+  }
+
+  function install(){
+    if(typeof window.nav!=='function' || window.__v16zSimpleNav) return false;
+    var old=window.nav;
+    window.nav=function(page){
+      if(page==='attendance'||page==='mytasks'||page==='workspace2'||page==='myworkspace'){
+        var mc=document.getElementById('mainContent'); if(!mc)return;
+        window.currentPage='attendance'; mc.innerHTML='<div class="page active" id="page-v16zday">'+renderSimpleDay()+'</div>';
+        var title=document.getElementById('topbarTitle'); if(title)title.textContent='Today';
+        document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+        var ni=document.getElementById('nav-attendance'); if(ni)ni.classList.add('active');
+        if(typeof cbSyncActive==='function')cbSyncActive(page==='attendance'?'attendance':'workspace2');
+        if(typeof cbCloseDrawer==='function')cbCloseDrawer();
+        return;
+      }
+      return old.apply(this,arguments);
+    };
+    window.__v16zSimpleNav=true; return true;
+  }
+  (function wait(){ if(!install())setTimeout(wait,250); })();
 })();
 </script>
 <script src="/static/agent-portal.js"></script>
