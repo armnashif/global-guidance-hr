@@ -7434,6 +7434,75 @@ const KV_V16L_OFFICES   = 'v16l:offices';         // array — office locations 
 const KV_V16L_PLAN      = 'v16l:daily-plan';      // array, cap 2000
 const KV_V16L_REPORT    = 'v16l:daily-report';    // array, cap 2000
 const KV_V16L_ACTIVITY  = 'v16l:team-activity';   // array, cap 500 — live activity feed
+const KV_V16Y_DOCUMENTS = 'v16y:documents';       // CEO-managed Drive/Docs/Sheets library
+const KV_V16Y_SYNC      = 'v16y:google-sync';      // append-only Google Sheets delivery queue
+
+const DEFAULT_DRIVE_DOCUMENTS = [
+    { id:'POLICY-001', owner:'', name:'Better HR Product and Trial Proposal — GG OS Reference', type:'PDF · Google Drive', url:'https://drive.google.com/file/d/1VMmHGzqQkAMRScE3wWQeRMoPXkXfQ1KS/view' },
+    { id:'GG001', owner:'nashif.razzak', name:'Nashif A. Razzak — Activity Workbook', type:'Google Sheet', url:'https://docs.google.com/spreadsheets/d/1A5HgAdO01NxoJaLuphWIFtb57AMQmysmhvWK4QdoXrA/edit' },
+    { id:'GG002', owner:'nafees.razzak', name:'Nafees Razzak — Activity Workbook', type:'Google Sheet', url:'https://docs.google.com/spreadsheets/d/1JEvQE3RFtkK_rOdpY2H3K0-cc_fPAq-9cjvUKldhmWE/edit' },
+    { id:'GG003', owner:'razan.thawus', name:'Razan Thawus — Activity Workbook', type:'Google Sheet', url:'https://docs.google.com/spreadsheets/d/1ckt8-Z2Mx2XRUFxbWamzSuRmmFNpgm48fK33SItB8Mw/edit' },
+    { id:'GG004', owner:'umair', name:'Umair — Activity Workbook', type:'Google Sheet', url:'https://docs.google.com/spreadsheets/d/1JIVBAlkh03IzYF10ViuBwF_Pn2YP0MXw1sQwnbzb-lA/edit' },
+    { id:'GG005', owner:'thasbiha.s', name:'Thasbiha S. — Activity Workbook', type:'Google Sheet', url:'https://docs.google.com/spreadsheets/d/1G6qmGSNb7SrPZAznnpLLmYHXZADoRJyltK0MvEf8d8Q/edit' },
+    { id:'GG006', owner:'mohamed.s', name:'Mohamed Salih — Activity Workbook', type:'Google Sheet', url:'https://docs.google.com/spreadsheets/d/1e493_1S_Rcblrk78X4sLqPXaYy8ilwj5jv6KCAOaIBQ/edit' },
+    { id:'GG007', owner:'sukaina', name:'Sukaina — Activity Workbook', type:'Google Sheet', url:'https://docs.google.com/spreadsheets/d/1rQChZjsmigxzT_LuTI7JIThpLMU2DtlcStwuQ36KwY8/edit' },
+    { id:'GG008', owner:'binupa', name:'Binupa — Activity Workbook', type:'Google Sheet', url:'https://docs.google.com/spreadsheets/d/1kN5fV6rD7ZzmSN8Ex27XzAQTUfzQMWCW4cl7MrQ7yCo/edit' },
+    { id:'GG009', owner:'shiran', name:'Shiran — Activity Workbook', type:'Google Sheet', url:'https://docs.google.com/spreadsheets/d/1MStWtQK8N825iKUouTihNSeOeZUnwVaSp4Yw16h8Sm0/edit' },
+    { id:'GG010', owner:'shakya', name:'Shakya — Activity Workbook', type:'Google Sheet', url:'https://docs.google.com/spreadsheets/d/16cX11mfdaZsZ_G53UROdaDVtMRq2-jwie4RZM8Z-C7Y/edit' },
+    { id:'GG011', owner:'jinushiya', name:'Jinushiya — Activity Workbook', type:'Google Sheet', url:'https://docs.google.com/spreadsheets/d/1lOfwZ6UlqqrFuJCUsbyhLozb1CqB_cBjOieR12fAf_k/edit' },
+    { id:'GG012', owner:'saleh', name:'Saleh — Activity Workbook', type:'Google Sheet', url:'https://docs.google.com/spreadsheets/d/1MAcsFIlhalzeoPMG62qzTWxYygK_eDCA90ieyq0EQZY/edit' }
+];
+
+async function v16yQueueGoogleSync(c: any, event: any) {
+    const queue = await kvLoadArr(c, KV_V16Y_SYNC);
+    const item: any = { id:v16lId('sync'), status:'pending', attempts:0, createdAt:new Date().toISOString(), ...event };
+    const webhook = String((c.env as any)?.GOOGLE_SHEETS_WEBHOOK_URL || '').trim();
+    if (webhook) {
+        try {
+            item.attempts = 1;
+            const response = await fetch(webhook, { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(item) });
+            item.status = response.ok ? 'synced' : 'failed';
+            item.syncedAt = response.ok ? new Date().toISOString() : '';
+            item.lastError = response.ok ? '' : 'HTTP ' + response.status;
+        } catch (e: any) { item.status='failed'; item.attempts=1; item.lastError=String(e?.message || e).slice(0,200); }
+    }
+    queue.unshift(item);
+    await kvSaveArr(c, KV_V16Y_SYNC, queue, 5000);
+    return item;
+}
+
+app.get('/api/v16y/documents', async (c) => {
+    let items = await kvLoadArr(c, KV_V16Y_DOCUMENTS);
+    if (!items.length) { items = DEFAULT_DRIVE_DOCUMENTS.slice(); await kvSaveArr(c, KV_V16Y_DOCUMENTS, items, 500); }
+    return c.json({ success:true, items });
+});
+
+app.post('/api/v16y/documents', async (c) => {
+    try {
+        const body = await c.req.json();
+        if (Number(body.level || 0) < 100) return c.json({ success:false, error:'CEO only' }, 403);
+        let items = await kvLoadArr(c, KV_V16Y_DOCUMENTS);
+        if (!items.length) items = DEFAULT_DRIVE_DOCUMENTS.slice();
+        const op = String(body.op || 'upsert');
+        const id = String(body.id || v16lId('doc'));
+        if (op === 'delete') items = items.filter((x:any) => x.id !== id);
+        else {
+            const url = String(body.url || '').trim();
+            if (!/^https:\/\/(docs|drive)\.google\.com\//i.test(url)) return c.json({ success:false, error:'Valid Google Drive/Docs/Sheets URL required' }, 400);
+            const row = { id, owner:String(body.owner || ''), name:String(body.name || 'Untitled document').slice(0,160), type:String(body.type || 'Google Drive').slice(0,60), url, updatedAt:new Date().toISOString(), updatedBy:String(body.updatedBy || '') };
+            const idx = items.findIndex((x:any) => x.id === id); if (idx >= 0) items[idx] = { ...items[idx], ...row }; else items.unshift(row);
+        }
+        await kvSaveArr(c, KV_V16Y_DOCUMENTS, items, 500);
+        await v16yQueueGoogleSync(c, { category:'document', action:op, user:String(body.updatedBy || ''), employeeId:String(body.employeeId || ''), recordId:id, data:body });
+        return c.json({ success:true, items });
+    } catch (e:any) { return c.json({ success:false, error:e?.message || String(e) }, 500); }
+});
+
+app.get('/api/v16y/google-sync', async (c) => {
+    const items = await kvLoadArr(c, KV_V16Y_SYNC);
+    const pending = items.filter((x:any) => x.status !== 'synced').length;
+    return c.json({ success:true, configured:!!String((c.env as any)?.GOOGLE_SHEETS_WEBHOOK_URL || '').trim(), pending, items:items.slice(0,100) });
+});
 
 // Default office master (CEO can edit)
 const DEFAULT_OFFICES = [
@@ -7559,6 +7628,7 @@ app.post('/api/v16l/attendance', async (c) => {
             dayKey: day
         });
         await kvSaveArr(c, KV_V16L_ACTIVITY, activity, 500);
+        await v16yQueueGoogleSync(c, { category:'attendance', action:kind, user, employeeId:entry.empId, recordId:entry.id, data:entry });
         return c.json({ success: true, entry });
     } catch (e: any) {
         return c.json({ success: false, error: e?.message || String(e) }, 500);
@@ -7610,6 +7680,7 @@ app.post('/api/v16l/daily-plan', async (c) => {
             ts: Date.now(), dayKey: day
         });
         await kvSaveArr(c, KV_V16L_ACTIVITY, activity, 500);
+        await v16yQueueGoogleSync(c, { category:'daily-plan', action:'submit', user, recordId:entry.id, data:entry });
         return c.json({ success: true, entry });
     } catch (e: any) {
         return c.json({ success: false, error: e?.message || String(e) }, 500);
@@ -7658,6 +7729,7 @@ app.post('/api/v16l/daily-report', async (c) => {
             ts: Date.now(), dayKey: day
         });
         await kvSaveArr(c, KV_V16L_ACTIVITY, activity, 500);
+        await v16yQueueGoogleSync(c, { category:'daily-report', action:'submit', user, recordId:entry.id, data:entry });
         return c.json({ success: true, entry });
     } catch (e: any) {
         return c.json({ success: false, error: e?.message || String(e) }, 500);
@@ -7686,12 +7758,17 @@ app.post('/api/v16l/team-activity', async (c) => {
             id: v16lId('act'),
             user: String(body.user),
             name: String(body.name || ''),
+            employeeId: String(body.employeeId || ''),
             type: String(body.type || 'activity'),
             text: String(body.text).slice(0, 280),
+            details: body.details || null,
+            ip: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown',
+            userAgent: c.req.header('user-agent') || 'unknown',
             ts: Date.now(), dayKey: day
         };
         arr.unshift(entry);
         await kvSaveArr(c, KV_V16L_ACTIVITY, arr, 500);
+        await v16yQueueGoogleSync(c, { category:'activity', action:entry.type, user:entry.user, recordId:entry.id, data:entry });
         return c.json({ success: true, entry });
     } catch (e: any) {
         return c.json({ success: false, error: e?.message || String(e) }, 500);
