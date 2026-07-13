@@ -6,6 +6,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://webapp-8mm.pages.dev/api/:path*"
+    },
+    {
       "source": "/",
       "destination": "/command-portal.html"
     },

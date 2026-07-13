@@ -7436,6 +7436,7 @@ const KV_V16L_REPORT    = 'v16l:daily-report';    // array, cap 2000
 const KV_V16L_ACTIVITY  = 'v16l:team-activity';   // array, cap 500 — live activity feed
 const KV_V16Y_DOCUMENTS = 'v16y:documents';       // CEO-managed Drive/Docs/Sheets library
 const KV_V16Y_SYNC      = 'v16y:google-sync';      // append-only Google Sheets delivery queue
+const KV_V16Y_SYNC_CFG  = 'v16y:google-sync-config'; // KV fallback for webhook config
 
 const DEFAULT_DRIVE_DOCUMENTS = [
     { id:'POLICY-001', owner:'', name:'Better HR Product and Trial Proposal — GG OS Reference', type:'PDF · Google Drive', url:'https://drive.google.com/file/d/1VMmHGzqQkAMRScE3wWQeRMoPXkXfQ1KS/view' },
@@ -7456,18 +7457,32 @@ const DEFAULT_DRIVE_DOCUMENTS = [
 async function v16yQueueGoogleSync(c: any, event: any) {
     const queue = await kvLoadArr(c, KV_V16Y_SYNC);
     const item: any = { id:v16lId('sync'), status:'pending', attempts:0, createdAt:new Date().toISOString(), ...event };
-    const webhook = String((c.env as any)?.GOOGLE_SHEETS_WEBHOOK_URL || '').trim();
-    if (webhook) {
-        try {
-            item.attempts = 1;
-            const response = await fetch(webhook, { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(item) });
-            item.status = response.ok ? 'synced' : 'failed';
-            item.syncedAt = response.ok ? new Date().toISOString() : '';
-            item.lastError = response.ok ? '' : 'HTTP ' + response.status;
-        } catch (e: any) { item.status='failed'; item.attempts=1; item.lastError=String(e?.message || e).slice(0,200); }
-    }
+    await v16yDeliverGoogleSyncItem(c, item);
     queue.unshift(item);
     await kvSaveArr(c, KV_V16Y_SYNC, queue, 5000);
+    return item;
+}
+
+async function v16yGoogleWebhook(c: any) {
+    const envWebhook = String((c.env as any)?.GOOGLE_SHEETS_WEBHOOK_URL || '').trim();
+    if (envWebhook) return envWebhook;
+    const cfg = await kvLoadObj(c, KV_V16Y_SYNC_CFG);
+    return String(cfg?.webhook || '').trim();
+}
+
+async function v16yDeliverGoogleSyncItem(c: any, item: any) {
+    const webhook = await v16yGoogleWebhook(c);
+    if (!webhook) return item;
+    try {
+        item.attempts = Number(item.attempts || 0) + 1;
+        const response = await fetch(webhook, { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(item) });
+        item.status = response.ok ? 'synced' : 'failed';
+        item.syncedAt = response.ok ? new Date().toISOString() : '';
+        item.lastError = response.ok ? '' : 'HTTP ' + response.status;
+    } catch (e: any) {
+        item.status='failed';
+        item.lastError=String(e?.message || e).slice(0,200);
+    }
     return item;
 }
 
@@ -7501,7 +7516,41 @@ app.post('/api/v16y/documents', async (c) => {
 app.get('/api/v16y/google-sync', async (c) => {
     const items = await kvLoadArr(c, KV_V16Y_SYNC);
     const pending = items.filter((x:any) => x.status !== 'synced').length;
-    return c.json({ success:true, configured:!!String((c.env as any)?.GOOGLE_SHEETS_WEBHOOK_URL || '').trim(), pending, items:items.slice(0,100) });
+    return c.json({ success:true, configured:!!(await v16yGoogleWebhook(c)), pending, items:items.slice(0,100) });
+});
+
+app.post('/api/v16y/google-sync/config', async (c) => {
+    try {
+        const body = await c.req.json();
+        if (Number(body.level || 0) < 100) return c.json({ success:false, error:'CEO only' }, 403);
+        const webhook = String(body.webhook || '').trim();
+        if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec\?token=/.test(webhook)) {
+            return c.json({ success:false, error:'Valid Apps Script webhook URL with token required' }, 400);
+        }
+        await kvSaveObj(c, KV_V16Y_SYNC_CFG, { webhook, updatedAt:new Date().toISOString(), updatedBy:String(body.updatedBy || '') });
+        return c.json({ success:true, configured:true });
+    } catch (e:any) { return c.json({ success:false, error:e?.message || String(e) }, 500); }
+});
+
+app.post('/api/v16y/google-sync/retry', async (c) => {
+    try {
+        const body = await c.req.json().catch(() => ({}));
+        if (Number(body.level || 0) < 100) return c.json({ success:false, error:'CEO only' }, 403);
+        const configured = !!(await v16yGoogleWebhook(c));
+        if (!configured) return c.json({ success:false, configured:false, error:'Google Sheets webhook is not configured' }, 400);
+        const limit = Math.max(1, Math.min(250, Number(body.limit || 100)));
+        const items = await kvLoadArr(c, KV_V16Y_SYNC);
+        let attempted = 0, synced = 0, failed = 0;
+        for (const item of items) {
+            if (attempted >= limit) break;
+            if (item.status === 'synced') continue;
+            attempted++;
+            await v16yDeliverGoogleSyncItem(c, item);
+            if (item.status === 'synced') synced++; else failed++;
+        }
+        await kvSaveArr(c, KV_V16Y_SYNC, items, 5000);
+        return c.json({ success:true, configured:true, attempted, synced, failed, pending:items.filter((x:any) => x.status !== 'synced').length });
+    } catch (e:any) { return c.json({ success:false, error:e?.message || String(e) }, 500); }
 });
 
 // Default office master (CEO can edit)
@@ -7661,6 +7710,9 @@ app.post('/api/v16l/daily-plan', async (c) => {
         const entry = {
             id: idx >= 0 ? arr[idx].id : v16lId('plan'),
             user, name: String(body.name || ''),
+            empId: String(body.empId || ''),
+            role: String(body.role || ''),
+            mode: String(body.mode || ''),
             tasks: Array.isArray(body.tasks) ? body.tasks.slice(0, 20) : [],
             students: body.students || { count: 0, highRisk: '', pendingReg: '', priorityConv: '' },
             universities: body.universities || { offers: '', cas: '', coe: '', docs: '' },
@@ -7675,12 +7727,13 @@ app.post('/api/v16l/daily-plan', async (c) => {
         const activity = await kvLoadArr(c, KV_V16L_ACTIVITY);
         activity.unshift({
             id: v16lId('act'), user, name: entry.name,
+            employeeId: entry.empId,
             type: 'daily-plan',
             text: 'Submitted daily plan — ' + (entry.tasks.length || 0) + ' priority task(s)',
             ts: Date.now(), dayKey: day
         });
         await kvSaveArr(c, KV_V16L_ACTIVITY, activity, 500);
-        await v16yQueueGoogleSync(c, { category:'daily-plan', action:'submit', user, recordId:entry.id, data:entry });
+        await v16yQueueGoogleSync(c, { category:'daily-plan', action:'submit', user, employeeId:entry.empId, recordId:entry.id, data:entry });
         return c.json({ success: true, entry });
     } catch (e: any) {
         return c.json({ success: false, error: e?.message || String(e) }, 500);
@@ -7712,11 +7765,16 @@ app.post('/api/v16l/daily-report', async (c) => {
         const entry = {
             id: idx >= 0 ? arr[idx].id : v16lId('rpt'),
             user, name: String(body.name || ''),
+            empId: String(body.empId || ''),
+            role: String(body.role || ''),
+            mode: String(body.mode || ''),
             completed:   String(body.completed || ''),
             pending:     String(body.pending || ''),
             challenges:  String(body.challenges || ''),
             tomorrow:    String(body.tomorrow || ''),
             mgmtNotes:   String(body.mgmtNotes || ''),
+            metrics: body.metrics || {},
+            achievements: String(body.achievements || ''),
             ts: Date.now(), dayKey: day
         };
         if (idx >= 0) arr[idx] = entry; else arr.push(entry);
@@ -7724,12 +7782,13 @@ app.post('/api/v16l/daily-report', async (c) => {
         const activity = await kvLoadArr(c, KV_V16L_ACTIVITY);
         activity.unshift({
             id: v16lId('act'), user, name: entry.name,
+            employeeId: entry.empId,
             type: 'daily-report',
             text: 'Filed daily report',
             ts: Date.now(), dayKey: day
         });
         await kvSaveArr(c, KV_V16L_ACTIVITY, activity, 500);
-        await v16yQueueGoogleSync(c, { category:'daily-report', action:'submit', user, recordId:entry.id, data:entry });
+        await v16yQueueGoogleSync(c, { category:'daily-report', action:'submit', user, employeeId:entry.empId, recordId:entry.id, data:entry });
         return c.json({ success: true, entry });
     } catch (e: any) {
         return c.json({ success: false, error: e?.message || String(e) }, 500);
@@ -7807,6 +7866,8 @@ app.get('/api/v16l/ceo-dashboard', async (c) => {
             plansToday:   plans.filter((r: any) => r.dayKey === day).length,
             reportsToday: reports.filter((r: any) => r.dayKey === day).length
         };
+        (counts as any).present = counts.checkedIn;
+        (counts as any).absent = Math.max(0, 12 - counts.checkedIn - counts.checkedOut - counts.leave);
         return c.json({
             success: true,
             day,
@@ -7832,7 +7893,7 @@ const KV_WS_LOCKS       = 'v16g:ws-locks';         // object: { [key]: true } �
 // Default staff controls (used when KV is empty for a given empId).
 // Heads/Execs default to ON; designers/comms/interns default OFF for planner.
 function defaultStaffControls(empId: string){
-    const opsHeads = new Set(['GG001','GG002','GG003','GG004','GG006']); // CEO/COO/Thasbiha/Umair/Razan
+    const opsHeads = new Set(['GG001','GG002','GG003','GG004','GG005']); // CEO/COO/Razan/Umair/Thasbiha
     const isOps = opsHeads.has(empId);
     return {
         plannerRequired:        isOps,

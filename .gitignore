@@ -33,3 +33,4 @@ debug_*.mjs
 
 # Binary memory dumps (sandbox artifacts, not app source)
 core
+.vercel
