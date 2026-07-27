@@ -32646,6 +32646,117 @@ else _tbBoot();
     hr: [['attendanceExceptions','Attendance exceptions'],['leaveRequests','Leave requests'],['employeeUpdates','Employee records updated'],['documents','Documents processed'],['assets','Assets updated'],['recruitmentActions','Recruitment actions']]
   };
 
+  // Staff-specific daily work templates used by the Morning Plan and Evening Report.
+  // These are intentionally short, WhatsApp-style prompts so staff can complete the
+  // portal without feeling like they are filling an ERP form.
+  var GG_STAFF_DAILY_FORMATS = {
+    'nashif.razzak': {
+      title:'CEO daily format',
+      plan:['Company priorities today','Key decisions required','Departments to review','Urgent escalations','CEO focus for today'],
+      report:['Company status','Key decisions completed','Escalations handled','Pending CEO matters','Tomorrow focus']
+    },
+    'nafees.razzak': {
+      title:'COO daily format',
+      plan:['Attendance / team review','Department follow-ups','Pending approvals','Operations issues','Escalations to resolve','Support needed from CEO'],
+      report:['Staff / team status','Department progress','Approvals completed','Escalations resolved','Pending operational issues','Tomorrow priorities']
+    },
+    'razan.thawus': {
+      title:'Head of BD / Visa daily format',
+      plan:['Visa cases to review','University / partner follow-ups','Pending visa documents','Refund / commission follow-ups','Marketing / event coordination','Escalations or support needed'],
+      report:['Visa cases updated','University / partner follow-ups completed','Documents collected / submitted','Pending visa issues','Escalations','Tomorrow priority cases']
+    },
+    'thasbiha.s': {
+      title:'Head of Admissions / HR + Himaaus daily format',
+      plan:['Global Guidance — new enquiries to review','Global Guidance — student follow-ups','Global Guidance — applications / offers / CAS / COE','Global Guidance — counsellor support','Global Guidance — HR / team matters','Himaaus — package cases','Himaaus — documentation reviews','Himaaus — client coordination','Himaaus — pending university decisions','Support needed'],
+      report:['Global Guidance — registrations','Global Guidance — applications submitted','Global Guidance — offers / CAS / COE updates','Global Guidance — counsellor / team support done','Global Guidance — HR / team updates','Himaaus — cases worked','Himaaus — documents completed','Himaaus — students / clients followed up','Himaaus — issues resolved','Pending matters','Tomorrow plan']
+    },
+    'umair': {
+      title:'Senior Admissions Executive daily format',
+      plan:['Assigned students / leads','Calls target','Applications to process','Offers / CAS / COE follow-ups','University emails','Escalations or support needed'],
+      report:['Calls completed','Students followed up','Applications submitted','Offers / CAS / COE updates','Pending students','Tomorrow priorities']
+    },
+    'sukaina': {
+      title:'Student Counsellor / Front Desk daily format',
+      plan:['Assigned leads','Calls / messages','Walk-ins / appointments','Registrations target','Documents to collect','Support needed'],
+      report:['Calls / messages completed','Students followed up','Appointments / walk-ins handled','Registrations','Documents collected','Pending follow-ups','Tomorrow plan']
+    },
+    'shakya': {
+      title:'Junior Counsellor daily format',
+      plan:['Leads to contact','Follow-ups','Calls / messages target','Appointments','Documents pending','Help needed'],
+      report:['Calls / messages completed','Students followed up','Appointments booked / done','Registrations / applications supported','Pending work','Tomorrow plan']
+    },
+    'jinushiya': {
+      title:'Intern Counsellor daily format',
+      plan:['Leads / students to support','Calls / messages','Data entry / CRM updates','Documents to collect / check','Training / learning task','Support needed'],
+      report:['Calls / messages completed','CRM / data updated','Documents checked','Students supported','What I learned today','Pending work','Tomorrow plan']
+    },
+    'mohamed.s': {
+      title:'Communications Coordinator daily format',
+      plan:['Student messages to handle','Follow-up communications','Email / WhatsApp replies','Social / marketing coordination','Pending responses','Escalations'],
+      report:['Messages / replies completed','Students contacted','Follow-ups completed','Marketing / communications updates','Pending replies','Tomorrow communication plan']
+    },
+    'shiran': {
+      title:'Graphic Designer daily format',
+      plan:['Designs to complete','Social media creatives','Campaign graphics','Revisions','Approval pending','Content support needed'],
+      report:['Designs completed','Revisions completed','Posts / campaign creatives delivered','Pending approvals','Delays / reasons','Tomorrow design plan']
+    },
+    'binupa': {
+      title:'Junior Counsellor / TikTok daily format',
+      plan:['Leads / students to follow','Calls / messages','TikTok / content tasks','Student videos / content support','Appointments','Support needed'],
+      report:['Calls / messages completed','Leads followed','TikTok / content work completed','Students supported','Pending work','Tomorrow plan']
+    },
+    accountant: {
+      title:'Finance daily format',
+      plan:['Payments to verify','Invoices / receipts','Petty cash','Student payment follow-ups','Commission / salary tasks','Finance issues or support needed'],
+      report:['Payments updated','Invoices / receipts completed','Petty cash updates','Pending payments','Finance reconciliation','Issues / escalations','Tomorrow finance tasks']
+    },
+    counsellor: {
+      title:'Counsellor daily format',
+      plan:['Assigned leads','Calls / messages target','Student follow-ups','Appointments / meetings','Registrations target','Documents to collect','Support needed'],
+      report:['Calls / messages completed','Students followed up','Meetings / appointments done','Registrations','Applications moved','Pending students','Tomorrow plan']
+    },
+    admissions: {
+      title:'Admissions daily format',
+      plan:['New enquiries to review','Student follow-ups','Applications to submit / review','Offers / CAS / COE follow-ups','University emails','Counsellor support','Escalations'],
+      report:['Registrations','Applications submitted','Offers / CAS / COE updates','University follow-ups completed','Counsellor / team support done','Pending admissions matters','Tomorrow priorities']
+    },
+    visa: {
+      title:'Visa / BD daily format',
+      plan:['Visa cases to review','University / partner follow-ups','Pending documents','Refund / commission follow-ups','Marketing / event coordination','Escalations'],
+      report:['Visa cases updated','Partner / university follow-ups completed','Documents collected / submitted','Pending visa issues','Escalations','Tomorrow priority cases']
+    },
+    designer: {
+      title:'Designer daily format',
+      plan:['Designs to complete','Campaign creatives','Social media posts','Revisions','Approvals needed'],
+      report:['Designs completed','Pending creatives','Revisions done','Posts / campaigns delivered','Waiting for approval','Tomorrow plan']
+    },
+    coo: {
+      title:'COO daily format',
+      plan:['Attendance / team review','Department follow-ups','Pending approvals','Operations issues','Escalations to resolve','Support needed from CEO'],
+      report:['Staff / team status','Department progress','Approvals completed','Escalations resolved','Pending operational issues','Tomorrow priorities']
+    },
+    ceo: {
+      title:'CEO daily format',
+      plan:['Company priorities today','Key decisions required','Departments to review','Urgent escalations','CEO focus for today'],
+      report:['Company status','Key decisions completed','Escalations handled','Pending CEO matters','Tomorrow focus']
+    },
+    intern: {
+      title:'Intern daily format',
+      plan:['Assigned support work','Calls / messages','CRM / data updates','Documents to check','Training task','Help needed'],
+      report:['Support work completed','CRM / data updated','Documents checked','What I learned today','Pending work','Tomorrow plan']
+    },
+    communications: {
+      title:'Communications daily format',
+      plan:['Student messages to handle','Follow-up communications','Email / WhatsApp replies','Marketing coordination','Pending responses','Escalations'],
+      report:['Messages / replies completed','Students contacted','Follow-ups completed','Marketing / communications updates','Pending replies','Tomorrow communication plan']
+    },
+    hr: {
+      title:'HR / Admin daily format',
+      plan:['Attendance exceptions','Leave requests','Employee records','Documents / acknowledgements','Assets / recruitment actions','Support needed'],
+      report:['Attendance issues handled','Leave requests processed','Employee records updated','Documents / assets updated','Recruitment actions','Pending HR matters','Tomorrow plan']
+    }
+  };
+
   function user(){ try { return currentUser || null; } catch(e){ return null; } }
   function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
   function dateKey(){ return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Colombo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
@@ -32662,6 +32773,22 @@ else _tbBoot();
     if(/hr|admin/.test(s))return 'hr';
     if(/intern|trainee/.test(s))return 'intern';
     return 'counsellor';
+  }
+  function dailyFormat(){
+    var u=user()||{}, key=String(u.username||'').toLowerCase();
+    return GG_STAFF_DAILY_FORMATS[key] || GG_STAFF_DAILY_FORMATS[roleKey()] || GG_STAFF_DAILY_FORMATS.counsellor;
+  }
+  function renderDailyFields(kind){
+    var f=dailyFormat(), fields=f[kind]||[], prefix=kind==='plan'?'ggPlanRole':'ggReportRole';
+    return '<section class="gg-panel gg-section"><div class="gg-section-head"><div><span class="gg-label">ROLE FORMAT</span><h3>'+esc(f.title)+'</h3></div><span class="gg-chip neutral">WhatsApp-ready</span></div><div class="gg-grid">'+fields.map(function(label,i){return '<label><span class="gg-label">'+esc(label)+'</span><textarea class="gg-textarea gg-role-field" data-'+kind+'-role-field="'+esc(label)+'" id="'+prefix+i+'" placeholder="Short bullet points or numbers"></textarea></label>';}).join('')+'</div></section>';
+  }
+  function collectDailyFields(kind){
+    var out={};
+    Array.from(document.querySelectorAll('[data-'+kind+'-role-field]')).forEach(function(el){var label=el.getAttribute('data-'+kind+'-role-field')||'';out[label]=String(el.value||'').trim();});
+    return out;
+  }
+  function dailySummaryText(obj){
+    return Object.keys(obj||{}).filter(function(k){return obj[k];}).map(function(k){return k+': '+obj[k];}).join('\n');
   }
   function storeKey(){ var u=user(); return 'ggos:day:v1:'+((u&&u.username)||'guest')+':'+dateKey(); }
   function blank(){ return {version:2,date:dateKey(),phase:'ready',mode:'Office',gps:null,device:null,checkInAt:'',plan:null,assignedTasks:[],personalTodos:[],timeline:[],report:null,checkOutAt:''}; }
@@ -32728,12 +32855,15 @@ else _tbBoot();
     var priorities=[]; for(var i=1;i<=5;i++){var v=field('ggPriority'+i);if(v)priorities.push(v);}
     if(priorities.length<1){flash('Add at least one priority for today.','error');return;}
     var checked=Array.from(document.querySelectorAll('[data-gg-check]:checked')).map(function(e){return e.value;});
-    s.plan={submittedAt:new Date().toISOString(),priorities:priorities,targets:{calls:num('ggCalls'),meetings:num('ggMeetings'),studentFollowUps:num('ggStudentFups'),universityFollowUps:num('ggUniFups')},checklist:checked,escalations:field('ggEscalations'),blockers:field('ggBlockers'),ceoSupport:!!document.getElementById('ggCeoSupport').checked,cooSupport:!!document.getElementById('ggCooSupport').checked,comments:field('ggPlanComments')};
+    var roleFields=collectDailyFields('plan');
+    s.plan={submittedAt:new Date().toISOString(),formatTitle:dailyFormat().title,roleFields:roleFields,priorities:priorities,targets:{calls:num('ggCalls'),meetings:num('ggMeetings'),studentFollowUps:num('ggStudentFups'),universityFollowUps:num('ggUniFups')},checklist:checked,escalations:field('ggEscalations'),blockers:field('ggBlockers'),ceoSupport:!!document.getElementById('ggCeoSupport').checked,cooSupport:!!document.getElementById('ggCooSupport').checked,comments:field('ggPlanComments')};
     var generated=(GG_ROLE_TASKS[roleKey()]||GG_ROLE_TASKS.counsellor).map(function(x,i){return {id:'role_'+dateKey()+'_'+i,text:x,priority:i<2?'P1':'P2',status:'pending',source:'system',comment:''};});
+    var rolePlanned=Object.keys(roleFields).filter(function(k){return roleFields[k];}).map(function(k,i){return {id:'rolefield_'+Date.now()+'_'+i,text:k+': '+roleFields[k],priority:i<2?'P1':'P2',status:'pending',source:'role-format',comment:''};});
     var planned=priorities.map(function(x,i){return {id:'plan_'+Date.now()+'_'+i,text:x,priority:i<2?'P1':'P2',status:'pending',source:'morning-plan',comment:''};});
     var seen={};s.assignedTasks=generated.concat(planned).filter(function(t){var k=t.text.toLowerCase();if(seen[k])return false;seen[k]=true;return true;});
+    s.assignedTasks=s.assignedTasks.concat(rolePlanned).filter(function(t){var k=t.text.toLowerCase();if(seen[k])return false;seen[k]=true;return true;});
     s.phase='active';event(s,'plan','Morning planner submitted',s.assignedTasks.length+' assigned tasks');save(s);
-    api('/api/v16l/daily-plan',{user:(user()||{}).username,name:(user()||{}).name,empId:(user()||{}).empId,role:(user()||{}).role,mode:s.mode,tasks:priorities,targets:s.plan.targets,checklist:checked,escalations:s.plan.escalations,blockers:s.plan.blockers,ceoSupport:s.plan.ceoSupport,cooSupport:s.plan.cooSupport,comments:s.plan.comments,expectedOutcomes:s.plan.comments});
+    api('/api/v16l/daily-plan',{user:(user()||{}).username,name:(user()||{}).name,empId:(user()||{}).empId,role:(user()||{}).role,mode:s.mode,formatTitle:s.plan.formatTitle,roleFields:roleFields,tasks:priorities,targets:s.plan.targets,checklist:checked,escalations:s.plan.escalations,blockers:s.plan.blockers,ceoSupport:s.plan.ceoSupport,cooSupport:s.plan.cooSupport,comments:s.plan.comments,expectedOutcomes:s.plan.comments});
     flash('Morning plan submitted.');render();
   };
   window.ggTaskToggle=function(id,on){var s=load(),t=s.assignedTasks.find(function(x){return x.id===id;});if(t){t.status=on?'completed':'pending';event(s,'task',on?'Task completed':'Task reopened',t.text);save(s);audit('task',on?'Completed task — '+t.text:'Reopened task — '+t.text,{taskId:id,status:t.status});render();}};
@@ -32752,10 +32882,11 @@ else _tbBoot();
       var btn=document.getElementById('ggReportSubmit');if(btn){btn.disabled=true;btn.textContent='Saving report…';}
       var roleMetrics={};
       Array.from(document.querySelectorAll('[data-role-metric]')).forEach(function(el){roleMetrics[el.getAttribute('data-role-metric')]=Math.max(0,Number(el.value||0)||0);});
-      s.report={submittedAt:new Date().toISOString(),role:roleKey(),completed:completed,pending:pending,delayReason:field('ggDelay'),metrics:roleMetrics,achievements:field('ggAchievements'),tomorrow:tomorrow,support:field('ggSupport')};
+      var roleFields=collectDailyFields('report');
+      s.report={submittedAt:new Date().toISOString(),role:roleKey(),formatTitle:dailyFormat().title,roleFields:roleFields,completed:completed,pending:pending,delayReason:field('ggDelay'),metrics:roleMetrics,achievements:field('ggAchievements'),tomorrow:tomorrow,support:field('ggSupport')};
       s.checkOutAt=timeNow();s.phase='complete';event(s,'report','Evening report submitted','Saved successfully');event(s,'attendance','Checked out',s.mode);save(s);
       try{var hk='ggos:report-history:'+((user()||{}).username||'guest');var history=JSON.parse(localStorage.getItem(hk)||'[]');history.unshift({date:s.date,report:s.report,checkInAt:s.checkInAt,checkOutAt:s.checkOutAt,mode:s.mode});localStorage.setItem(hk,JSON.stringify(history.slice(0,120)));}catch(e){}
-      api('/api/v16l/daily-report',{user:(user()||{}).username,name:(user()||{}).name,empId:(user()||{}).empId,role:(user()||{}).role,mode:s.mode,completed:completed,pending:pending,challenges:s.report.delayReason,tomorrow:tomorrow,mgmtNotes:s.report.support,metrics:s.report.metrics,achievements:s.report.achievements});
+      api('/api/v16l/daily-report',{user:(user()||{}).username,name:(user()||{}).name,empId:(user()||{}).empId,role:(user()||{}).role,mode:s.mode,formatTitle:s.report.formatTitle,roleFields:roleFields,completed:completed,pending:pending,challenges:s.report.delayReason,tomorrow:tomorrow,mgmtNotes:s.report.support,metrics:s.report.metrics,achievements:s.report.achievements});
       api('/api/v16l/attendance',{user:(user()||{}).username,name:(user()||{}).name,empId:(user()||{}).empId,level:(user()||{}).level,mode:s.mode,kind:'checkout',lat:s.gps&&s.gps.lat,lng:s.gps&&s.gps.lng,accuracy:s.gps&&s.gps.accuracy,device:s.device&&s.device.platform||'',browser:s.device&&s.device.userAgent||'',dayKey:s.date});
       flash('Daily report saved. You are checked out.');render('dashboard');
     }catch(e){flash('Could not save the report: '+(e.message||'unknown error'),'error');var b=document.getElementById('ggReportSubmit');if(b){b.disabled=false;b.textContent='Submit report & check out';}}
@@ -32784,7 +32915,7 @@ else _tbBoot();
   window.ggCallLead=function(id){var l=(window.LEADS_DATA||[]).find(function(x){return String(x.id)===String(id);});if(!l||!l.phone){flash('No phone number is saved for this lead.','error');return false;}var D=window.THB_DASH||{};D.day=D.day||dateKey();D.ws=D.ws||'gg';D.calls=D.calls||[];D.calls.unshift({id:'call_'+Date.now(),day:D.day,ws:D.ws,contact:l.name,purpose:'Lead follow-up',outcome:'Call initiated',durationMin:'',notes:'Started from GG OS',ts:Date.now()});try{localStorage.setItem('ggos:thasbiha:calls:'+D.day,JSON.stringify(D.calls));}catch(e){}flash('Opening dialler for '+l.name+'.');return true;};
   function leadCallsPanel(){var u=user()||{},first=(u.name||'').split(' ')[0].toLowerCase(),all=window.LEADS_DATA||[],mine=all.filter(function(l){var a=String(l.assigned||l.counsellor||'').toLowerCase();return management()||a.indexOf(first)>-1;}).filter(function(l){return l.phone&&l.phone!=='—';}).slice(0,6);if(!mine.length)return '';return '<section class="gg-panel gg-section"><div class="gg-section-head"><div><span class="gg-label">LEAD CALLS</span><h3>Call directly from today</h3></div><span class="gg-chip neutral">Uses your phone dialler</span></div>'+mine.map(function(l){var phone=String(l.phone).replace(/[^0-9+]/g,''),wa=phone.replace(/[^0-9]/g,'');return '<div class="gg-task"><div style="flex:1"><b>'+esc(l.name)+'</b><div class="gg-muted">'+esc(l.phone)+' · '+esc(l.status||'lead')+'</div></div><a class="gg-btn gg-primary" style="text-decoration:none;padding:8px 12px" href="tel:'+esc(phone)+'" onclick="return ggCallLead(\''+esc(l.id)+'\')">☎ Call</a><a class="gg-btn gg-success" style="text-decoration:none;padding:8px 12px" target="_blank" rel="noopener" href="https://wa.me/'+esc(wa)+'">WhatsApp</a></div>';}).join('')+'</section>';}
   function ready(s){var u=user()||{};return '<div class="gg-shell">'+header('Good morning, '+(u.name||'there'),'You only need to check in to begin.',s)+liveCompanyPanel()+'<div class="gg-section"><span class="gg-label">WORK MODE</span><div class="gg-modes">'+['Office','Remote','Field'].map(function(m){return '<button class="gg-mode '+(s.mode===m?'on':'')+'" onclick="ggSetMode(\''+m+'\')">'+(m==='Office'?'🏢':m==='Remote'?'🏠':'🚗')+' '+m+'</button>';}).join('')+'</div></div><div class="gg-section gg-muted">GPS, device and network evidence will be recorded when you check in.</div><button id="ggCheckInBtn" class="gg-btn gg-success" style="width:100%;margin-top:16px" onclick="ggCheckIn()">Check in</button></div>';}
-  function planner(s){var checks=GG_ROLES[roleKey()]||GG_ROLES.counsellor;return '<div class="gg-shell">'+header('Morning daily plan','Required before Today opens · '+esc(s.mode)+' · checked in '+esc(s.checkInAt),s)+'<div class="gg-section"><span class="gg-label">TODAY\'S TOP 5 PRIORITIES</span>'+[1,2,3,4,5].map(function(i){return '<input class="gg-input" id="ggPriority'+i+'" style="margin-bottom:8px" placeholder="Priority '+i+'">';}).join('')+'</div><div class="gg-section"><span class="gg-label">TODAY\'S TARGETS</span><div class="gg-metric">'+[['ggCalls','Calls'],['ggMeetings','Meetings'],['ggStudentFups','Student follow-ups'],['ggUniFups','University follow-ups']].map(function(x){return '<label><span class="gg-label">'+x[1]+'</span><input class="gg-input" id="'+x[0]+'" type="number" min="0" value="0"></label>';}).join('')+'</div></div><div class="gg-section"><span class="gg-label">ROLE CHECKLIST · '+esc(roleKey())+'</span><div class="gg-grid">'+checks.map(function(x){return '<label class="gg-check"><input data-gg-check type="checkbox" value="'+esc(x)+'"><span>'+esc(x)+'</span></label>';}).join('')+'</div></div><div class="gg-grid gg-section"><label><span class="gg-label">ESCALATIONS</span><textarea class="gg-textarea" id="ggEscalations"></textarea></label><label><span class="gg-label">BLOCKERS</span><textarea class="gg-textarea" id="ggBlockers"></textarea></label></div><div class="gg-section"><label class="gg-check"><input id="ggCeoSupport" type="checkbox"> Need CEO support</label><label class="gg-check"><input id="ggCooSupport" type="checkbox"> Need COO support</label><label><span class="gg-label">COMMENTS</span><textarea class="gg-textarea" id="ggPlanComments"></textarea></label></div><button class="gg-btn gg-primary" style="width:100%;margin-top:16px" onclick="ggSubmitPlan()">Submit morning plan</button></div>';}
+  function planner(s){var checks=GG_ROLES[roleKey()]||GG_ROLES.counsellor;return '<div class="gg-shell">'+header('Morning daily plan','Required before Today opens · '+esc(s.mode)+' · checked in '+esc(s.checkInAt),s)+'<div class="gg-section"><span class="gg-label">TODAY\'S TOP 5 PRIORITIES</span>'+[1,2,3,4,5].map(function(i){return '<input class="gg-input" id="ggPriority'+i+'" style="margin-bottom:8px" placeholder="Priority '+i+'">';}).join('')+'</div>'+renderDailyFields('plan')+'<div class="gg-section"><span class="gg-label">TODAY\'S TARGETS</span><div class="gg-metric">'+[['ggCalls','Calls'],['ggMeetings','Meetings'],['ggStudentFups','Student follow-ups'],['ggUniFups','University follow-ups']].map(function(x){return '<label><span class="gg-label">'+x[1]+'</span><input class="gg-input" id="'+x[0]+'" type="number" min="0" value="0"></label>';}).join('')+'</div></div><div class="gg-section"><span class="gg-label">ROLE CHECKLIST · '+esc(roleKey())+'</span><div class="gg-grid">'+checks.map(function(x){return '<label class="gg-check"><input data-gg-check type="checkbox" value="'+esc(x)+'"><span>'+esc(x)+'</span></label>';}).join('')+'</div></div><div class="gg-grid gg-section"><label><span class="gg-label">ESCALATIONS</span><textarea class="gg-textarea" id="ggEscalations"></textarea></label><label><span class="gg-label">BLOCKERS</span><textarea class="gg-textarea" id="ggBlockers"></textarea></label></div><div class="gg-section"><label class="gg-check"><input id="ggCeoSupport" type="checkbox"> Need CEO support</label><label class="gg-check"><input id="ggCooSupport" type="checkbox"> Need COO support</label><label><span class="gg-label">COMMENTS</span><textarea class="gg-textarea" id="ggPlanComments"></textarea></label></div><button class="gg-btn gg-primary" style="width:100%;margin-top:16px" onclick="ggSubmitPlan()">Submit morning plan</button></div>';}
   function today(s){
     var completed=s.assignedTasks.filter(function(t){return t.status==='completed';}).length;
     var delayed=s.assignedTasks.filter(function(t){return t.status==='delayed';}).length;
@@ -32810,7 +32941,7 @@ else _tbBoot();
       +'<section class="gg-panel gg-section"><span class="gg-label">MY DAY TIMELINE</span>'+timeline+'</section>'
       +'<button class="gg-btn gg-primary" style="width:100%;margin-top:20px" onclick="ggOpenReport()">Finish day &amp; complete daily report</button></div>';
   }
-  function report(s){var defs=metricDefs();return '<div class="gg-shell">'+header('Evening daily report','Your '+esc((user()||{}).role||'role')+' report. Saved immediately; cloud sync runs in the background.',s)+'<div class="gg-grid"><label><span class="gg-label">COMPLETED TASKS *</span><textarea id="ggCompleted" class="gg-textarea"></textarea></label><label><span class="gg-label">PENDING TASKS</span><textarea id="ggPending" class="gg-textarea"></textarea></label><label><span class="gg-label">REASON FOR DELAY</span><textarea id="ggDelay" class="gg-textarea"></textarea></label><label><span class="gg-label">ACHIEVEMENTS</span><textarea id="ggAchievements" class="gg-textarea"></textarea></label></div><div class="gg-section"><span class="gg-label">TODAY\'S ROLE NUMBERS</span><div class="gg-metric">'+defs.map(function(x){return '<label><span class="gg-label">'+esc(x[1])+'</span><input data-role-metric="'+esc(x[0])+'" class="gg-input" type="number" min="0" value="0"></label>';}).join('')+'</div></div><div class="gg-grid gg-section"><label><span class="gg-label">TOMORROW PLAN *</span><textarea id="ggTomorrow" class="gg-textarea"></textarea></label><label><span class="gg-label">SUPPORT NEEDED</span><textarea id="ggSupport" class="gg-textarea"></textarea></label></div><div id="ggReportMessage" class="gg-muted" style="margin-top:14px">Completed tasks and tomorrow plan are required.</div><div style="display:flex;gap:8px;margin-top:12px"><button type="button" class="gg-btn gg-secondary" onclick="ggBackToToday()">Back</button><button type="button" id="ggReportSubmit" data-gg-submit-report="true" class="gg-btn gg-primary" style="flex:1">Submit report &amp; check out</button></div></div>';}
+  function report(s){var defs=metricDefs();return '<div class="gg-shell">'+header('Evening daily report','Your '+esc((user()||{}).role||'role')+' report. Saved immediately; cloud sync runs in the background.',s)+renderDailyFields('report')+'<div class="gg-grid gg-section"><label><span class="gg-label">COMPLETED TASKS *</span><textarea id="ggCompleted" class="gg-textarea"></textarea></label><label><span class="gg-label">PENDING TASKS</span><textarea id="ggPending" class="gg-textarea"></textarea></label><label><span class="gg-label">REASON FOR DELAY</span><textarea id="ggDelay" class="gg-textarea"></textarea></label><label><span class="gg-label">ACHIEVEMENTS</span><textarea id="ggAchievements" class="gg-textarea"></textarea></label></div><div class="gg-section"><span class="gg-label">TODAY\'S ROLE NUMBERS</span><div class="gg-metric">'+defs.map(function(x){return '<label><span class="gg-label">'+esc(x[1])+'</span><input data-role-metric="'+esc(x[0])+'" class="gg-input" type="number" min="0" value="0"></label>';}).join('')+'</div></div><div class="gg-grid gg-section"><label><span class="gg-label">TOMORROW PLAN *</span><textarea id="ggTomorrow" class="gg-textarea"></textarea></label><label><span class="gg-label">SUPPORT NEEDED</span><textarea id="ggSupport" class="gg-textarea"></textarea></label></div><div id="ggReportMessage" class="gg-muted" style="margin-top:14px">Completed tasks and tomorrow plan are required.</div><div style="display:flex;gap:8px;margin-top:12px"><button type="button" class="gg-btn gg-secondary" onclick="ggBackToToday()">Back</button><button type="button" id="ggReportSubmit" data-gg-submit-report="true" class="gg-btn gg-primary" style="flex:1">Submit report &amp; check out</button></div></div>';}
   function complete(s){var receipt=(s.report&&s.report.submittedAt)?new Date(s.report.submittedAt).toLocaleString('en-GB'):'Saved';return '<div class="gg-shell" style="text-align:center;padding:48px 22px">'+header('Day complete','Checked out at '+esc(s.checkOutAt),s)+'<div style="font-size:54px;margin:22px">✓</div><h3 style="margin:0">Report submitted successfully</h3><p class="gg-muted">Saved '+esc(receipt)+' · Receipt '+esc(s.date+'-'+(user()||{}).empId)+'</p><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="gg-btn gg-secondary" onclick="nav(\'attendance\')">View attendance</button>'+(isCeo()?'<button class="gg-btn gg-primary" onclick="nav(\'staffreports\')">View &amp; download staff reports</button>':'')+'</div></div>';}
   function attendancePage(s){var status=s.phase==='ready'?'Not checked in':s.phase==='complete'?'Checked out':'Present';var events=s.timeline.filter(function(e){return e.type==='attendance';}).slice().reverse();return '<div class="gg-shell">'+portalHero()+header('Attendance','A simple record of your working day.',s)+'<div class="gg-progress-grid"><div><span class="gg-label">STATUS</span><strong style="font-size:17px">'+esc(status)+'</strong></div><div><span class="gg-label">WORK MODE</span><strong style="font-size:17px">'+esc(s.mode)+'</strong></div><div><span class="gg-label">CHECK IN</span><strong style="font-size:17px">'+esc(s.checkInAt||'—')+'</strong></div><div><span class="gg-label">CHECK OUT</span><strong style="font-size:17px">'+esc(s.checkOutAt||'—')+'</strong></div></div><section class="gg-panel gg-section"><span class="gg-label">TODAY\'S ATTENDANCE HISTORY</span>'+(events.length?events.map(function(e){return '<div class="gg-time-row"><b>'+esc(e.at)+'</b><span>'+esc(e.label)+'</span><small>'+esc(e.meta)+'</small></div>';}).join(''):'<div class="gg-empty">No attendance activity recorded today.</div>')+'</section><button class="gg-btn gg-primary" style="margin-top:18px" onclick="nav(\'dashboard\')">Back to dashboard</button></div>';}
   function isCeo(){var u=user()||{},s=((u.role||'')+' '+(u.username||'')).toLowerCase();return /chief executive|\bceo\b|nashif\.razzak|superadmin/.test(s);}
