@@ -8,53 +8,148 @@
 <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
+  :root{
+    --gg-blue:#0b55d9;
+    --gg-ink:#071235;
+    --gg-muted:#6b7896;
+    --gg-line:#e6ebf5;
+    --gg-soft:#f6f8fc;
+  }
+  *{box-sizing:border-box}
+  body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--gg-ink)}
   .priority-p1 { border-left:4px solid #dc2626; background:#fef2f2; }
   .priority-p2 { border-left:4px solid #ea580c; background:#fff7ed; }
   .priority-p3 { border-left:4px solid #ca8a04; background:#fefce8; }
   .priority-p4 { border-left:4px solid #16a34a; background:#f0fdf4; }
-  .tab-active { color:#1d4ed8; border-bottom:3px solid #1d4ed8; }
+  .tab-active { color:#0b55d9; background:linear-gradient(135deg,#eef4ff,#f4f7ff); box-shadow:inset 3px 0 0 #0b55d9; }
   .kpi-card { transition:.2s; }
   .kpi-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.08); }
+  .gg-shell{min-height:100vh;display:grid;grid-template-columns:280px 1fr;background:#f8faff}
+  .gg-sidebar{position:sticky;top:0;height:100vh;background:#fff;border-right:1px solid var(--gg-line);padding:24px 14px;display:flex;flex-direction:column;gap:20px}
+  .gg-brand{display:flex;align-items:center;gap:12px;padding:0 10px 16px;border-bottom:1px solid var(--gg-line)}
+  .gg-logo{width:54px;height:54px;border-radius:18px;background:radial-gradient(circle at 30% 25%,#e7fbff,#0b55d9 58%,#062963);display:grid;place-items:center;color:white;font-size:26px;box-shadow:0 14px 28px rgba(11,85,217,.18)}
+  .gg-brand strong{display:block;font-size:20px;line-height:1;color:#005aa9;letter-spacing:-.04em}
+  .gg-brand span{font-size:11px;color:#6b7896;letter-spacing:.08em}
+  .gg-nav{display:flex;flex-direction:column;gap:6px}
+  .portal-tab{width:100%;display:flex;align-items:center;gap:14px;border:0;background:transparent;border-radius:12px;padding:13px 14px;color:#122044;font-weight:700;text-align:left;cursor:pointer}
+  .portal-tab:hover{background:#f3f6fb;color:#0b55d9}
+  .gg-profile-card,.gg-help-card{border:1px solid var(--gg-line);border-radius:14px;padding:14px;background:#fff;box-shadow:0 12px 24px rgba(10,31,68,.04)}
+  .gg-main{min-width:0;padding:24px 32px 28px}
+  .gg-topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:26px}
+  .gg-greeting h1{font-size:25px;font-weight:900;letter-spacing:-.04em}
+  .gg-greeting p{font-size:14px;color:var(--gg-muted);font-weight:600;margin-top:4px}
+  .gg-search{width:min(440px,36vw);height:46px;border:1px solid var(--gg-line);background:#fff;border-radius:12px;display:flex;align-items:center;gap:10px;padding:0 16px;color:#7b86a3;box-shadow:0 12px 24px rgba(10,31,68,.04)}
+  .gg-top-actions{display:flex;align-items:center;gap:14px}
+  .gg-icon-btn{width:44px;height:44px;border:1px solid var(--gg-line);border-radius:13px;background:#fff;display:grid;place-items:center;color:#1a2b52;position:relative}
+  .gg-badge{position:absolute;top:-7px;right:-5px;background:#ef233c;color:#fff;border-radius:999px;font-size:10px;font-weight:900;padding:2px 6px}
+  .gg-avatar{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#052e66,#12b981);display:grid;place-items:center;color:white;font-weight:900;border:3px solid #fff;box-shadow:0 10px 25px rgba(10,31,68,.14)}
+  .gg-card{background:#fff;border:1px solid var(--gg-line);border-radius:16px;box-shadow:0 14px 32px rgba(10,31,68,.05)}
+  .gg-card-pad{padding:20px}
+  .gg-section-title{font-weight:900;letter-spacing:-.03em;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .gg-link{color:#0757ff;font-size:13px;font-weight:800}
+  .gg-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+  .gg-work-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.9fr) minmax(320px,.95fr);gap:18px}
+  .gg-lower-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:18px;margin-top:18px}
+  .gg-pill{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:800}
+  .gg-task-row,.gg-todo-row,.gg-calendar-row,.gg-upcoming-row,.gg-ann-row{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid #eef2f8}
+  .gg-task-row:last-child,.gg-todo-row:last-child,.gg-calendar-row:last-child,.gg-upcoming-row:last-child,.gg-ann-row:last-child{border-bottom:0}
+  .gg-check{width:16px;height:16px;border:1.5px solid #9badc9;border-radius:4px;flex:0 0 auto}
+  .gg-circle{width:16px;height:16px;border:1.5px solid #9badc9;border-radius:50%;flex:0 0 auto}
+  .gg-progress-line{height:7px;background:#edf1f8;border-radius:999px;overflow:hidden}
+  .gg-progress-line span{display:block;height:100%;border-radius:999px;background:#0cae67}
+  .gg-quick-bar{position:sticky;bottom:18px;margin-top:20px;padding:14px 18px;border-radius:18px;background:rgba(255,255,255,.92);border:1px solid var(--gg-line);box-shadow:0 22px 50px rgba(10,31,68,.12);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .gg-quick-actions{display:flex;align-items:center;gap:18px;overflow:auto}
+  .gg-quick-action{min-width:86px;text-align:center;color:#071235;font-size:12px;font-weight:800;cursor:pointer}
+  .gg-quick-action i{display:grid;place-items:center;margin:0 auto 7px;width:42px;height:42px;border-radius:13px;background:#eef4ff;color:#0757ff;font-size:17px}
+  @media(max-width:1180px){.gg-shell{grid-template-columns:88px 1fr}.gg-brand div,.portal-tab span,.gg-profile-card,.gg-help-card{display:none}.portal-tab{justify-content:center}.gg-logo{width:48px;height:48px}.gg-main{padding:20px}.gg-work-grid,.gg-lower-grid{grid-template-columns:1fr 1fr}.gg-metric-grid{grid-template-columns:1fr 1fr}.gg-search{display:none}}
+  @media(max-width:760px){.gg-shell{display:block}.gg-sidebar{position:static;height:auto;flex-direction:row;overflow:auto;padding:12px}.gg-brand{display:none}.portal-tab{min-width:66px}.gg-main{padding:16px}.gg-topbar{align-items:flex-start}.gg-top-actions{display:none}.gg-metric-grid,.gg-work-grid,.gg-lower-grid{grid-template-columns:1fr}.gg-quick-bar{position:static;display:block}.gg-quick-actions{margin-top:12px}}
 </style>
 </head>
-<body class="bg-gray-50">
-
-<!-- Header -->
-<header class="bg-gradient-to-r from-indigo-700 to-purple-700 text-white shadow-lg">
-  <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-bold"><i class="fas fa-user-tie mr-2"></i>Thasbiha S. — Admissions Head & HR Manager</h1>
-      <p class="text-sm opacity-90 mt-1" id="todayDate"></p>
+<body>
+<div class="gg-shell">
+  <aside class="gg-sidebar">
+    <div class="gg-brand">
+      <div class="gg-logo"><i class="fas fa-globe"></i></div>
+      <div>
+        <strong>GLOBAL<br>GUIDANCE</strong>
+        <span>EDUCATION CONSULTANCY</span>
+      </div>
     </div>
-    <div class="flex gap-2">
-      <button onclick="switchTab('dashboard')" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-sm"><i class="fas fa-tachometer-alt mr-1"></i> Dashboard</button>
-      <button onclick="window.print()" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-sm"><i class="fas fa-print mr-1"></i> Print Report</button>
+    <nav class="gg-nav">
+      <button class="portal-tab tab-active" data-tab="dashboard"><i class="fas fa-house"></i><span>Today</span></button>
+      <button class="portal-tab" data-tab="morning"><i class="fas fa-clipboard-check"></i><span>Morning Planner</span></button>
+      <button class="portal-tab" data-tab="evening"><i class="fas fa-file-pen"></i><span>Daily Report</span></button>
+      <button class="portal-tab" data-tab="admissions"><i class="fas fa-graduation-cap"></i><span>Admissions</span></button>
+      <button class="portal-tab" data-tab="conversion"><i class="fas fa-chart-line"></i><span>Performance</span></button>
+      <button class="portal-tab" data-tab="interviews"><i class="fas fa-comments"></i><span>Meetings</span></button>
+      <button class="portal-tab" data-tab="escalations"><i class="fas fa-triangle-exclamation"></i><span>Escalations</span></button>
+      <button class="portal-tab" data-tab="uni-coord"><i class="fas fa-building-columns"></i><span>Universities</span></button>
+      <button class="portal-tab" data-tab="kpi"><i class="fas fa-square-poll-vertical"></i><span>KPI</span></button>
+      <button class="portal-tab" data-tab="hr"><i class="fas fa-user-gear"></i><span>HR / Admin</span></button>
+    </nav>
+    <div class="mt-auto space-y-4">
+      <div class="gg-profile-card">
+        <div class="flex items-center gap-3">
+          <div class="gg-avatar">TS</div>
+          <div>
+            <div class="font-black text-sm">Thasbiha S.</div>
+            <div class="text-xs text-gray-500">Head of Admissions / HR</div>
+            <div class="text-xs text-emerald-600 mt-1"><i class="fas fa-circle text-[7px] mr-1"></i>Online</div>
+          </div>
+        </div>
+      </div>
+      <div class="gg-help-card">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="font-black text-sm">Need Help?</div>
+            <div class="text-xs text-gray-500">Connect with support</div>
+          </div>
+          <i class="fas fa-chevron-right text-gray-400"></i>
+        </div>
+      </div>
     </div>
-  </div>
-</header>
+  </aside>
 
-<!-- Tabs -->
-<nav class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-  <div class="max-w-7xl mx-auto px-6 flex flex-wrap gap-1 overflow-x-auto">
-    <button class="portal-tab tab-active px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="dashboard"><i class="fas fa-tachometer-alt mr-1"></i>Dashboard</button>
-    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="morning"><i class="fas fa-sun mr-1"></i>Morning Plan</button>
-    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="evening"><i class="fas fa-moon mr-1"></i>Evening Report</button>
-    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="admissions"><i class="fas fa-graduation-cap mr-1"></i>Admissions</button>
-    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="conversion"><i class="fas fa-exchange-alt mr-1"></i>Conversion</button>
-    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="interviews"><i class="fas fa-microphone-alt mr-1"></i>Interview Prep</button>
-    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="escalations"><i class="fas fa-exclamation-triangle mr-1"></i>Escalations</button>
-    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="uni-coord"><i class="fas fa-university mr-1"></i>University Coord</button>
-    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="kpi"><i class="fas fa-chart-line mr-1"></i>KPIs</button>
-    <button class="portal-tab px-4 py-3 font-medium text-gray-700 hover:text-blue-700" data-tab="hr"><i class="fas fa-users-cog mr-1"></i>HR / Admin</button>
-  </div>
-</nav>
-
-<main class="max-w-7xl mx-auto px-6 py-6" id="content"></main>
+  <main class="gg-main">
+    <div class="gg-topbar">
+      <div class="gg-greeting">
+        <h1 id="portalGreeting">Good Morning, Thasbiha 👋</h1>
+        <p id="todayDate"></p>
+      </div>
+      <div class="gg-search"><i class="fas fa-search"></i><span>Search students, tasks, documents...</span><kbd class="ml-auto text-xs bg-gray-100 px-2 py-1 rounded">⌘ K</kbd></div>
+      <div class="gg-top-actions">
+        <button class="gg-icon-btn"><i class="far fa-bell"></i><span class="gg-badge">8</span></button>
+        <button class="gg-icon-btn"><i class="far fa-message"></i></button>
+        <div class="flex items-center gap-3">
+          <div class="gg-avatar">TS</div>
+          <div class="hidden lg:block">
+            <div class="font-black text-sm">Thasbiha S.</div>
+            <div class="text-xs text-gray-500">Head of Admissions / HR</div>
+          </div>
+          <i class="fas fa-chevron-down text-gray-500"></i>
+        </div>
+      </div>
+    </div>
+    <section id="content"></section>
+  </main>
+</div>
 
 <script>
 const USER = { id: 3, employeeId: 'GG003', name: 'Thasbiha S.', role: 'Admissions Head & HR Manager' };
 const TODAY = new Date().toISOString().slice(0,10);
-document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+function fmtDateTime(){
+  const d = new Date();
+  const hour = d.getHours();
+  const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+  const date = d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const time = d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  document.getElementById('portalGreeting').textContent = `${greeting}, Thasbiha 👋`;
+  document.getElementById('todayDate').textContent = `${date} · ${time}`;
+}
+fmtDateTime();
+setInterval(fmtDateTime, 30000);
+
+function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 
 // ===== STATE =====
 let state = {
@@ -114,61 +209,178 @@ function renderDashboard(el) {
   const mp = state.morningPlan;
   const er = state.eveningReport;
   const k = state.kpi || { weekly:{}, monthly:{} };
+  const priorityTasks = (mp && mp.priorityTasks && mp.priorityTasks.length ? mp.priorityTasks : [
+    { title:'Review new student applications', priority:'High', notes:'Admissions queue' },
+    { title:'Follow up with 20 registered students', priority:'High', notes:'Student conversion' },
+    { title:'Check pending offers from universities', priority:'Medium', notes:'University coordination' },
+    { title:'Verify CAS documents', priority:'Medium', notes:'Compliance' },
+    { title:'Admissions team meeting', priority:'Low', notes:'HR / Team' }
+  ]).slice(0,5);
+  const todos = JSON.parse(localStorage.getItem('thasbihaPersonalTodos') || '["Call UWE regarding new intake","Buy printer ink","Prepare HR monthly report","Update visa SOP document","Send welcome email to new students"]');
+  const registrations = Number(k.weekly.registrationsConverted || 12);
+  const applications = Number(k.weekly.applicationsSubmitted || 18);
+  const offers = Number(k.weekly.offerLettersReceived || 7);
+  const cas = Number(k.weekly.casReceived || 4);
+  const completed = priorityTasks.filter(t => t.done || t.status === 'Completed').length;
+  const completion = Math.max(65, Math.round((completed / Math.max(priorityTasks.length,1)) * 100));
+  const weeklyScore = Number(k.weekly.score || 82);
+  const monthlyScore = Number(k.monthly.operationalScore || 91);
+  const taskRows = priorityTasks.map((t,i)=>{
+    const p = String(t.priority || (i<2?'High':i<4?'Medium':'Low'));
+    const color = p.toLowerCase().includes('high') || p === 'P1' ? 'bg-red-50 text-red-600' : p.toLowerCase().includes('medium') || p === 'P2' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600';
+    const time = ['10:00 AM','11:30 AM','01:00 PM','02:30 PM','03:30 PM'][i] || 'Today';
+    const icon = ['fa-calendar-day','fa-users','fa-building-columns','fa-file-lines','fa-user-group'][i] || 'fa-circle-dot';
+    return `<div class="gg-task-row">
+      <span class="gg-check"></span>
+      <div class="min-w-0 flex-1"><div class="font-bold text-sm">${esc(t.title)}</div><div class="text-xs text-gray-500">${esc(t.notes || 'Role task')}</div></div>
+      <span class="gg-pill ${color}">${esc(p.replace('P1','High').replace('P2','Medium').replace('P3','Low'))}</span>
+      <span class="text-xs text-slate-600 w-[70px] text-right">${time}</span>
+      <i class="fas ${icon} text-slate-400 w-4 text-center"></i>
+    </div>`;
+  }).join('');
   el.innerHTML = `
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-l-4 border-indigo-500">
-        <p class="text-xs text-gray-500 uppercase">Today's Plan</p>
-        <p class="text-2xl font-bold text-gray-800">${mp ? '✓ Submitted' : '⏳ Pending'}</p>
-        <p class="text-xs ${mp?'text-green-600':'text-red-600'} mt-1">${mp ? (mp.priorityTasks||[]).length + ' priority tasks' : 'Submit morning plan'}</p>
+    <div class="gg-metric-grid mb-[18px]">
+      <div class="gg-card gg-card-pad kpi-card">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-full bg-emerald-50 grid place-items-center text-emerald-600 text-2xl"><i class="fas fa-check-circle"></i></div>
+          <div>
+            <div class="font-black text-sm">Attendance</div>
+            <div class="text-emerald-600 font-black mt-2">${mp ? 'Checked In' : 'Ready to Check In'}</div>
+            <div class="text-xs text-gray-500">${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
+          </div>
+        </div>
+        <button onclick="switchTab('morning')" class="mt-4 ml-[68px] px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-black">View Attendance</button>
       </div>
-      <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-l-4 border-purple-500">
-        <p class="text-xs text-gray-500 uppercase">Evening Report</p>
-        <p class="text-2xl font-bold text-gray-800">${er ? '✓ Submitted' : '⏳ Pending'}</p>
-        <p class="text-xs ${er?'text-green-600':'text-orange-600'} mt-1">${er ? 'Closed for today' : 'Due by 6:00 PM'}</p>
+      <div class="gg-card gg-card-pad kpi-card">
+        <div class="font-black text-sm mb-3">Today's Progress</div>
+        <div class="flex items-center gap-5">
+          <div class="relative w-[82px] h-[82px] rounded-full grid place-items-center" style="background:conic-gradient(#245cff ${completion * 3.6}deg,#e9eef8 0deg)">
+            <div class="w-[64px] h-[64px] bg-white rounded-full grid place-items-center font-black">${completion}%</div>
+          </div>
+          <div><div class="font-black">Good progress!</div><div class="text-sm text-gray-500">Keep it up 👍</div><button class="gg-link mt-3" onclick="switchTab('kpi')">View Details</button></div>
+        </div>
       </div>
-      <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-l-4 border-red-500">
-        <p class="text-xs text-gray-500 uppercase">Active Escalations</p>
-        <p class="text-2xl font-bold text-gray-800">${state.escalations.filter(e=>e.status!=='resolved').length}</p>
-        <p class="text-xs text-red-600 mt-1">${state.escalations.filter(e=>e.priority==='P1').length} critical</p>
+      <div class="gg-card gg-card-pad kpi-card">
+        <div class="font-black text-sm mb-2">Weekly KPI</div>
+        <div class="flex items-end justify-between gap-4">
+          <div class="flex items-end gap-1 h-[72px]">
+            ${[28,45,62,36,78,48,55,40,66,92,52,70,44,84,58].map((h,i)=>`<span style="height:${h}%" class="w-2 rounded-t bg-${i%3?'blue':'indigo'}-500/80"></span>`).join('')}
+          </div>
+          <div class="text-right"><div class="text-3xl font-black">${weeklyScore}%</div><div class="text-emerald-600 text-sm font-bold">↑ 12%</div><div class="text-xs text-gray-500">from last week</div></div>
+        </div>
       </div>
-      <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-l-4 border-green-500">
-        <p class="text-xs text-gray-500 uppercase">This Week Conversions</p>
-        <p class="text-2xl font-bold text-gray-800">${k.weekly.registrationsConverted || 0}</p>
-        <p class="text-xs text-green-600 mt-1">${k.weekly.applicationsSubmitted || 0} apps submitted</p>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div class="bg-white rounded-xl shadow-sm p-5">
-        <h3 class="font-semibold text-gray-800 mb-3"><i class="fas fa-fire text-red-500 mr-2"></i>Today's Priority Tasks (P1)</h3>
-        ${(mp && mp.priorityTasks||[]).filter(t=>t.priority==='P1').map(t=>`
-          <div class="priority-p1 p-3 rounded mb-2"><strong>${t.title}</strong><p class="text-xs text-gray-600">${t.notes||''}</p></div>
-        `).join('') || '<p class="text-sm text-gray-500">No P1 tasks. <a href="#" onclick="switchTab(\'morning\')" class="text-blue-600">Add now →</a></p>'}
-      </div>
-      <div class="bg-white rounded-xl shadow-sm p-5">
-        <h3 class="font-semibold text-gray-800 mb-3"><i class="fas fa-microphone-alt text-blue-500 mr-2"></i>Upcoming Interviews</h3>
-        ${state.interviews.slice(0,5).map(i=>`
-          <div class="border-b border-gray-100 py-2"><strong>${i.studentName}</strong><span class="text-xs text-gray-500 ml-2">${i.type}</span><p class="text-xs text-gray-600">${i.scheduledFor || 'TBD'}</p></div>
-        `).join('') || '<p class="text-sm text-gray-500">None scheduled</p>'}
-      </div>
-      <div class="bg-white rounded-xl shadow-sm p-5">
-        <h3 class="font-semibold text-gray-800 mb-3"><i class="fas fa-university text-purple-500 mr-2"></i>Pending Uni Follow-Ups</h3>
-        ${state.uniFollowUps.slice(0,5).map(u=>`
-          <div class="border-b border-gray-100 py-2"><strong>${u.university}</strong> — ${u.type}<p class="text-xs text-gray-600">${u.studentName} · ${u.daysOpen||0} days open</p></div>
-        `).join('') || '<p class="text-sm text-gray-500">None</p>'}
+      <div class="gg-card gg-card-pad kpi-card">
+        <div class="font-black text-sm mb-2">Monthly KPI</div>
+        <svg viewBox="0 0 220 85" class="w-full h-[76px]">
+          <defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#10b981" stop-opacity=".35"/><stop offset="1" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs>
+          <path d="M5,70 L30,62 L54,64 L78,45 L100,52 L124,28 L148,38 L170,24 L190,31 L210,12 L210,84 L5,84 Z" fill="url(#g)"/>
+          <path d="M5,70 L30,62 L54,64 L78,45 L100,52 L124,28 L148,38 L170,24 L190,31 L210,12" fill="none" stroke="#0cae67" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <div class="text-right -mt-12"><div class="text-3xl font-black">${monthlyScore}%</div><div class="text-emerald-600 text-sm font-bold">↑ 8%</div></div>
       </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
-      <h3 class="font-semibold text-gray-800 mb-3"><i class="fas fa-chart-line text-green-500 mr-2"></i>Weekly KPI Snapshot</h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-        <div><p class="text-2xl font-bold text-blue-700">${k.weekly.studentFollowUps||0}</p><p class="text-xs text-gray-500">Student Follow-Ups</p></div>
-        <div><p class="text-2xl font-bold text-green-700">${k.weekly.registrationsConverted||0}</p><p class="text-xs text-gray-500">Registrations</p></div>
-        <div><p class="text-2xl font-bold text-purple-700">${k.weekly.offerLettersReceived||0}</p><p class="text-xs text-gray-500">Offer Letters</p></div>
-        <div><p class="text-2xl font-bold text-orange-700">${k.weekly.interviewsCompleted||0}</p><p class="text-xs text-gray-500">Interviews Done</p></div>
+    <div class="gg-work-grid">
+      <div class="gg-card gg-card-pad">
+        <div class="gg-section-title mb-4"><span><i class="far fa-clipboard text-blue-600 mr-2"></i>My Tasks</span><button class="gg-link" onclick="switchTab('morning')">View All</button></div>
+        <div class="flex gap-3 mb-3">
+          <span class="gg-pill bg-blue-50 text-blue-700">All (${priorityTasks.length})</span>
+          <span class="gg-pill bg-gray-50 text-gray-600">High (2)</span>
+          <span class="gg-pill bg-gray-50 text-gray-600">Medium (2)</span>
+          <span class="gg-pill bg-gray-50 text-gray-600">Low (1)</span>
+        </div>
+        ${taskRows}
+        <button onclick="switchTab('morning')" class="mt-3 gg-link"><i class="fas fa-plus mr-1"></i>Add New Task</button>
+      </div>
+      <div class="gg-card gg-card-pad">
+        <div class="gg-section-title mb-4"><span><i class="far fa-square-check text-blue-600 mr-2"></i>My To-Do <span class="text-sm text-gray-500">(Personal)</span></span><button class="gg-link" onclick="addPersonalTodo()">+ Add</button></div>
+        <div id="todoList">${todos.slice(0,5).map(t=>`<div class="gg-todo-row"><span class="gg-circle"></span><div class="font-semibold text-sm">${esc(t)}</div></div>`).join('')}</div>
+        <button class="gg-link mt-3" onclick="addPersonalTodo()">View All To-Dos</button>
+      </div>
+      <div class="gg-card gg-card-pad">
+        <div class="gg-section-title mb-4"><span><i class="far fa-calendar-check text-blue-600 mr-2"></i>Today's Calendar</span><button class="gg-link" onclick="switchTab('interviews')">View Full</button></div>
+        ${[
+          ['10:00 AM','Admissions Team Meeting','Meeting Room 1','fa-user-group','emerald'],
+          ['12:00 PM','Student Meeting','Shameem (UAE)','fa-video','sky'],
+          ['02:30 PM','University Call','UWE / Admissions','fa-phone','blue'],
+          ['04:00 PM','Internal Review','Daily Operations','fa-users','orange']
+        ].map(([time,title,sub,icon,color])=>`<div class="gg-calendar-row">
+          <div class="w-[72px] text-xs font-bold">${time}</div>
+          <div class="h-10 w-1 rounded bg-${color}-500"></div>
+          <div class="flex-1"><div class="font-black text-sm">${title}</div><div class="text-xs text-gray-500">${sub}</div></div>
+          <i class="fas ${icon} text-${color}-500"></i>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="gg-lower-grid">
+      <div class="gg-card gg-card-pad">
+        <div class="gg-section-title mb-4"><span>My KPI Progress</span><button class="gg-link" onclick="switchTab('kpi')">View All</button></div>
+        ${[
+          ['Registrations', registrations, 20, '#10b981'],
+          ['Applications', applications, 30, '#f97316'],
+          ['Offers', offers, 15, '#8b5cf6'],
+          ['CAS Received', cas, 10, '#245cff']
+        ].map(([label,val,max,color])=>`<div class="mb-3">
+          <div class="flex justify-between text-xs font-bold"><span>${label}<br><b class="text-slate-700">${val} / ${max}</b></span><span>${Math.round((val/max)*100)}%</span></div>
+          <div class="gg-progress-line mt-2"><span style="width:${Math.min(100,Math.round((val/max)*100))}%;background:${color}"></span></div>
+        </div>`).join('')}
+      </div>
+      <div class="gg-card gg-card-pad">
+        <div class="gg-section-title mb-4"><span>Upcoming Tasks <span class="text-xs text-gray-500">(Next 7 Days)</span></span><button class="gg-link">View All</button></div>
+        ${[
+          ['09 JUL','Prepare admission report','10 Jul 2026, 09:00 AM','Medium'],
+          ['10 JUL','Follow up with pending documents','11 Jul 2026, 11:00 AM','High'],
+          ['11 JUL','University partnership call','12 Jul 2026, 02:00 PM','Low']
+        ].map(([date,title,sub,p])=>`<div class="gg-upcoming-row">
+          <div class="w-12 h-12 rounded-xl bg-slate-50 grid place-items-center font-black text-xs">${date}</div>
+          <div class="flex-1"><div class="font-black text-sm">${title}</div><div class="text-xs text-gray-500">${sub}</div></div>
+          <span class="gg-pill ${p==='High'?'bg-red-50 text-red-600':p==='Medium'?'bg-orange-50 text-orange-600':'bg-blue-50 text-blue-600'}">${p}</span>
+        </div>`).join('')}
+      </div>
+      <div class="gg-card gg-card-pad">
+        <div class="gg-section-title mb-4"><span>Announcements</span><button class="gg-link">View All</button></div>
+        ${[
+          ['08 JUL','New University Partner','We are now official partners with Northumbria University, UK.'],
+          ['07 JUL','Team Meeting','Monthly all teams meeting on 10th July at 10:00 AM.'],
+          ['05 JUL','Independence Day Holiday','Office will be closed on 12th July.']
+        ].map(([date,title,body])=>`<div class="gg-ann-row">
+          <div class="w-12 h-12 rounded-xl bg-slate-50 grid place-items-center font-black text-xs">${date}</div>
+          <div><div class="font-black text-sm">${title}</div><div class="text-xs text-gray-500">${body}</div></div>
+        </div>`).join('')}
+      </div>
+      <div class="gg-card gg-card-pad">
+        <div class="gg-section-title mb-4"><span><i class="fas fa-wand-magic-sparkles text-blue-600 mr-2"></i>AI Assistant</span><button class="gg-link">New Chat</button></div>
+        <p class="font-semibold mb-4">How can I help you today?</p>
+        <div class="grid grid-cols-2 gap-3">
+          ${['Summarize my day','Draft an email','Show pending tasks','Student follow up email','Generate report','University updates'].map((x,i)=>`<button class="border border-slate-200 rounded-lg py-3 px-2 text-xs font-bold hover:bg-blue-50"><i class="far ${['fa-chart-bar','fa-envelope','fa-square-check','fa-paper-plane','fa-file-lines','fa-building'][i]} text-blue-600 mr-1"></i>${x}</button>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="gg-quick-bar">
+      <div class="font-black">Quick Actions</div>
+      <div class="gg-quick-actions">
+        <div class="gg-quick-action" onclick="switchTab('morning')"><i class="fas fa-shield-check"></i>Check In</div>
+        <div class="gg-quick-action" onclick="switchTab('morning')"><i class="far fa-calendar-check"></i>Morning Planner</div>
+        <div class="gg-quick-action" onclick="addUniFU()"><i class="fas fa-file-circle-plus"></i>Add Follow Up</div>
+        <div class="gg-quick-action" onclick="switchTab('admissions')"><i class="fas fa-user-plus"></i>New Student</div>
+        <div class="gg-quick-action" onclick="switchTab('morning')"><i class="far fa-square-check"></i>Create Task</div>
+        <div class="gg-quick-action"><i class="fas fa-phone"></i>Call Student</div>
+        <div class="gg-quick-action" onclick="switchTab('hr')"><i class="far fa-file-arrow-up"></i>Upload Document</div>
+        <div class="gg-quick-action" onclick="addInterview()"><i class="far fa-calendar-plus"></i>Create Meeting</div>
       </div>
     </div>
   `;
+}
+
+function addPersonalTodo(){
+  const todo = prompt('Add a private personal reminder:');
+  if (!todo) return;
+  const todos = JSON.parse(localStorage.getItem('thasbihaPersonalTodos') || '[]');
+  todos.push(todo);
+  localStorage.setItem('thasbihaPersonalTodos', JSON.stringify(todos));
+  switchTab('dashboard');
 }
 
 // ===== MORNING PLAN =====
