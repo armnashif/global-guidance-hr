@@ -2439,8 +2439,9 @@ const USERS = {
   'nashif.razzak': { name:'Nashif A. Razzak', empId:'GG001', role:'CEO', level:100, dept:'Executive', avatar:'#6378ff,#9b59b6', pages:['dashboard','myworkspace','ceocommand','teamattendance','communications','emailhub','whatsappweb','redflags','workspace','attendance','leads','pipeline','followups','applications','universities','students','coursefinder','mock','language','visa','enrolment','employees','leave','performance','tasks','commissions','petty','payroll','reports','settings','legacy'] },
   'nafees.razzak': { name:'Nafees Razzak', empId:'GG002', role:'COO', level:100, dept:'Executive', avatar:'#38d9a9,#0fa875', pages:['dashboard','myworkspace','ceocommand','teamattendance','communications','emailhub','whatsappweb','redflags','workspace','attendance','leads','pipeline','followups','applications','universities','students','coursefinder','mock','language','visa','enrolment','employees','leave','performance','tasks','commissions','petty','payroll','reports','settings','legacy'] },
   // v16f: Thasbiha trimmed nav — no commissions/petty/payroll/enrolments/students/workspace/performance/legacy.
-  // She runs two workstreams (Global Guidance + Himaaus). Finance is registration-only via her dashboard.
-  'thasbiha.s':    { name:'Thasbiha S.', empId:'GG005', role:'Head of Admissions/HR · Himaaus Coordinator', level:80, dept:'Admin/HR', avatar:'#6378ff,#38d9a9', pages:['dashboard','myworkspace','teamattendance','attendance','leads','pipeline','followups','applications','universities','redflags','visa','mock','language','coursefinder','employees','leave','communications','emailhub','whatsappweb','settings'] },
+  // She runs HR operations plus admissions/Himaaus coordination. Finance is registration-only via her dashboard.
+  'thasbiha.s':    { name:'Thasbiha S.', empId:'GG005', role:'HR Manager', level:80, dept:'Admin/HR', avatar:'#6378ff,#38d9a9', pages:['dashboard','myworkspace','teamattendance','attendance','leads','pipeline','followups','applications','universities','redflags','visa','mock','language','coursefinder','employees','leave','communications','emailhub','whatsappweb','settings'] },
+  'hr.manager':    { name:'HR Manager Portal', empId:'GG005', role:'HR Manager', level:80, dept:'Admin/HR', avatar:'#6378ff,#38d9a9', pages:['dashboard','myworkspace','teamattendance','attendance','employees','leave','documents','tasks','reports','communications','emailhub','whatsappweb','settings'] },
   'razan.thawus':  { name:'Razan Thawus', empId:'GG003', role:'Head of BD / Visa', level:80, dept:'BD & Visa', avatar:'#1d4ed8,#1e3a8a', pages:['dashboard','myworkspace','communications','emailhub','whatsappweb','redflags','workspace','attendance','leads','pipeline','followups','applications','universities','students','coursefinder','mock','visa','enrolment','leave','tasks','commissions','settings','legacy'] },
   // Umair (L-60): full CRM access; sees Red Flags (L-60+)
   'umair':         { name:'Umair', empId:'GG004', role:'Sr. Admissions Executive', level:60, dept:'Admin/HR', avatar:'#6378ff,#4ecdc4', pages:['dashboard','myworkspace','communications','emailhub','whatsappweb','redflags','workspace','attendance','leads','pipeline','followups','applications','students','coursefinder','mock','language','enrolment','leave','tasks','settings','legacy'] },
@@ -2461,7 +2462,7 @@ const USERS = {
 // v15.0 — Role helper. Management = CEO/COO/Head of Admissions+HR + Super Admin.
 // Everyone else is "staff" and gets the simplified My Workspace experience.
 const MANAGEMENT_USERS = new Set([
-  'superadmin','nashif.razzak','nafees.razzak','razan.thawus','thasbiha.s'
+  'superadmin','nashif.razzak','nafees.razzak','razan.thawus','thasbiha.s','hr.manager'
 ]);
 function _isManagement(u){
   if (!u) return false;
@@ -2483,7 +2484,8 @@ const PRIMARY_ROLES = {
   'superadmin':    'ceo',          // see everything
   'nashif.razzak': 'ceo',
   'nafees.razzak': 'coo',
-  'thasbiha.s':    'admissions_head',
+  'thasbiha.s':    'hr_manager',
+  'hr.manager':    'hr_manager',
   'razan.thawus':  'bd_finance',
   'umair':         'admissions_exec',
   'sukaina':       'counsellor',
@@ -5914,7 +5916,7 @@ function renderSettingsUsers() {
   const PERM_FEATURES = ALL_PERMISSION_FEATURES;
   const ROLES = [
     { id:'ceo',level:100,label:'CEO/COO',color:'#f06595',allow:'all' },
-    { id:'head',level:80,label:'Head',color:'#6378ff',allow:['view_leads','edit_leads','view_apps','edit_apps','view_finance','view_hr','edit_hr','view_reports','export_data'] },
+    { id:'head',level:80,label:'Head / HR Manager',color:'#6378ff',allow:['view_leads','edit_leads','view_apps','edit_apps','view_finance','view_hr','edit_hr','view_reports','export_data'] },
     { id:'exec',level:60,label:'Executive',color:'#38d9a9',allow:['view_leads','edit_leads','view_apps','edit_apps','view_reports'] },
     { id:'staff',level:40,label:'Staff',color:'#ffa94d',allow:['view_leads','edit_leads','view_apps'] }
   ];
@@ -19346,9 +19348,9 @@ function renderEmployees() {
       ${[
         ['#6378ff,#9b59b6','N','Nashif A. Razzak','GG001','Chief Executive Officer','Executive',100,'nashif.razzak','Jan 2020'],
         ['#38d9a9,#20c997','Na','Nafees Razzak','GG002','Chief Operating Officer','Executive',100,'nafees.razzak','Jan 2020'],
-        ['#6378ff,#38d9a9','T','Thasbiha S.','GG003','Head of Admissions / HR','Admin/HR',80,'thasbiha.s','Mar 2021'],
-        ['#ffa94d,#ff6b6b','R','Razan Thawus','GG004','Head of BD / Visa','BD & Visa',80,'razan.thawus','Jun 2021'],
-        ['#6378ff,#4ecdc4','U','Umair','GG005','Sr. Admissions Executive','Admin/HR',60,'umair','Sep 2021'],
+        ['#6378ff,#38d9a9','T','Thasbiha S.','GG005','HR Manager','Admin/HR',80,'thasbiha.s','Mar 2021'],
+        ['#ffa94d,#ff6b6b','R','Razan Thawus','GG003','Head of BD / Visa','BD & Visa',80,'razan.thawus','Jun 2021'],
+        ['#6378ff,#4ecdc4','U','Umair','GG004','Sr. Admissions Executive','Admin/HR',60,'umair','Sep 2021'],
         ['#f06595,#cc5de8','M','Mohamed Salih','GG006','Comms Coordinator','Admin/HR',60,'mohamed.s','Jan 2022'],
         ['#38d9a9,#6378ff','S','Sukaina','GG007','Counsellor / Front Desk','BD & Visa',40,'sukaina','Apr 2022'],
         ['#ffa94d,#cc5de8','B','Binupa','GG008','Jr. Counsellor / TikTok','Marketing',40,'binupa','Jul 2022'],
@@ -28708,7 +28710,7 @@ else _tbBoot();
   };
 
   window.v16sOpenCreate = function(){
-    const ROLES = ['CEO','COO','Head of Admissions/HR','Head of BD / Visa','Sr. Admissions Executive','Counsellor','Counsellor / Front Desk','Jr. Counsellor','Intern Counsellor','Comms Coordinator','Graphic Designer','HR Executive','Staff'];
+    const ROLES = ['CEO','COO','HR Manager','Head of Admissions/HR','Head of BD / Visa','Sr. Admissions Executive','Counsellor','Counsellor / Front Desk','Jr. Counsellor','Intern Counsellor','Comms Coordinator','Graphic Designer','HR Executive','Staff'];
     const DEPTS = ['Executive','Admin/HR','BD & Visa','Marketing','Finance','System','General'];
     v16sOpenModal(''
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-size:18px;font-weight:700"><i class="fas fa-user-plus" style="color:#6378ff"></i> Add New User</div><button onclick="v16sCloseModal()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px"><i class="fas fa-times"></i></button></div>'
@@ -28790,7 +28792,7 @@ else _tbBoot();
     const u = (typeof USERS === 'object' && USERS[username]) || null;
     if (!u) { alert('User not found.'); return; }
     const isManaged = !!u._v16sManaged;
-    const ROLES = ['CEO','COO','Head of Admissions/HR','Head of BD / Visa','Sr. Admissions Executive','Counsellor','Counsellor / Front Desk','Jr. Counsellor','Intern Counsellor','Comms Coordinator','Graphic Designer','HR Executive','Staff'];
+    const ROLES = ['CEO','COO','HR Manager','Head of Admissions/HR','Head of BD / Visa','Sr. Admissions Executive','Counsellor','Counsellor / Front Desk','Jr. Counsellor','Intern Counsellor','Comms Coordinator','Graphic Designer','HR Executive','Staff'];
     const DEPTS = ['Executive','Admin/HR','BD & Visa','Marketing','Finance','System','General'];
     v16sOpenModal(''
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-size:18px;font-weight:700"><i class="fas fa-user-pen" style="color:#3b82f6"></i> Edit User · ' + v16sEsc(username) + '</div><button onclick="v16sCloseModal()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px"><i class="fas fa-times"></i></button></div>'
@@ -32666,9 +32668,14 @@ else _tbBoot();
       report:['Visa cases updated','University / partner follow-ups completed','Documents collected / submitted','Pending visa issues','Escalations','Tomorrow priority cases']
     },
     'thasbiha.s': {
-      title:'Head of Admissions / HR + Himaaus daily format',
-      plan:['Global Guidance — new enquiries to review','Global Guidance — student follow-ups','Global Guidance — applications / offers / CAS / COE','Global Guidance — counsellor support','Global Guidance — HR / team matters','Himaaus — package cases','Himaaus — documentation reviews','Himaaus — client coordination','Himaaus — pending university decisions','Support needed'],
-      report:['Global Guidance — registrations','Global Guidance — applications submitted','Global Guidance — offers / CAS / COE updates','Global Guidance — counsellor / team support done','Global Guidance — HR / team updates','Himaaus — cases worked','Himaaus — documents completed','Himaaus — students / clients followed up','Himaaus — issues resolved','Pending matters','Tomorrow plan']
+      title:'HR Manager daily format',
+      plan:['Attendance exceptions to review','Leave requests / staff approvals','Employee records to update','HR documents / acknowledgements','New staff onboarding / probation follow-ups','Department support requests','Daily staff report monitoring','Compliance or policy issues','Escalations to COO / CEO','Support needed'],
+      report:['Attendance / leave actions completed','Employee records updated','HR documents reviewed or uploaded','Onboarding / probation updates','Daily reports followed up','Staff issues resolved','Escalations raised or closed','Pending HR matters','Tomorrow HR priorities','Support needed']
+    },
+    'hr.manager': {
+      title:'HR Manager daily format',
+      plan:['Attendance exceptions to review','Leave requests / staff approvals','Employee records to update','HR documents / acknowledgements','New staff onboarding / probation follow-ups','Department support requests','Daily staff report monitoring','Compliance or policy issues','Escalations to COO / CEO','Support needed'],
+      report:['Attendance / leave actions completed','Employee records updated','HR documents reviewed or uploaded','Onboarding / probation updates','Daily reports followed up','Staff issues resolved','Escalations raised or closed','Pending HR matters','Tomorrow HR priorities','Support needed']
     },
     'umair': {
       title:'Senior Admissions Executive daily format',
