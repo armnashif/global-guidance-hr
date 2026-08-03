@@ -3,159 +3,92 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Thasbiha S. — Admissions Head & HR Manager Portal</title>
+<title>GG OS — Thasbiha Workspace</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root{
-    --gg-blue:#1f5eff;
-    --gg-blue-2:#eef4ff;
-    --gg-ink:#101a34;
-    --gg-muted:#69758f;
-    --gg-line:#e4e9f3;
-    --gg-soft:#f7f9fd;
-    --gg-shadow:0 10px 26px rgba(17,31,64,.055);
+    --blue:#115cff;--blue2:#eef4ff;--ink:#071338;--muted:#687593;--line:#e5ebf5;--soft:#f8faff;
+    --green:#08a66a;--orange:#ff8a00;--red:#f43f5e;--purple:#7657ff;--shadow:0 16px 42px rgba(15,31,69,.065);
   }
-  *{box-sizing:border-box}
-  html{font-size:14px}
-  body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--gg-ink);background:var(--gg-soft);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-  button,a{transition:background .16s ease,color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease}
-  button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid rgba(31,94,255,.16);outline-offset:2px}
-  .priority-p1 { border-left:3px solid #dc2626; background:#fff7f7; }
-  .priority-p2 { border-left:3px solid #ea580c; background:#fff9f1; }
-  .priority-p3 { border-left:3px solid #ca8a04; background:#fffdf2; }
-  .priority-p4 { border-left:3px solid #16a34a; background:#f4fbf6; }
-  .tab-active { color:var(--gg-blue); background:var(--gg-blue-2); box-shadow:inset 3px 0 0 var(--gg-blue); }
-  .kpi-card { transition:.16s ease; }
-  .kpi-card:hover { transform:translateY(-1px); box-shadow:0 12px 28px rgba(17,31,64,.075); }
-  .gg-shell{min-height:100vh;display:grid;grid-template-columns:252px minmax(0,1fr);background:var(--gg-soft)}
-  .gg-sidebar{position:sticky;top:0;height:100vh;background:#fff;border-right:1px solid var(--gg-line);padding:18px 12px;display:flex;flex-direction:column;gap:16px}
-  .gg-brand{display:flex;align-items:center;gap:10px;padding:0 8px 14px;border-bottom:1px solid var(--gg-line)}
-  .gg-logo{width:46px;height:46px;border-radius:15px;background:radial-gradient(circle at 30% 25%,#e7fbff,#0b55d9 58%,#062963);display:grid;place-items:center;color:white;font-size:21px;box-shadow:0 12px 24px rgba(11,85,217,.15)}
-  .gg-brand strong{display:block;font-size:17px;line-height:.94;color:#005aa9;letter-spacing:-.04em}
-  .gg-brand span{font-size:9.5px;color:#6b7896;letter-spacing:.07em}
-  .gg-nav{display:flex;flex-direction:column;gap:4px}
-  .portal-tab{width:100%;display:flex;align-items:center;gap:11px;border:0;background:transparent;border-radius:10px;padding:10px 12px;color:#192743;font-size:13px;font-weight:720;text-align:left;cursor:pointer;line-height:1.2}
-  .portal-tab i{width:18px;text-align:center;color:#31517d}
-  .portal-tab:hover{background:#f4f7fb;color:var(--gg-blue)}
-  .portal-tab:hover i,.portal-tab.tab-active i{color:var(--gg-blue)}
-  .gg-profile-card,.gg-help-card{border:1px solid var(--gg-line);border-radius:13px;padding:12px;background:#fff;box-shadow:var(--gg-shadow)}
-  .gg-main{min-width:0;padding:20px 24px 24px}
-  .gg-topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
-  .gg-greeting h1{font-size:22px;font-weight:820;letter-spacing:-.035em;line-height:1.12}
-  .gg-greeting p{font-size:13px;color:var(--gg-muted);font-weight:600;margin-top:4px}
-  .gg-search{width:min(410px,34vw);height:42px;border:1px solid var(--gg-line);background:#fff;border-radius:12px;display:flex;align-items:center;gap:10px;padding:0 14px;color:#7b86a3;box-shadow:var(--gg-shadow);font-size:13px}
-  .gg-top-actions{display:flex;align-items:center;gap:10px}
-  .gg-icon-btn{width:40px;height:40px;border:1px solid var(--gg-line);border-radius:12px;background:#fff;display:grid;place-items:center;color:#1a2b52;position:relative}
-  .gg-badge{position:absolute;top:-7px;right:-5px;background:#ef233c;color:#fff;border-radius:999px;font-size:10px;font-weight:900;padding:2px 6px}
-  .gg-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#052e66,#12b981);display:grid;place-items:center;color:white;font-size:12px;font-weight:900;border:3px solid #fff;box-shadow:0 8px 20px rgba(10,31,68,.13)}
-  .gg-card{background:#fff;border:1px solid var(--gg-line);border-radius:14px;box-shadow:var(--gg-shadow)}
-  .gg-card-pad{padding:16px}
-  .gg-section-title{font-size:14px;font-weight:820;letter-spacing:-.025em;display:flex;align-items:center;justify-content:space-between;gap:10px;line-height:1.2}
-  .gg-link{color:#0757ff;font-size:12px;font-weight:760}
-  .gg-link:hover{text-decoration:underline}
-  .gg-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-  .gg-work-grid{display:grid;grid-template-columns:minmax(0,1.28fr) minmax(280px,.9fr) minmax(300px,.94fr);gap:14px}
-  .gg-lower-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:14px}
-  .gg-pill{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:760;white-space:nowrap}
-  .gg-task-row,.gg-todo-row,.gg-calendar-row,.gg-upcoming-row,.gg-ann-row{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid #eef2f8}
-  .gg-task-row:last-child,.gg-todo-row:last-child,.gg-calendar-row:last-child,.gg-upcoming-row:last-child,.gg-ann-row:last-child{border-bottom:0}
-  .gg-check{width:14px;height:14px;border:1.4px solid #9badc9;border-radius:4px;flex:0 0 auto}
-  .gg-circle{width:14px;height:14px;border:1.4px solid #9badc9;border-radius:50%;flex:0 0 auto}
-  .gg-progress-line{height:6px;background:#edf1f8;border-radius:999px;overflow:hidden}
-  .gg-progress-line span{display:block;height:100%;border-radius:999px;background:#0cae67}
-  .gg-quick-bar{position:sticky;bottom:14px;margin-top:16px;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.94);border:1px solid var(--gg-line);box-shadow:0 18px 42px rgba(10,31,68,.11);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:space-between;gap:12px}
-  .gg-quick-actions{display:flex;align-items:center;gap:12px;overflow:auto}
-  .gg-quick-action{min-width:76px;text-align:center;color:#071235;font-size:11px;font-weight:760;cursor:pointer}
-  .gg-quick-action:hover{color:var(--gg-blue)}
-  .gg-quick-action i{display:grid;place-items:center;margin:0 auto 6px;width:36px;height:36px;border-radius:12px;background:#eef4ff;color:#0757ff;font-size:15px}
-  #content h2{font-size:19px;line-height:1.2;font-weight:820;letter-spacing:-.03em}
-  #content h3{font-size:14px;line-height:1.25;font-weight:780;color:#15213d}
-  #content p,#content td,#content th,#content label{font-size:13px}
-  #content .bg-white{border:1px solid var(--gg-line);box-shadow:var(--gg-shadow)!important;border-radius:14px!important}
-  #content .rounded-xl{border-radius:14px!important}
-  #content .shadow-sm{box-shadow:var(--gg-shadow)!important}
-  #content input,#content textarea,#content select{border:1px solid #dce3ef!important;border-radius:10px!important;background:#fbfcff;color:#111b33;font-size:13px!important;line-height:1.35;box-shadow:inset 0 1px 0 rgba(255,255,255,.8)}
-  #content input{min-height:38px}
-  #content textarea{min-height:82px;resize:vertical}
-  #content input:focus,#content textarea:focus,#content select:focus{border-color:#8faeff!important;background:#fff;box-shadow:0 0 0 4px rgba(31,94,255,.10)!important}
-  #content button:not(.portal-tab):not(.gg-icon-btn),#content a.inline-block{border-radius:10px!important;font-size:13px!important;font-weight:760!important;box-shadow:none!important}
-  #content table{border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:12px;font-size:13px}
-  #content th{background:#f6f8fc!important;color:#66718c;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
-  #content td,#content th{padding:10px 12px!important;border-color:#eef2f8!important}
-  #content .text-2xl{font-size:1.25rem!important}
-  #content .text-3xl{font-size:1.55rem!important}
-  #content .p-6{padding:18px!important}
-  #content .p-5{padding:16px!important}
-  #content .mb-6{margin-bottom:16px!important}
-  @media(max-width:1180px){.gg-shell{grid-template-columns:88px 1fr}.gg-brand div,.portal-tab span,.gg-profile-card,.gg-help-card{display:none}.portal-tab{justify-content:center}.gg-logo{width:48px;height:48px}.gg-main{padding:20px}.gg-work-grid,.gg-lower-grid{grid-template-columns:1fr 1fr}.gg-metric-grid{grid-template-columns:1fr 1fr}.gg-search{display:none}}
-  @media(max-width:760px){.gg-shell{display:block}.gg-sidebar{position:static;height:auto;flex-direction:row;overflow:auto;padding:12px}.gg-brand{display:none}.portal-tab{min-width:66px}.gg-main{padding:16px}.gg-topbar{align-items:flex-start}.gg-top-actions{display:none}.gg-metric-grid,.gg-work-grid,.gg-lower-grid{grid-template-columns:1fr}.gg-quick-bar{position:static;display:block}.gg-quick-actions{margin-top:12px}}
+  *{box-sizing:border-box} html{font-size:14px}
+  body{margin:0;background:var(--soft);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+  button,a,input,textarea,select{font:inherit} button,a{transition:.16s ease} button{cursor:pointer}
+  button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid rgba(17,92,255,.16);outline-offset:2px}
+  .app{display:grid;grid-template-columns:268px minmax(0,1fr);min-height:100vh}
+  .side{position:sticky;top:0;height:100vh;background:#fff;border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;gap:16px}
+  .brand{display:flex;gap:12px;align-items:center;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  .logo{width:56px;height:56px;border-radius:18px;background:radial-gradient(circle at 28% 23%,#e8fbff 0,#64ccff 24%,#0b67d1 56%,#061b4d 100%);display:grid;place-items:center;color:white;font-size:25px;box-shadow:0 12px 28px rgba(11,103,209,.16)}
+  .brand b{display:block;font-size:18px;line-height:.92;letter-spacing:-.045em;color:#0063b9}.brand span{font-size:10px;color:#60708f;font-weight:700}
+  .nav{display:flex;flex-direction:column;gap:5px;overflow:auto;padding-right:2px}
+  .nav-btn{border:0;background:transparent;border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:12px;text-align:left;color:#111d3e;font-weight:760;font-size:13px;line-height:1.2}
+  .nav-btn i{width:18px;color:#385174;text-align:center}.nav-btn:hover,.nav-btn.active{background:linear-gradient(90deg,#edf3ff,#f8fbff);color:var(--blue)}.nav-btn:hover i,.nav-btn.active i{color:var(--blue)}
+  .user-card,.help-card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:13px;box-shadow:var(--shadow)}
+  .avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#071338,#0987b8);display:grid;place-items:center;color:white;font-size:13px;font-weight:900;border:3px solid #fff;box-shadow:0 8px 20px rgba(15,31,69,.14);overflow:hidden}
+  .main{padding:24px 28px 28px;min-width:0}
+  .top{display:grid;grid-template-columns:minmax(260px,1fr) minmax(320px,440px) auto;align-items:center;gap:18px;margin-bottom:22px}
+  .top h1{font-size:24px;line-height:1.08;margin:0;font-weight:900;letter-spacing:-.04em}.top p{margin:6px 0 0;color:var(--muted);font-weight:650}
+  .search{height:44px;border:1px solid var(--line);border-radius:13px;background:#fff;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;padding:0 14px;color:#78849d}
+  .search kbd{margin-left:auto;background:#f4f7fc;border:1px solid #e8eef8;border-radius:7px;padding:2px 8px;font-size:11px;color:#596681}
+  .top-actions{display:flex;align-items:center;gap:12px}.icon-btn{width:42px;height:42px;border:1px solid var(--line);background:#fff;border-radius:13px;display:grid;place-items:center;color:#162348;position:relative}.dot{position:absolute;top:-7px;right:-6px;background:#ef233c;color:#fff;border-radius:999px;font-size:10px;font-weight:900;padding:2px 6px}
+  .page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px}.page-head h2{font-size:25px;font-weight:900;letter-spacing:-.04em;margin:0}.page-head p{color:var(--muted);font-weight:650;margin-top:5px}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:11px;padding:10px 13px;font-weight:800;color:#12204a}.btn:hover{background:#f7faff}.btn.primary{background:var(--blue);border-color:var(--blue);color:white}.btn.green{background:var(--green);border-color:var(--green);color:white}.btn.orange{background:var(--orange);border-color:var(--orange);color:white}.btn.red{background:var(--red);border-color:var(--red);color:white}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}.pad{padding:17px}.title{font-weight:900;letter-spacing:-.02em;display:flex;align-items:center;justify-content:space-between;gap:10px}.muted{color:var(--muted)}.link{border:0;background:transparent;color:var(--blue);font-weight:850;padding:0}.link:hover{text-decoration:underline}
+  .grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.grid-5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}.grid-6{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px}.dash-grid{display:grid;grid-template-columns:1.18fr .82fr .82fr;gap:16px}.lower-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:16px}
+  .stat{display:flex;align-items:center;gap:15px}.stat-icon{width:56px;height:56px;border-radius:17px;display:grid;place-items:center;font-size:22px}.stat b{font-size:25px;line-height:1;font-weight:950}.stat small{display:block;color:var(--muted);font-weight:750;margin-top:5px}
+  .pill{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:850;white-space:nowrap}.blue{background:#eaf1ff;color:#0757ff}.greenp{background:#eafbf3;color:#078655}.orangep{background:#fff4e5;color:#d66a00}.redp{background:#fff0f2;color:#df2245}.purplep{background:#f2edff;color:#6841e9}.grayp{background:#f4f6fa;color:#60708f}
+  .row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #edf2f8}.row:last-child{border-bottom:0}.check,.circle{width:15px;height:15px;border:1.5px solid #9badc9;flex:0 0 auto}.check{border-radius:4px}.circle{border-radius:50%}.done{background:var(--blue);border-color:var(--blue);color:white;display:grid;place-items:center;font-size:9px}
+  .progress{height:7px;border-radius:999px;background:#edf2f8;overflow:hidden}.progress span{display:block;height:100%;border-radius:999px}
+  .table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px}.table th{background:#f7f9fd;color:#6a7590;font-weight:900;text-transform:uppercase;letter-spacing:.04em;text-align:left}.table th,.table td{padding:11px;border-bottom:1px solid #edf2f8}.table tr:last-child td{border-bottom:0}
+  .tabs{display:flex;gap:8px;margin-bottom:14px;overflow:auto}.tab-chip{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;font-weight:850;color:#213051}.tab-chip.active{background:#eef4ff;color:var(--blue);border-color:#d9e6ff}
+  .field{width:100%;border:1px solid #dce5f2!important;background:#fbfcff;border-radius:11px;padding:10px 12px;min-height:40px}.field:focus{background:#fff;border-color:#93b0ff!important;box-shadow:0 0 0 4px rgba(17,92,255,.10)}textarea.field{min-height:86px;resize:vertical}
+  .quick{position:sticky;bottom:14px;margin-top:18px;padding:13px 16px;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:18px;box-shadow:0 20px 46px rgba(15,31,69,.12);display:flex;align-items:center;justify-content:space-between;gap:14px}.quick-list{display:flex;gap:14px;overflow:auto}.quick-item{min-width:78px;text-align:center;font-size:11px;font-weight:850;color:#111d3e}.quick-item i{display:grid;place-items:center;margin:0 auto 7px;width:38px;height:38px;border-radius:13px;background:#eef4ff;color:var(--blue)}
+  .modal{position:fixed;inset:0;background:rgba(7,19,56,.54);display:none;align-items:center;justify-content:center;z-index:90;padding:20px}.modal.open{display:flex}.modal-card{width:min(760px,96vw);max-height:88vh;overflow:auto;background:#fff;border-radius:18px;border:1px solid var(--line);box-shadow:0 30px 90px rgba(0,0,0,.25)}.modal-head{position:sticky;top:0;background:#fff;padding:18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.modal-body{padding:18px}
+  #toast{position:fixed;right:22px;top:22px;z-index:120;padding:13px 16px;border-radius:14px;font-weight:850;box-shadow:0 18px 48px rgba(15,31,69,.16);display:none}#toast.ok{display:block;background:#effdf6;color:#067348;border:1px solid #bff4d7}#toast.err{display:block;background:#fff3f4;color:#c01837;border:1px solid #ffd0d8}
+  @media(max-width:1220px){.app{grid-template-columns:86px 1fr}.brand div,.nav-btn span,.user-card,.help-card{display:none}.nav-btn{justify-content:center}.side{padding:16px 10px}.top{grid-template-columns:1fr auto}.search{display:none}.grid-5,.grid-6{grid-template-columns:repeat(3,1fr)}.dash-grid,.lower-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:760px){.app{display:block}.side{height:auto;position:static;flex-direction:row;overflow:auto}.brand{display:none}.nav{flex-direction:row}.nav-btn{min-width:62px}.main{padding:16px}.top{display:block}.top-actions{display:none}.page-head{display:block}.grid-2,.grid-3,.grid-4,.grid-5,.grid-6,.dash-grid,.lower-grid{grid-template-columns:1fr}.quick{position:static;display:block}.quick-list{margin-top:12px}}
 </style>
 </head>
 <body>
-<div class="gg-shell">
-  <aside class="gg-sidebar">
-    <div class="gg-brand">
-      <div class="gg-logo"><i class="fas fa-globe"></i></div>
-      <div>
-        <strong>GLOBAL<br>GUIDANCE</strong>
-        <span>EDUCATION CONSULTANCY</span>
-      </div>
-    </div>
-    <nav class="gg-nav">
-      <button class="portal-tab tab-active" data-tab="dashboard"><i class="fas fa-house"></i><span>Today</span></button>
-      <button class="portal-tab" data-tab="morning"><i class="fas fa-clipboard-check"></i><span>Morning Planner</span></button>
-      <button class="portal-tab" data-tab="evening"><i class="fas fa-file-pen"></i><span>Daily Report</span></button>
-      <button class="portal-tab" data-tab="admissions"><i class="fas fa-graduation-cap"></i><span>Admissions</span></button>
-      <button class="portal-tab" data-tab="conversion"><i class="fas fa-chart-line"></i><span>Performance</span></button>
-      <button class="portal-tab" data-tab="interviews"><i class="fas fa-comments"></i><span>Meetings</span></button>
-      <button class="portal-tab" data-tab="escalations"><i class="fas fa-triangle-exclamation"></i><span>Escalations</span></button>
-      <button class="portal-tab" data-tab="uni-coord"><i class="fas fa-building-columns"></i><span>Universities</span></button>
-      <button class="portal-tab" data-tab="kpi"><i class="fas fa-square-poll-vertical"></i><span>KPI</span></button>
-      <button class="portal-tab" data-tab="hr"><i class="fas fa-user-gear"></i><span>HR / Admin</span></button>
+<div id="toast"></div>
+<div id="modal" class="modal"><div class="modal-card"><div class="modal-head"><div><h3 id="modalTitle" class="text-xl font-black"></h3><p id="modalSub" class="muted text-sm"></p></div><button class="icon-btn" onclick="closeModal()"><i class="fas fa-times"></i></button></div><div id="modalBody" class="modal-body"></div></div></div>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="logo"><i class="fas fa-globe"></i></div><div><b>GLOBAL<br>GUIDANCE</b><span>EDUCATION CONSULTANCY</span></div></div>
+    <nav class="nav" id="nav">
+      <button class="nav-btn active" data-tab="today"><i class="fas fa-house"></i><span>Today</span></button>
+      <button class="nav-btn" data-tab="work"><i class="fas fa-list-check"></i><span>My Work</span></button>
+      <button class="nav-btn" data-tab="attendance"><i class="far fa-clock"></i><span>Attendance</span></button>
+      <button class="nav-btn" data-tab="leave"><i class="far fa-calendar-check"></i><span>Leave</span></button>
+      <button class="nav-btn" data-tab="operations"><i class="fas fa-briefcase"></i><span>Operations</span></button>
+      <button class="nav-btn" data-tab="performance"><i class="fas fa-chart-line"></i><span>Performance</span></button>
+      <button class="nav-btn" data-tab="followups"><i class="fas fa-phone"></i><span>Follow Ups & Calls</span></button>
+      <button class="nav-btn" data-tab="learning"><i class="fas fa-book-open"></i><span>Learning</span></button>
+      <button class="nav-btn" data-tab="documents"><i class="far fa-file-lines"></i><span>Documents</span></button>
+      <button class="nav-btn" data-tab="organization"><i class="fas fa-people-group"></i><span>Organization</span></button>
+      <button class="nav-btn" data-tab="assets"><i class="fas fa-laptop"></i><span>Assets</span></button>
+      <button class="nav-btn" data-tab="ai"><i class="fas fa-wand-magic-sparkles"></i><span>AI Assistant</span></button>
+      <button class="nav-btn" data-tab="notifications"><i class="far fa-bell"></i><span>Notifications</span></button>
+      <button class="nav-btn" data-tab="communication"><i class="far fa-message"></i><span>Communication</span></button>
+      <button class="nav-btn" data-tab="profile"><i class="far fa-user"></i><span>Profile</span></button>
+      <button class="nav-btn" data-tab="settings"><i class="fas fa-gear"></i><span>Settings</span></button>
     </nav>
     <div class="mt-auto space-y-4">
-      <div class="gg-profile-card">
-        <div class="flex items-center gap-3">
-          <div class="gg-avatar">TS</div>
-          <div>
-            <div class="font-black text-sm">Thasbiha S.</div>
-            <div class="text-xs text-gray-500">Head of Admissions / HR</div>
-            <div class="text-xs text-emerald-600 mt-1"><i class="fas fa-circle text-[7px] mr-1"></i>Online</div>
-          </div>
-        </div>
-      </div>
-      <div class="gg-help-card">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="font-black text-sm">Need Help?</div>
-            <div class="text-xs text-gray-500">Connect with support</div>
-          </div>
-          <i class="fas fa-chevron-right text-gray-400"></i>
-        </div>
-      </div>
+      <div class="user-card"><div class="flex items-center gap-3"><div class="avatar">TS</div><div><div class="font-black">Thasbiha S.</div><div class="text-xs muted">Head of Admissions / HR</div><div class="text-xs text-emerald-600 mt-1"><i class="fas fa-circle text-[7px] mr-1"></i>Online</div></div></div></div>
+      <button class="help-card w-full text-left" onclick="action('support','Support requested from portal')"><div class="flex items-center justify-between"><div><div class="font-black">Need Help?</div><div class="text-xs muted">Connect with support</div></div><i class="fas fa-chevron-right muted"></i></div></button>
     </div>
   </aside>
 
-  <main class="gg-main">
-    <div class="gg-topbar">
-      <div class="gg-greeting">
-        <h1 id="portalGreeting">Good Morning, Thasbiha 👋</h1>
-        <p id="todayDate"></p>
-      </div>
-      <div class="gg-search"><i class="fas fa-search"></i><span>Search students, tasks, documents...</span><kbd class="ml-auto text-xs bg-gray-100 px-2 py-1 rounded">⌘ K</kbd></div>
-      <div class="gg-top-actions">
-        <button class="gg-icon-btn"><i class="far fa-bell"></i><span class="gg-badge">8</span></button>
-        <button class="gg-icon-btn"><i class="far fa-message"></i></button>
-        <div class="flex items-center gap-3">
-          <div class="gg-avatar">TS</div>
-          <div class="hidden lg:block">
-            <div class="font-black text-sm">Thasbiha S.</div>
-            <div class="text-xs text-gray-500">Head of Admissions / HR</div>
-          </div>
-          <i class="fas fa-chevron-down text-gray-500"></i>
-        </div>
+  <main class="main">
+    <div class="top">
+      <div><h1 id="topTitle">Good Morning, Thasbiha 👋</h1><p id="topSub"></p></div>
+      <div class="search"><i class="fas fa-search"></i><span>Search students, tasks, reports...</span><kbd>⌘ K</kbd></div>
+      <div class="top-actions">
+        <button class="icon-btn" onclick="switchTab('notifications')"><i class="far fa-bell"></i><span class="dot">8</span></button>
+        <button class="icon-btn" onclick="switchTab('communication')"><i class="far fa-message"></i></button>
+        <div class="avatar">TS</div>
       </div>
     </div>
     <section id="content"></section>
@@ -163,729 +96,306 @@
 </div>
 
 <script>
-const USER = { id: 3, employeeId: 'GG003', name: 'Thasbiha S.', role: 'Admissions Head & HR Manager' };
-function colomboDayKey(){
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Colombo', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date());
-  const get = type => parts.find(p => p.type === type)?.value || '';
-  return `${get('year')}-${get('month')}-${get('day')}`;
-}
-const TODAY = colomboDayKey();
-function fmtDateTime(){
-  const d = new Date();
-  const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone:'Asia/Colombo', hour:'2-digit', hour12:false }).format(d));
-  const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
-  const date = d.toLocaleDateString('en-GB', { timeZone:'Asia/Colombo', weekday:'long', day:'numeric', month:'long', year:'numeric' });
-  const time = d.toLocaleTimeString('en-GB', { timeZone:'Asia/Colombo', hour:'2-digit', minute:'2-digit' });
-  document.getElementById('portalGreeting').textContent = `${greeting}, Thasbiha 👋`;
-  document.getElementById('todayDate').textContent = `${date} · ${time}`;
-}
-fmtDateTime();
-setInterval(fmtDateTime, 30000);
+const API_EMP_ID = 'GG003';
+const DISPLAY_EMP_ID = 'GG005';
+const USER = { id:3, name:'Thasbiha S.', fullName:'Thasbiha Sulaiman', employeeId:DISPLAY_EMP_ID, role:'Head of Admissions / HR', department:'Admissions & HR', email:'thasbiha@global-guidance.com', phone:'+94 71 345 6789', manager:'Nafees A. (COO)' };
+const fmt = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Colombo',year:'numeric',month:'2-digit',day:'2-digit'});
+const TODAY = fmt.format(new Date());
+const nowTime = () => new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Colombo',hour:'2-digit',minute:'2-digit'});
+const dateLong = () => new Date().toLocaleDateString('en-GB',{timeZone:'Asia/Colombo',weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const $ = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const get = (k,f) => { try{return JSON.parse(localStorage.getItem(k)) ?? f}catch{return f} };
+const set = (k,v) => localStorage.setItem(k,JSON.stringify(v));
 
-function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+let state = { morningPlan:null, eveningReport:null, kpi:null, escalations:[], interviews:[], uniFollowUps:[], tasks:[], todos:[], attendance:get('tsAttendance',null), calls:get('tsCalls',[]), notes:get('tsNotes',[]), messages:get('tsMessages',[]) };
 
-// ===== STATE =====
-let state = {
-  morningPlan: null,
-  eveningReport: null,
-  kpi: null,
-  escalations: [],
-  interviews: [],
-  uniFollowUps: [],
-  conversions: []
-};
+const baseTasks = [
+  {id:'t1',title:'Review new student applications',cat:'Admissions',priority:'High',due:'10:00 AM',status:'In Progress',assignee:'TS'},
+  {id:'t2',title:'Follow up with 20 registered students',cat:'Follow Ups',priority:'High',due:'11:30 AM',status:'In Progress',assignee:'TS'},
+  {id:'t3',title:'Check pending offers from universities',cat:'Admissions',priority:'Medium',due:'01:00 PM',status:'Pending',assignee:'R'},
+  {id:'t4',title:'Verify CAS documents',cat:'CAS & Visa',priority:'Medium',due:'02:30 PM',status:'Pending',assignee:'S'},
+  {id:'t5',title:'Admissions team meeting',cat:'Meetings',priority:'Low',due:'03:30 PM',status:'Upcoming',assignee:'N'},
+  {id:'t6',title:'Update university follow-up tracker',cat:'Universities',priority:'Low',due:'04:30 PM',status:'Upcoming',assignee:'TS'},
+  {id:'t7',title:'Prepare admissions report (Weekly)',cat:'Reports',priority:'Medium',due:'Tomorrow',status:'Upcoming',assignee:'TS'}
+];
+const baseTodos = ['Call UWE regarding new intake','Buy printer ink','Prepare HR monthly report','Update visa SOP document','Send welcome email to new students'];
+const calendar = [
+  ['10:00 AM','Admissions Team Meeting','Meeting Room 1','fa-user-group','green'],
+  ['12:00 PM','Student Meeting','Shameem (UAE)','fa-video','blue'],
+  ['02:30 PM','University Call','UWE / Admissions','fa-phone','purple'],
+  ['04:00 PM','Internal Review','Daily Operations','fa-users','orange']
+];
+const staff = [
+  ['Mohamed Nashif','CEO / Founder','CEO','nashif@global-guidance.com'],['Nafees A.','COO','Operations','nafees@global-guidance.com'],['Thasbiha S.','Head of Admissions / HR','Admissions & HR','thasbiha@global-guidance.com'],['Razan T.','Head of BD & Visa','Business Development & Visa','razan@global-guidance.com'],['Umair N.','Sr. Admissions Officer','Admissions','umair@global-guidance.com'],['Binupa K.','Jr. Counselor','Counseling Team','binupa@global-guidance.com'],['Jinushiya J.','Intern','Support & Operations','jinushiya@global-guidance.com'],['Shiran F.','Designer','Marketing','shiran@global-guidance.com'],['Ashadulla','Accountant','Finance','accounts@global-guidance.com']
+];
+const documents = [
+  ['Visa Approval - Anushan P.','Visa','Razan T.','08 Jul 2026','1.2 MB','Approved'],
+  ['CAS Letter - Vaidehi N.','Admission','Umair N.','08 Jul 2026','842 KB','Approved'],
+  ['Offer Letter - Pinushan R.','Offer Letter','Thasbiha S.','07 Jul 2026','210 KB','Approved'],
+  ['Bank Statement - Ilyas M.','Finance','Razan T.','07 Jul 2026','1.8 MB','Pending Review'],
+  ['Passport Copy - Akeel S.','ID Proof','Jinushiya J.','07 Jul 2026','620 KB','Approved']
+];
+const notifications = [
+  ['New Application Submitted','A new application has been submitted by Dilshan Perera for MSc International Business','Applications','10:24 AM','fa-graduation-cap','blue'],
+  ['Document Awaiting Review','3 student documents are pending your review and approval.','Documents','09:48 AM','fa-file-lines','green'],
+  ['Follow Up Reminder','You have 6 pending follow ups due today.','Follow Ups & Calls','09:00 AM','fa-phone','blue'],
+  ['Meeting Reminder','Team meeting with COO at 04:30 PM today.','Meetings','08:30 AM','fa-calendar-check','purple'],
+  ['Visa Document Update','UK visa checklist updated for Rashika Fernando.','Visas','Yesterday, 05:15 PM','fa-bell','orange'],
+  ['Weekly Performance Report Available','Your team weekly performance report is ready to view.','Reports','Yesterday, 04:30 PM','fa-chart-line','orange'],
+  ['Task Completed','Jinushiya J. marked task “Contact Aston University” as completed.','Tasks','Yesterday, 03:20 PM','fa-check','green'],
+  ['New Team Member Added','Binupa K. has been added to the Counseling Team.','Organization','07 Jul 2026, 02:45 PM','fa-users','purple']
+];
 
-async function loadAll() {
-  try {
-    const [mp, er, k, esc, iv, uf] = await Promise.all([
-      fetch('/api/staff-portal/morning-plan/GG003/' + TODAY).then(r=>r.json()).catch(()=>({})),
-      fetch('/api/staff-portal/evening-report/GG003/' + TODAY).then(r=>r.json()).catch(()=>({})),
-      fetch('/api/staff-portal/kpi/GG003').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/staff-portal/escalations/GG003').then(r=>r.json()).catch(()=>({items:[]})),
-      fetch('/api/staff-portal/interviews/GG003').then(r=>r.json()).catch(()=>({items:[]})),
-      fetch('/api/staff-portal/uni-followups/GG003').then(r=>r.json()).catch(()=>({items:[]}))
-    ]);
-    state.morningPlan = mp.plan || null;
-    state.eveningReport = er.report || null;
-    state.kpi = k.kpi || { weekly:{}, monthly:{} };
-    state.escalations = esc.items || [];
-    state.interviews = iv.items || [];
-    state.uniFollowUps = uf.items || [];
-  } catch(e) {}
-}
+function toast(msg,type='ok'){ const t=$('toast'); t.className=type; t.textContent=msg; clearTimeout(window.toastTimer); window.toastTimer=setTimeout(()=>{t.className=''},2600); }
+async function logActivity(type,text,details){ try{ await fetch('/api/v16l/team-activity',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:'thasbiha.s',name:'Thasbiha S.',employeeId:DISPLAY_EMP_ID,type,text,details:details||null})}); }catch(e){} }
+function action(type,text,details){ toast(text || 'Done'); logActivity(type,text,details); }
+function openModal(title,body,sub=''){ $('modalTitle').textContent=title; $('modalSub').textContent=sub; $('modalBody').innerHTML=body; $('modal').classList.add('open'); }
+function closeModal(){ $('modal').classList.remove('open'); }
 
-function switchTab(name) {
-  document.querySelectorAll('.portal-tab').forEach(t => t.classList.remove('tab-active'));
-  const active = document.querySelector(`.portal-tab[data-tab="${name}"]`);
-  if (active) active.classList.add('tab-active');
-  renderTab(name);
-}
-document.querySelectorAll('.portal-tab').forEach(t => t.onclick = () => switchTab(t.dataset.tab));
-
-function notify(message, type='success'){
-  const old = document.getElementById('ggToast');
-  if (old) old.remove();
-  const toast = document.createElement('div');
-  toast.id = 'ggToast';
-  toast.className = 'fixed right-5 top-5 z-[9999] rounded-xl px-4 py-3 text-sm font-bold shadow-lg border';
-  toast.style.background = type === 'error' ? '#fff5f5' : '#f0fdf4';
-  toast.style.borderColor = type === 'error' ? '#fecaca' : '#bbf7d0';
-  toast.style.color = type === 'error' ? '#b91c1c' : '#047857';
-  toast.textContent = message;
-  document.body.appendChild(toast);
-  setTimeout(()=>toast.remove(), 2600);
-}
-
-async function logPortalActivity(type, text, details){
+async function loadAll(){
+  state.tasks = get('tsTasks',baseTasks);
+  state.todos = get('tsTodos',baseTodos);
   try{
-    await fetch('/api/v16l/team-activity', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ user:'thasbiha.s', name:'Thasbiha S.', employeeId:'GG005', type, text, details:details || null })
-    });
+    const [mp,er,k,esc,iv,uf] = await Promise.all([
+      fetch('/api/staff-portal/morning-plan/'+API_EMP_ID+'/'+TODAY).then(r=>r.json()).catch(()=>({})),
+      fetch('/api/staff-portal/evening-report/'+API_EMP_ID+'/'+TODAY).then(r=>r.json()).catch(()=>({})),
+      fetch('/api/staff-portal/kpi/'+API_EMP_ID).then(r=>r.json()).catch(()=>({})),
+      fetch('/api/staff-portal/escalations/'+API_EMP_ID).then(r=>r.json()).catch(()=>({items:[]})),
+      fetch('/api/staff-portal/interviews/'+API_EMP_ID).then(r=>r.json()).catch(()=>({items:[]})),
+      fetch('/api/staff-portal/uni-followups/'+API_EMP_ID).then(r=>r.json()).catch(()=>({items:[]}))
+    ]);
+    state.morningPlan = mp.plan || null; state.eveningReport = er.report || null; state.kpi = k.kpi || {weekly:{},monthly:{}};
+    state.escalations = esc.items || []; state.interviews = iv.items || []; state.uniFollowUps = uf.items || [];
   }catch(e){}
 }
 
-async function renderTab(name) {
-  const el = document.getElementById('content');
-  el.innerHTML = '<p class="text-gray-500"><i class="fas fa-spinner fa-spin"></i> Loading…</p>';
+function refreshClock(){
+  const hour = +new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Colombo',hour:'2-digit',hour12:false}).format(new Date());
+  $('topTitle').textContent = `${hour<12?'Good Morning':hour<17?'Good Afternoon':'Good Evening'}, Thasbiha 👋`;
+  $('topSub').textContent = `${dateLong()} · ${nowTime()}`;
+}
+refreshClock(); setInterval(refreshClock,30000);
+
+function pageHead(title,sub,actions=''){
+  return `<div class="page-head"><div><h2>${title}</h2><p>${sub}</p></div><div class="flex gap-2 flex-wrap">${actions}</div></div>`;
+}
+function statCard(icon,label,value,sub,color='blue'){
+  const colors={blue:['#eaf1ff','#0757ff'],green:['#eafbf3','#078655'],orange:['#fff4e5','#d66a00'],red:['#fff0f2','#df2245'],purple:['#f2edff','#6841e9'],cyan:['#e9fbff','#0891b2']};
+  const c=colors[color]||colors.blue;
+  return `<div class="card pad stat"><div class="stat-icon" style="background:${c[0]};color:${c[1]}"><i class="fas ${icon}"></i></div><div><div class="text-xs font-black">${label}</div><b>${value}</b><small>${sub}</small></div></div>`;
+}
+function badge(p){ const s=String(p); const cls=s.includes('High')||s.includes('Late')||s.includes('Overdue')?'redp':s.includes('Medium')||s.includes('Pending')?'orangep':s.includes('Low')?'blue':s.includes('Approved')||s.includes('Active')||s.includes('Present')||s.includes('Done')||s.includes('Completed')?'greenp':'grayp'; return `<span class="pill ${cls}">${esc(s)}</span>`; }
+function progress(label,val,max,color='var(--blue)'){ const pct=Math.min(100,Math.round((Number(val)/Math.max(Number(max),1))*100)); return `<div class="mb-3"><div class="flex justify-between text-xs font-black"><span>${label}<br><span class="muted">${val} / ${max}</span></span><span>${pct}%</span></div><div class="progress mt-2"><span style="width:${pct}%;background:${color}"></span></div></div>`; }
+function table(headers,rows){ return `<table class="table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`; }
+function taskRows(limit=7){
+  return state.tasks.slice(0,limit).map(t=>`<div class="row">
+    <button class="check ${t.status==='Completed'?'done':''}" onclick="toggleTask('${t.id}')">${t.status==='Completed'?'<i class="fas fa-check"></i>':''}</button>
+    <div class="min-w-0 flex-1"><div class="font-black">${esc(t.title)}</div><div class="text-xs muted"><i class="fas fa-building-columns mr-1"></i>${esc(t.cat)}</div></div>
+    ${badge(t.priority)}<span class="text-xs muted w-[74px] text-right">${esc(t.due)}</span><button class="icon-btn !w-8 !h-8" onclick="editTask('${t.id}')"><i class="fas fa-ellipsis-vertical"></i></button>
+  </div>`).join('');
+}
+function calendarRows(){ return calendar.map(([time,title,sub,icon,color])=>`<div class="row"><div class="w-[72px] text-xs font-black">${time}</div><div class="w-1 h-11 rounded bg-${color}-500"></div><div class="flex-1"><div class="font-black">${title}</div><div class="text-xs muted">${sub}</div></div><i class="fas ${icon} text-${color}-600"></i></div>`).join(''); }
+function quickActions(){
+  return `<div class="quick"><div class="font-black">Quick Actions</div><div class="quick-list">
+    ${[['Check In','fa-calendar-check','attendance'],['Morning Planner','fa-clipboard-check','morning'],['Daily Report','fa-file-pen','evening'],['Add Follow Up','fa-user-clock','followups'],['New Student','fa-user-plus','operations'],['Create Task','fa-list-check','work'],['Call Student','fa-phone','followups'],['Upload Document','fa-file-arrow-up','documents'],['AI Assistant','fa-wand-magic-sparkles','ai'],['More','fa-ellipsis','settings']].map(([l,i,t])=>`<button class="quick-item" onclick="${l==='Check In'?'checkIn()':`switchTab('${t}')`}"><i class="fas ${i}"></i>${l}</button>`).join('')}
+  </div></div>`;
+}
+
+function switchTab(name){
+  const aliases={dashboard:'today',admissions:'operations',conversion:'performance',interviews:'communication',escalations:'operations','uni-coord':'operations',kpi:'performance',hr:'profile'};
+  name = aliases[name] || name;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  renderTab(name);
+}
+document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+
+async function renderTab(name){
+  const el=$('content'); el.innerHTML='<div class="card pad muted"><i class="fas fa-spinner fa-spin mr-2"></i>Loading…</div>';
   await loadAll();
-  if (name === 'dashboard') return renderDashboard(el);
-  if (name === 'morning') return renderMorning(el);
-  if (name === 'evening') return renderEvening(el);
-  if (name === 'admissions') return renderAdmissions(el);
-  if (name === 'conversion') return renderConversion(el);
-  if (name === 'interviews') return renderInterviews(el);
-  if (name === 'escalations') return renderEscalations(el);
-  if (name === 'uni-coord') return renderUniCoord(el);
-  if (name === 'kpi') return renderKPI(el);
-  if (name === 'hr') return renderHR(el);
+  ({today:renderToday,work:renderWork,attendance:renderAttendance,leave:renderLeave,operations:renderOperations,performance:renderPerformance,followups:renderFollowups,learning:renderLearning,documents:renderDocuments,organization:renderOrganization,assets:renderAssets,ai:renderAI,notifications:renderNotifications,communication:renderCommunication,profile:renderProfile,settings:renderSettings,morning:renderMorning,evening:renderEvening}[name] || renderToday)(el);
 }
 
-// ===== DASHBOARD =====
-function renderDashboard(el) {
-  const mp = state.morningPlan;
-  const er = state.eveningReport;
-  const k = state.kpi || { weekly:{}, monthly:{} };
-  const priorityTasks = (mp && mp.priorityTasks && mp.priorityTasks.length ? mp.priorityTasks : [
-    { title:'Review new student applications', priority:'High', notes:'Admissions queue' },
-    { title:'Follow up with 20 registered students', priority:'High', notes:'Student conversion' },
-    { title:'Check pending offers from universities', priority:'Medium', notes:'University coordination' },
-    { title:'Verify CAS documents', priority:'Medium', notes:'Compliance' },
-    { title:'Admissions team meeting', priority:'Low', notes:'HR / Team' }
-  ]).slice(0,5);
-  const todos = JSON.parse(localStorage.getItem('thasbihaPersonalTodos') || '["Call UWE regarding new intake","Buy printer ink","Prepare HR monthly report","Update visa SOP document","Send welcome email to new students"]');
-  const registrations = Number(k.weekly.registrationsConverted || 12);
-  const applications = Number(k.weekly.applicationsSubmitted || 18);
-  const offers = Number(k.weekly.offerLettersReceived || 7);
-  const cas = Number(k.weekly.casReceived || 4);
-  const completed = priorityTasks.filter(t => t.done || t.status === 'Completed').length;
-  const completion = Math.max(65, Math.round((completed / Math.max(priorityTasks.length,1)) * 100));
-  const weeklyScore = Number(k.weekly.score || 82);
-  const monthlyScore = Number(k.monthly.operationalScore || 91);
-  const taskRows = priorityTasks.map((t,i)=>{
-    const p = String(t.priority || (i<2?'High':i<4?'Medium':'Low'));
-    const color = p.toLowerCase().includes('high') || p === 'P1' ? 'bg-red-50 text-red-600' : p.toLowerCase().includes('medium') || p === 'P2' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600';
-    const time = ['10:00 AM','11:30 AM','01:00 PM','02:30 PM','03:30 PM'][i] || 'Today';
-    const icon = ['fa-calendar-day','fa-users','fa-building-columns','fa-file-lines','fa-user-group'][i] || 'fa-circle-dot';
-    return `<div class="gg-task-row">
-      <span class="gg-check"></span>
-      <div class="min-w-0 flex-1"><div class="font-bold text-sm">${esc(t.title)}</div><div class="text-xs text-gray-500">${esc(t.notes || 'Role task')}</div></div>
-      <span class="gg-pill ${color}">${esc(p.replace('P1','High').replace('P2','Medium').replace('P3','Low'))}</span>
-      <span class="text-xs text-slate-600 w-[70px] text-right">${time}</span>
-      <i class="fas ${icon} text-slate-400 w-4 text-center"></i>
-    </div>`;
-  }).join('');
+function renderToday(el){
+  const completed=state.tasks.filter(t=>t.status==='Completed').length; const pct=Math.max(65,Math.round((completed/Math.max(state.tasks.length,1))*100)); const k=state.kpi?.weekly||{};
   el.innerHTML = `
-    <div class="gg-metric-grid mb-[18px]">
-      <div class="gg-card gg-card-pad kpi-card">
-        <div class="flex items-center gap-4">
-          <div class="w-14 h-14 rounded-full bg-emerald-50 grid place-items-center text-emerald-600 text-2xl"><i class="fas fa-check-circle"></i></div>
-          <div>
-            <div class="font-black text-sm">Attendance</div>
-            <div class="text-emerald-600 font-black mt-2">${mp ? 'Checked In' : 'Ready to Check In'}</div>
-            <div class="text-xs text-gray-500">${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
-          </div>
-        </div>
-        <button onclick="switchTab('morning')" class="mt-4 ml-[68px] px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-black">View Attendance</button>
-      </div>
-      <div class="gg-card gg-card-pad kpi-card">
-        <div class="font-black text-sm mb-3">Today's Progress</div>
-        <div class="flex items-center gap-5">
-          <div class="relative w-[82px] h-[82px] rounded-full grid place-items-center" style="background:conic-gradient(#245cff ${completion * 3.6}deg,#e9eef8 0deg)">
-            <div class="w-[64px] h-[64px] bg-white rounded-full grid place-items-center font-black">${completion}%</div>
-          </div>
-          <div><div class="font-black">Good progress!</div><div class="text-sm text-gray-500">Keep it up 👍</div><button class="gg-link mt-3" onclick="switchTab('kpi')">View Details</button></div>
-        </div>
-      </div>
-      <div class="gg-card gg-card-pad kpi-card">
-        <div class="font-black text-sm mb-2">Weekly KPI</div>
-        <div class="flex items-end justify-between gap-4">
-          <div class="flex items-end gap-1 h-[72px]">
-            ${[28,45,62,36,78,48,55,40,66,92,52,70,44,84,58].map((h,i)=>`<span style="height:${h}%" class="w-2 rounded-t bg-${i%3?'blue':'indigo'}-500/80"></span>`).join('')}
-          </div>
-          <div class="text-right"><div class="text-3xl font-black">${weeklyScore}%</div><div class="text-emerald-600 text-sm font-bold">↑ 12%</div><div class="text-xs text-gray-500">from last week</div></div>
-        </div>
-      </div>
-      <div class="gg-card gg-card-pad kpi-card">
-        <div class="font-black text-sm mb-2">Monthly KPI</div>
-        <svg viewBox="0 0 220 85" class="w-full h-[76px]">
-          <defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#10b981" stop-opacity=".35"/><stop offset="1" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs>
-          <path d="M5,70 L30,62 L54,64 L78,45 L100,52 L124,28 L148,38 L170,24 L190,31 L210,12 L210,84 L5,84 Z" fill="url(#g)"/>
-          <path d="M5,70 L30,62 L54,64 L78,45 L100,52 L124,28 L148,38 L170,24 L190,31 L210,12" fill="none" stroke="#0cae67" stroke-width="4" stroke-linecap="round"/>
-        </svg>
-        <div class="text-right -mt-12"><div class="text-3xl font-black">${monthlyScore}%</div><div class="text-emerald-600 text-sm font-bold">↑ 8%</div></div>
-      </div>
+    <div class="grid-4 mb-4">
+      ${statCard('fa-check-circle','Attendance',state.attendance?.checkedIn?'Checked In':'Ready',state.attendance?.time||'08:31 AM','green')}
+      <div class="card pad"><div class="title mb-3">Today's Progress</div><div class="flex items-center gap-5"><div class="relative w-20 h-20 rounded-full grid place-items-center" style="background:conic-gradient(var(--blue) ${pct*3.6}deg,#e9eef8 0)"><div class="w-16 h-16 bg-white rounded-full grid place-items-center font-black">${pct}%</div></div><div><div class="font-black">Good progress!</div><div class="muted text-sm">Keep it up 👍</div><button class="link mt-2" onclick="switchTab('performance')">View Details</button></div></div></div>
+      <div class="card pad"><div class="title mb-2">Weekly KPI</div><div class="flex items-end justify-between"><div class="flex items-end gap-1 h-20">${[28,45,62,36,78,48,55,40,66,92,52,70,44].map((h,i)=>`<span class="w-2 rounded-t ${i%2?'bg-blue-500':'bg-indigo-400'}" style="height:${h}%"></span>`).join('')}</div><div class="text-right"><b class="text-3xl">82%</b><div class="text-emerald-600 font-black">↑ 12%</div></div></div></div>
+      <div class="card pad"><div class="title mb-2">Monthly KPI</div><svg viewBox="0 0 210 84" class="w-full h-20"><path d="M6 66L31 60L55 63L80 43L102 51L126 27L150 38L172 22L192 30L206 12" fill="none" stroke="#0cae67" stroke-width="4" stroke-linecap="round"/></svg><div class="text-right -mt-10"><b class="text-3xl">91%</b><div class="text-emerald-600 font-black">↑ 8%</div></div></div>
     </div>
-
-    <div class="gg-work-grid">
-      <div class="gg-card gg-card-pad">
-        <div class="gg-section-title mb-4"><span><i class="far fa-clipboard text-blue-600 mr-2"></i>My Tasks</span><button class="gg-link" onclick="switchTab('morning')">View All</button></div>
-        <div class="flex gap-3 mb-3">
-          <span class="gg-pill bg-blue-50 text-blue-700">All (${priorityTasks.length})</span>
-          <span class="gg-pill bg-gray-50 text-gray-600">High (2)</span>
-          <span class="gg-pill bg-gray-50 text-gray-600">Medium (2)</span>
-          <span class="gg-pill bg-gray-50 text-gray-600">Low (1)</span>
-        </div>
-        ${taskRows}
-        <button onclick="switchTab('morning')" class="mt-3 gg-link"><i class="fas fa-plus mr-1"></i>Add New Task</button>
-      </div>
-      <div class="gg-card gg-card-pad">
-        <div class="gg-section-title mb-4"><span><i class="far fa-square-check text-blue-600 mr-2"></i>My To-Do <span class="text-sm text-gray-500">(Personal)</span></span><button class="gg-link" onclick="addPersonalTodo()">+ Add</button></div>
-        <div id="todoList">${todos.slice(0,5).map(t=>`<div class="gg-todo-row"><span class="gg-circle"></span><div class="font-semibold text-sm">${esc(t)}</div></div>`).join('')}</div>
-        <button class="gg-link mt-3" onclick="addPersonalTodo()">View All To-Dos</button>
-      </div>
-      <div class="gg-card gg-card-pad">
-        <div class="gg-section-title mb-4"><span><i class="far fa-calendar-check text-blue-600 mr-2"></i>Today's Calendar</span><button class="gg-link" onclick="switchTab('interviews')">View Full</button></div>
-        ${[
-          ['10:00 AM','Admissions Team Meeting','Meeting Room 1','fa-user-group','emerald'],
-          ['12:00 PM','Student Meeting','Shameem (UAE)','fa-video','sky'],
-          ['02:30 PM','University Call','UWE / Admissions','fa-phone','blue'],
-          ['04:00 PM','Internal Review','Daily Operations','fa-users','orange']
-        ].map(([time,title,sub,icon,color])=>`<div class="gg-calendar-row">
-          <div class="w-[72px] text-xs font-bold">${time}</div>
-          <div class="h-10 w-1 rounded bg-${color}-500"></div>
-          <div class="flex-1"><div class="font-black text-sm">${title}</div><div class="text-xs text-gray-500">${sub}</div></div>
-          <i class="fas ${icon} text-${color}-500"></i>
-        </div>`).join('')}
-      </div>
+    <div class="dash-grid">
+      <div class="card pad"><div class="title mb-3"><span><i class="far fa-clipboard text-blue-600 mr-2"></i>My Tasks</span><button class="link" onclick="switchTab('work')">View All</button></div><div class="tabs"><button class="tab-chip active">All (${state.tasks.length})</button><button class="tab-chip">High (2)</button><button class="tab-chip">In Progress (3)</button><button class="tab-chip">Pending (2)</button></div>${taskRows(5)}<button class="link mt-3" onclick="addTaskModal()">+ Add New Task</button></div>
+      <div class="card pad"><div class="title mb-3"><span><i class="far fa-square-check text-blue-600 mr-2"></i>My To-Do</span><button class="link" onclick="addTodo()">+ Add</button></div>${state.todos.slice(0,5).map(t=>`<div class="row"><span class="circle"></span><div class="font-semibold">${esc(t)}</div></div>`).join('')}<button class="link mt-3" onclick="switchTab('work')">View All</button></div>
+      <div class="card pad"><div class="title mb-3"><span><i class="far fa-calendar text-blue-600 mr-2"></i>Today's Calendar</span><button class="link">View Full</button></div>${calendarRows()}</div>
     </div>
-
-    <div class="gg-lower-grid">
-      <div class="gg-card gg-card-pad">
-        <div class="gg-section-title mb-4"><span>My KPI Progress</span><button class="gg-link" onclick="switchTab('kpi')">View All</button></div>
-        ${[
-          ['Registrations', registrations, 20, '#10b981'],
-          ['Applications', applications, 30, '#f97316'],
-          ['Offers', offers, 15, '#8b5cf6'],
-          ['CAS Received', cas, 10, '#245cff']
-        ].map(([label,val,max,color])=>`<div class="mb-3">
-          <div class="flex justify-between text-xs font-bold"><span>${label}<br><b class="text-slate-700">${val} / ${max}</b></span><span>${Math.round((val/max)*100)}%</span></div>
-          <div class="gg-progress-line mt-2"><span style="width:${Math.min(100,Math.round((val/max)*100))}%;background:${color}"></span></div>
-        </div>`).join('')}
-      </div>
-      <div class="gg-card gg-card-pad">
-        <div class="gg-section-title mb-4"><span>Upcoming Tasks <span class="text-xs text-gray-500">(Next 7 Days)</span></span><button class="gg-link">View All</button></div>
-        ${[
-          ['09 JUL','Prepare admission report','10 Jul 2026, 09:00 AM','Medium'],
-          ['10 JUL','Follow up with pending documents','11 Jul 2026, 11:00 AM','High'],
-          ['11 JUL','University partnership call','12 Jul 2026, 02:00 PM','Low']
-        ].map(([date,title,sub,p])=>`<div class="gg-upcoming-row">
-          <div class="w-12 h-12 rounded-xl bg-slate-50 grid place-items-center font-black text-xs">${date}</div>
-          <div class="flex-1"><div class="font-black text-sm">${title}</div><div class="text-xs text-gray-500">${sub}</div></div>
-          <span class="gg-pill ${p==='High'?'bg-red-50 text-red-600':p==='Medium'?'bg-orange-50 text-orange-600':'bg-blue-50 text-blue-600'}">${p}</span>
-        </div>`).join('')}
-      </div>
-      <div class="gg-card gg-card-pad">
-        <div class="gg-section-title mb-4"><span>Announcements</span><button class="gg-link">View All</button></div>
-        ${[
-          ['08 JUL','New University Partner','We are now official partners with Northumbria University, UK.'],
-          ['07 JUL','Team Meeting','Monthly all teams meeting on 10th July at 10:00 AM.'],
-          ['05 JUL','Independence Day Holiday','Office will be closed on 12th July.']
-        ].map(([date,title,body])=>`<div class="gg-ann-row">
-          <div class="w-12 h-12 rounded-xl bg-slate-50 grid place-items-center font-black text-xs">${date}</div>
-          <div><div class="font-black text-sm">${title}</div><div class="text-xs text-gray-500">${body}</div></div>
-        </div>`).join('')}
-      </div>
-      <div class="gg-card gg-card-pad">
-        <div class="gg-section-title mb-4"><span><i class="fas fa-wand-magic-sparkles text-blue-600 mr-2"></i>AI Assistant</span><button class="gg-link">New Chat</button></div>
-        <p class="font-semibold mb-4">How can I help you today?</p>
-        <div class="grid grid-cols-2 gap-3">
-          ${['Summarize my day','Draft an email','Show pending tasks','Student follow up email','Generate report','University updates'].map((x,i)=>`<button onclick="aiQuick('${esc(x)}')" class="border border-slate-200 rounded-lg py-3 px-2 text-xs font-bold hover:bg-blue-50"><i class="far ${['fa-chart-bar','fa-envelope','fa-square-check','fa-paper-plane','fa-file-lines','fa-building'][i]} text-blue-600 mr-1"></i>${x}</button>`).join('')}
-        </div>
-      </div>
-    </div>
-
-    <div class="gg-quick-bar">
-      <div class="font-black">Quick Actions</div>
-      <div class="gg-quick-actions">
-        <div class="gg-quick-action" onclick="switchTab('morning')"><i class="fas fa-circle-check"></i>Check In</div>
-        <div class="gg-quick-action" onclick="switchTab('morning')"><i class="far fa-calendar-check"></i>Morning Planner</div>
-        <div class="gg-quick-action" onclick="addUniFU()"><i class="fas fa-file-circle-plus"></i>Add Follow Up</div>
-        <div class="gg-quick-action" onclick="switchTab('admissions')"><i class="fas fa-user-plus"></i>New Student</div>
-        <div class="gg-quick-action" onclick="switchTab('morning')"><i class="far fa-square-check"></i>Create Task</div>
-        <div class="gg-quick-action" onclick="callStudent()"><i class="fas fa-phone"></i>Call Student</div>
-        <div class="gg-quick-action" onclick="switchTab('hr')"><i class="far fa-file-arrow-up"></i>Upload Document</div>
-        <div class="gg-quick-action" onclick="addInterview()"><i class="far fa-calendar-plus"></i>Create Meeting</div>
-      </div>
-    </div>
-  `;
+    <div class="lower-grid">
+      <div class="card pad"><div class="title mb-3">Today's KPI <button class="link" onclick="switchTab('performance')">View All</button></div>${progress('Registrations',k.registrationsConverted||12,20,'#10b981')}${progress('Applications',k.applicationsSubmitted||18,30,'#f97316')}${progress('Offers',k.offerLettersReceived||7,15,'#8b5cf6')}${progress('Follow Ups',k.studentFollowUps||14,25,'#115cff')}</div>
+      <div class="card pad"><div class="title mb-3">Announcements <button class="link">View All</button></div>${[['08 JUL','New University Partner','Northumbria University, UK.'],['07 JUL','Team Meeting','10th July at 10:00 AM.'],['05 JUL','Holiday','Office closed on 12th July.']].map(a=>`<div class="row"><div class="w-12 h-12 rounded-xl bg-slate-50 grid place-items-center font-black text-xs">${a[0]}</div><div><div class="font-black">${a[1]}</div><div class="text-xs muted">${a[2]}</div></div></div>`).join('')}</div>
+      <div class="card pad"><div class="title mb-3">Learning Center <button class="link" onclick="switchTab('learning')">View All</button></div>${progress('UK Admissions Process',65,100,'#7657ff')}${progress('CAS & Visa Guide',40,100,'#4aa3ff')}${progress('Communication Skills',0,100,'#cbd5e1')}</div>
+      <div class="card pad"><div class="title mb-3"><span><i class="fas fa-wand-magic-sparkles text-purple-600 mr-2"></i>AI Assistant</span><button class="link" onclick="switchTab('ai')">New Chat</button></div><p class="mb-3">How can I help you today?</p><div class="grid grid-cols-2 gap-2">${['Summarize my day','Draft an email','Show pending tasks','Student follow up email','Generate report','University updates'].map(x=>`<button class="btn !text-xs" onclick="aiQuick('${esc(x)}')">${x}</button>`).join('')}</div></div>
+    </div>${quickActions()}`;
 }
 
-function addPersonalTodo(){
-  const todo = prompt('Add a private personal reminder:');
-  if (!todo) return;
-  const todos = JSON.parse(localStorage.getItem('thasbihaPersonalTodos') || '[]');
-  todos.push(todo);
-  localStorage.setItem('thasbihaPersonalTodos', JSON.stringify(todos));
-  notify('Personal to-do added');
-  switchTab('dashboard');
+function renderWork(el){
+  el.innerHTML = `${pageHead('My Work','All your tasks, to-dos and work in one place',`<button class="btn" onclick="exportReport('work')"><i class="fas fa-download mr-2"></i>Export</button><button class="btn primary" onclick="addTaskModal()">+ Add Task</button>`)}
+    <div class="tabs"><button class="tab-chip active">Overview</button><button class="tab-chip">My Tasks</button><button class="tab-chip">To-Do</button><button class="tab-chip">Completed</button><button class="tab-chip">Upcoming</button><button class="tab-chip">Overdue</button></div>
+    <div class="grid-5 mb-4">${statCard('fa-square-check','Total Tasks',state.tasks.length,'6 in progress','blue')}${statCard('fa-check','Completed',state.tasks.filter(t=>t.status==='Completed').length,'39% completed','green')}${statCard('fa-clock','Pending',state.tasks.filter(t=>t.status==='Pending').length,'50% pending','orange')}${statCard('fa-circle-exclamation','Overdue',2,'Action needed','red')}<div class="card pad"><div class="flex items-center gap-4"><div class="relative w-20 h-20 rounded-full grid place-items-center" style="background:conic-gradient(var(--blue) 234deg,#e9eef8 0)"><div class="w-16 h-16 bg-white rounded-full grid place-items-center font-black">65%</div></div><div><div class="font-black">Today's Progress</div><div class="muted text-sm">👍 On track</div></div></div></div></div>
+    <div class="grid-3">
+      <div class="card pad md:col-span-2"><div class="title mb-3"><span><i class="fas fa-list text-blue-600 mr-2"></i>My Tasks</span><span><button class="btn !py-2" onclick="groupTasks()">Group</button> <button class="btn primary !py-2" onclick="addTaskModal()">+ Add Task</button></span></div><div class="tabs"><button class="tab-chip active">All (${state.tasks.length})</button><button class="tab-chip">High</button><button class="tab-chip">Medium</button><button class="tab-chip">Low</button></div>${taskRows(20)}</div>
+      <div class="space-y-4"><div class="card pad"><div class="title mb-3">My To-Do (Personal) <button class="link" onclick="addTodo()">+ Add</button></div>${state.todos.map((t,i)=>`<div class="row"><button class="circle" onclick="removeTodo(${i})"></button><div>${esc(t)}</div></div>`).join('')}</div><div class="card pad"><div class="title mb-3">Today's Calendar</div>${calendarRows()}</div><div class="card pad"><div class="title mb-3">My KPI Progress</div>${progress('Registrations',12,20,'#10b981')}${progress('Applications',18,30,'#f97316')}${progress('CAS Received',4,10,'#115cff')}</div></div>
+    </div>${quickActions()}`;
 }
 
-function aiQuick(action){
-  const suggestions = {
-    'Summarize my day':'Today summary: review morning plan, completed tasks, pending follow-ups, escalations, and KPI progress.',
-    'Draft an email':'Email draft ready: Please share the student name/university in the AI Assistant module.',
-    'Show pending tasks':'Pending tasks are shown in My Tasks, Upcoming Tasks, and Escalations.',
-    'Student follow up email':'Follow-up template ready: Dear student, this is a reminder regarding your pending documents/application update...',
-    'Generate report':'Use Daily Report to generate today’s official CEO-visible report.',
-    'University updates':'University follow-ups are available under the Universities tab.'
-  };
-  notify(suggestions[action] || 'AI action ready');
-  logPortalActivity('ai-assistant','Thasbiha used AI quick action: ' + action, { action });
+function renderAttendance(el){
+  const a=state.attendance || {}; const checked=!!a.checkedIn;
+  el.innerHTML = `${pageHead('Attendance','Track your attendance, working hours and history',`<button class="btn" onclick="exportReport('attendance')"><i class="fas fa-download mr-2"></i>Export Report</button>`)}
+    <div class="grid-5 mb-4">${statCard('fa-circle-check','Attendance Status',checked?'Present':'Not checked',checked?'Checked in at '+a.time:'Start your day','green')}${statCard('fa-clock','Today’s Working Hours',a.hours||'0h 00m','Started at '+(a.time||'—'),'blue')}${statCard('fa-calendar-check','This Week','5 / 5 Days','100% Present','purple')}${statCard('fa-calendar-days','This Month','20 / 21 Days','95% Present','orange')}${statCard('fa-stopwatch','Monthly Working Hours','152h 30m','Target: 160h 00m','green')}</div>
+    <div class="grid-3"><div class="card pad"><div class="title mb-4">Check In / Check Out</div><div class="rounded-2xl p-5 ${checked?'bg-emerald-50 border border-emerald-200':'bg-blue-50 border border-blue-200'}"><div class="font-black text-${checked?'emerald':'blue'}-700">${checked?'Checked In':'Ready to Check In'}</div><div class="text-3xl font-black mt-2">${a.time||nowTime()}</div><div class="muted">${dateLong()}</div></div><div class="mt-4 space-y-3 text-sm"><div><i class="fas fa-location-dot muted mr-2"></i>Location: ${a.location||'Office - Colombo HQ'}</div><div><i class="fas fa-building-columns muted mr-2"></i>Mode: ${a.mode||'Office'}</div><div><i class="fas fa-wifi muted mr-2"></i>IP Address: ${a.ip||'203.123.45.67'}</div></div><button class="btn ${checked?'orange':'green'} w-full mt-5" onclick="${checked?'checkOut()':'checkIn()'}">${checked?'Check Out':'Check In'}</button></div>
+      <div class="card pad"><div class="title mb-3">Attendance Calendar <span class="muted text-sm">July 2026</span></div><div class="grid grid-cols-7 gap-3 text-center text-sm">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun',29,30,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,1,2].map(d=>`<div class="${d===8?'bg-blue-600 text-white rounded-full font-black py-2':'py-2'}">${d}</div>`).join('')}</div><div class="flex gap-4 justify-center mt-5 text-xs muted"><span>● Present</span><span class="text-orange-500">● Late</span><span class="text-red-500">● Absent</span><span class="text-purple-500">● Leave</span></div></div>
+      <div class="space-y-4"><div class="card pad"><div class="title mb-3">Recent Activity</div>${[['Checked In','08:31 AM · Office - Colombo HQ','On Time'],['Morning Planner Submitted','08:35 AM',''],['Admissions Team Meeting','09:30 AM - 10:15 AM',''],['Working','10:30 AM – Now','']].map(r=>`<div class="row"><div class="stat-icon !w-10 !h-10 bg-emerald-50 text-emerald-600 !text-base"><i class="fas fa-check"></i></div><div class="flex-1"><div class="font-black">${r[0]}</div><div class="text-xs muted">${r[1]}</div></div>${r[2]?badge(r[2]):''}</div>`).join('')}</div><div class="card pad"><div class="title mb-3">Attendance Overview</div><div class="flex items-center gap-6"><div class="relative w-28 h-28 rounded-full grid place-items-center" style="background:conic-gradient(var(--green) 342deg,#e9eef8 0)"><div class="w-20 h-20 bg-white rounded-full grid place-items-center font-black">95%</div></div><div class="text-sm space-y-2"><div>● Present 20</div><div class="text-orange-500">● Late 1</div><div class="text-red-500">● Absent 0</div></div></div></div></div></div>`;
 }
 
-function callStudent(){
-  const number = prompt('Enter student phone number to call:');
-  if (!number) return;
-  const clean = String(number).replace(/[^\d+]/g,'');
-  if (!clean || clean.length < 6) return notify('Please enter a valid phone number','error');
-  logPortalActivity('call-student','Thasbiha started a student call', { phone: clean });
-  window.location.href = 'tel:' + clean;
+function renderLeave(el){
+  el.innerHTML = `${pageHead('Leave','Manage leave requests, balance and policies',`<button class="btn primary" onclick="applyLeave()">+ Apply Leave</button>`)}
+    <div class="grid-5 mb-4">${statCard('fa-calendar-check','Annual Leave','14','days available','blue')}${statCard('fa-heart-pulse','Medical Leave','7','days available','green')}${statCard('fa-person-walking','Personal Leave','3','days available','purple')}${statCard('fa-stopwatch','Unpaid Leave','2','days used','orange')}${statCard('fa-calendar-plus','Comp Off','1','day available','orange')}</div>
+    <div class="tabs"><button class="tab-chip active">My Requests</button><button class="tab-chip">Team Requests</button><button class="tab-chip">Leave Calendar</button><button class="tab-chip">Leave Policy</button><button class="tab-chip">Leave Balance History</button></div>
+    <div class="grid-2"><div class="card pad"><div class="title mb-4">My Leave Requests <button class="link">View All</button></div>${table(['Leave Type','Duration','Dates','Status','Applied On'],[['Annual Leave','3 Days','15 Jul - 17 Jul 2026','Pending','08 Jul 2026'],['Medical Leave','1 Day','02 Jul 2026','Approved','01 Jul 2026'],['Personal Leave','1 Day','20 Jun 2026','Approved','18 Jun 2026'],['Annual Leave','5 Days','10 Jun - 14 Jun 2026','Approved','05 Jun 2026']].map(r=>`<tr>${r.map((c,i)=>`<td>${i===3?badge(c):esc(c)}</td>`).join('')}</tr>`))}</div><div class="card pad"><div class="title mb-3">Leave Calendar <span>July 2026</span></div><div class="grid grid-cols-7 gap-3 text-center">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun',29,30,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,1,2].map(d=>`<div class="${[8].includes(d)?'bg-blue-600 text-white rounded-full py-2 font-black':[15,16,17].includes(d)?'bg-blue-100 rounded-full py-2':'py-2'}">${d}</div>`).join('')}</div></div></div><div class="card pad mt-4 bg-blue-50"><div class="flex justify-between items-center"><div><div class="font-black"><i class="fas fa-circle-info text-blue-600 mr-2"></i>Leave Approval Flow</div><div class="muted mt-1">Your leave request will be sent to COO/manager. You will be notified once there is an update.</div></div><button class="btn">View Approval Flow</button></div></div>`;
 }
 
-// ===== MORNING PLAN =====
-function renderMorning(el) {
-  const mp = state.morningPlan || { priorityTasks:[], studentFollowUps:'', uniFollowUps:'', criticalEscalations:'', eventsTasks:'', supportNeeded:'' };
-  el.innerHTML = `
-    <div class="bg-gradient-to-r from-orange-100 to-yellow-100 rounded-xl p-4 mb-4">
-      <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-sun text-orange-500 mr-2"></i>Daily Morning Update — ${TODAY}</h2>
-      <p class="text-sm text-gray-700 mt-1">Submit this when marking attendance. Visible to CEO/COO.</p>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm p-6 space-y-5">
-      <div>
-        <h3 class="font-semibold text-gray-800 mb-3">A. Priority Tasks for Today (up to 5)</h3>
-        <div id="taskList"></div>
-        <button onclick="addTask()" class="text-sm text-blue-600 hover:underline"><i class="fas fa-plus"></i> Add task</button>
-      </div>
-
-      <div>
-        <h3 class="font-semibold text-gray-800 mb-2">B. Student Follow-Ups Planned</h3>
-        <textarea id="studentFollowUps" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="3" placeholder="Number, priority cases, pending registrations…">${mp.studentFollowUps||''}</textarea>
-      </div>
-      <div>
-        <h3 class="font-semibold text-gray-800 mb-2">C. University Follow-Ups Planned</h3>
-        <textarea id="uniFollowUps" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="3" placeholder="Pending responses, offers, CAS/COE, deadlines…">${mp.uniFollowUps||''}</textarea>
-      </div>
-      <div>
-        <h3 class="font-semibold text-gray-800 mb-2">D. Critical Escalations</h3>
-        <textarea id="criticalEscalations" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="3" placeholder="Students at risk, refund concerns, complaints…">${mp.criticalEscalations||''}</textarea>
-      </div>
-      <div>
-        <h3 class="font-semibold text-gray-800 mb-2">E. Events / Meetings / Operational Tasks</h3>
-        <textarea id="eventsTasks" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Meetings, seminars, internal coordination…">${mp.eventsTasks||''}</textarea>
-      </div>
-      <div>
-        <h3 class="font-semibold text-gray-800 mb-2">F. Support Required from Management</h3>
-        <textarea id="supportNeeded" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Pending approvals, decisions, operational support…">${mp.supportNeeded||''}</textarea>
-      </div>
-      <button onclick="submitMorning()" class="w-full py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white rounded-lg font-semibold hover:from-orange-600 hover:to-yellow-600">
-        <i class="fas fa-paper-plane mr-2"></i>Submit Morning Plan
-      </button>
-    </div>
-  `;
-  renderTasks(mp.priorityTasks || [{title:'',priority:'P2',notes:''}]);
+function renderOperations(el){
+  el.innerHTML = `${pageHead('Operations','Manage operational activities and processes',`<button class="btn" onclick="exportReport('operations')"><i class="fas fa-download mr-2"></i>Export Report</button><button class="btn primary" onclick="addTaskModal()">+ Add Task</button>`)}
+    <div class="grid-5 mb-4">${statCard('fa-file-lines','Active Applications','162','↑ 12 this week','blue')}${statCard('fa-envelope','Offer Sent','48','↑ 8 this week','green')}${statCard('fa-file-contract','CAS Issued','27','↑ 5 this week','orange')}${statCard('fa-passport','Visa Approved','19','↑ 4 this week','blue')}${statCard('fa-clock','Pending Follow Ups','36','↓ 3 this week','red')}</div>
+    <div class="grid-2"><div class="card pad"><div class="title mb-4">Application Pipeline <button class="btn !py-2">This Month</button></div><div class="flex items-center justify-center"><div class="text-center text-white font-black" style="width:310px"><div style="background:#115cff;clip-path:polygon(0 0,100% 0,84% 100%,16% 100%);padding:20px">162<br><span class="text-xs">Enquiries</span></div><div style="background:#5d91ff;clip-path:polygon(14% 0,86% 0,72% 100%,28% 100%);padding:18px">98<br><span class="text-xs">Applications</span></div><div style="background:#86c5ff;clip-path:polygon(28% 0,72% 0,62% 100%,38% 100%);padding:16px;color:#071338">48<br><span class="text-xs">Offers</span></div><div style="background:#9adfbb;clip-path:polygon(38% 0,62% 0,56% 100%,44% 100%);padding:14px;color:#071338">27<br><span class="text-xs">CAS Issued</span></div></div></div></div><div class="card pad"><div class="title mb-3">Operational Tasks</div>${taskRows(5)}</div></div>
+    <div class="grid-3 mt-4"><div class="card pad"><div class="title mb-3">Follow Ups Overview</div><div class="relative w-32 h-32 mx-auto rounded-full grid place-items-center" style="background:conic-gradient(#16a34a 58%,#ff8a00 58% 84%,#115cff 84%)"><div class="w-20 h-20 bg-white rounded-full grid place-items-center font-black">36</div></div></div><div class="card pad"><div class="title mb-3">Document Status</div>${progress('Documents Received',76,120,'#16a34a')}${progress('Documents Pending',28,120,'#ff8a00')}${progress('Documents Rejected',16,120,'#ef233c')}</div><div class="card pad"><div class="title mb-3">Recent Activities</div>${[['Offer sent to John Perera','10:30 AM'],['CAS issued for 2 students','09:15 AM'],['Follow up call with student','Yesterday, 04:30 PM'],['Visa approved for 1 student','Yesterday, 11:20 AM']].map(r=>`<div class="row"><div class="stat-icon !w-10 !h-10 bg-blue-50 text-blue-600 !text-base"><i class="fas fa-envelope"></i></div><div class="flex-1"><div class="font-black">${r[0]}</div></div><span class="text-xs muted">${r[1]}</span></div>`).join('')}</div></div>${quickActions()}`;
 }
 
-let _tasks = [];
-function renderTasks(list) {
-  _tasks = list.length ? list : [{title:'',priority:'P2',notes:''}];
-  document.getElementById('taskList').innerHTML = _tasks.map((t,i)=>`
-    <div class="flex gap-2 mb-2 items-start">
-      <select onchange="_tasks[${i}].priority=this.value" class="border border-gray-300 rounded px-2 py-2 text-xs w-20">
-        ${['P1','P2','P3','P4'].map(p=>`<option value="${p}" ${p===t.priority?'selected':''}>${p}</option>`).join('')}
-      </select>
-      <input value="${(t.title||'').replace(/"/g,'&quot;')}" oninput="_tasks[${i}].title=this.value" class="border border-gray-300 rounded px-3 py-2 text-sm flex-1" placeholder="Task title"/>
-      <input value="${(t.notes||'').replace(/"/g,'&quot;')}" oninput="_tasks[${i}].notes=this.value" class="border border-gray-300 rounded px-3 py-2 text-sm flex-1" placeholder="Notes"/>
-      <button onclick="_tasks.splice(${i},1);renderTasks(_tasks)" class="text-red-500 px-2"><i class="fas fa-times"></i></button>
-    </div>
-  `).join('');
-}
-function addTask() { _tasks.push({title:'',priority:'P3',notes:''}); renderTasks(_tasks); }
-
-async function submitMorning() {
-  const plan = {
-    date: TODAY,
-    priorityTasks: _tasks.filter(t=>t.title.trim()),
-    studentFollowUps: document.getElementById('studentFollowUps').value,
-    uniFollowUps: document.getElementById('uniFollowUps').value,
-    criticalEscalations: document.getElementById('criticalEscalations').value,
-    eventsTasks: document.getElementById('eventsTasks').value,
-    supportNeeded: document.getElementById('supportNeeded').value
-  };
-  const res = await fetch('/api/staff-portal/morning-plan/GG003', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(plan) });
-  const j = await res.json();
-  if (j.success) { notify('Morning plan submitted ✓'); logPortalActivity('morning-plan','Thasbiha submitted morning plan',plan); switchTab('dashboard'); }
-  else notify(j.error || 'Failed to submit morning plan','error');
+function renderPerformance(el){
+  el.innerHTML = `${pageHead('Performance','Track performance, KPIs and achievements',`<button class="btn" onclick="exportReport('performance')"><i class="fas fa-download mr-2"></i>Export Report</button>`)}
+    <div class="tabs"><button class="tab-chip active">Overview</button><button class="tab-chip">KPIs</button><button class="tab-chip">Team Performance</button><button class="tab-chip">Goals</button><button class="tab-chip">Appraisals</button><button class="tab-chip">Reports</button></div>
+    <div class="grid-5 mb-4">${statCard('fa-clipboard-check','Overall Performance','88%','Good Performance','blue')}${statCard('fa-bullseye','Targets Achieved','72%','13 / 18 Targets','green')}${statCard('fa-list-check','Tasks Completed','156','This Month','orange')}${statCard('fa-users','Student Enquiries','162','This Month','purple')}${statCard('fa-chart-line','Conversion Rate','11.7%','This Month','blue')}</div>
+    <div class="grid-3"><div class="card pad md:col-span-2"><div class="title mb-3">Performance Trend</div><canvas id="perfChart" height="110"></canvas></div><div class="card pad"><div class="title mb-3">Top Performers</div>${[['Umair N.','92%'],['Thasbiha S.','88%'],['Razan T.','85%'],['Binupa K.','82%'],['Jinushiya J.','78%']].map((r,i)=>`<div class="row"><div class="avatar !w-9 !h-9">${r[0][0]}</div><div class="flex-1"><div class="font-black">${i+1}. ${r[0]}</div></div><b>${r[1]}</b></div>`).join('')}</div></div>
+    <div class="grid-2 mt-4"><div class="card pad"><div class="title mb-3">Goal Progress</div>${table(['Goal','Progress','Target','Achieved','Status'],[['Monthly Student Enquiries','81%','200','162','On Track'],['Application Submissions','65%','150','98','On Track'],['CAS Issuance','54%','50','27','At Risk'],['Visa Approvals','48%','40','19','At Risk']].map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${badge(r[4])}</td></tr>`))}</div><div class="card pad"><div class="title mb-3">Performance Insights</div>${['Your overall performance improved by 6% compared to last month.','Student enquiries are up by 18% compared to last month.','CAS issuance and visa approvals need more focus to meet targets.','You have 5 overdue tasks that may impact performance.'].map((x,i)=>`<div class="row"><div class="stat-icon !w-10 !h-10 ${i<2?'bg-emerald-50 text-emerald-600':'bg-orange-50 text-orange-600'} !text-base"><i class="fas ${i<2?'fa-chart-line':'fa-triangle-exclamation'}"></i></div><div>${x}</div></div>`).join('')}</div></div>`;
+  setTimeout(()=>{ const c=$('perfChart'); if(c) new Chart(c,{type:'line',data:{labels:['Feb','Mar','Apr','May','Jun','Jul'],datasets:[{label:'Overall Performance (%)',data:[72,75,78,80,82,88],borderColor:'#115cff',tension:.35}]},options:{plugins:{legend:{display:false}},scales:{y:{min:0,max:100}}}}); },60);
 }
 
-// ===== EVENING REPORT =====
-function renderEvening(el) {
-  const er = state.eveningReport || { tasksCompleted:'', studentUpdates:'', uniStatus:'', escalationsHandled:'', pendingTomorrow:'', operationalChallenges:'', supportNeeded:'' };
-  el.innerHTML = `
-    <div class="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl p-4 mb-4">
-      <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-moon text-indigo-600 mr-2"></i>End-of-Day Report — ${TODAY}</h2>
-      <p class="text-sm text-gray-700 mt-1">Mandatory before logout. KPIs auto-update from this report.</p>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm p-6 space-y-5">
-      <div><h3 class="font-semibold mb-2">A. Tasks Completed Today</h3>
-        <textarea id="tasksCompleted" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="3" placeholder="List completed tasks">${er.tasksCompleted||''}</textarea></div>
-      <div><h3 class="font-semibold mb-2">B. Student Conversion Updates</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
-          <input id="leadsContacted" type="number" min="0" placeholder="Leads contacted" class="border border-gray-300 rounded p-2 text-sm" value="${(er.conversionUpdates||{}).leadsContacted||0}"/>
-          <input id="registrationsCompleted" type="number" min="0" placeholder="Registrations" class="border border-gray-300 rounded p-2 text-sm" value="${(er.conversionUpdates||{}).registrationsCompleted||0}"/>
-          <input id="interestedStudents" type="number" min="0" placeholder="Interested" class="border border-gray-300 rounded p-2 text-sm" value="${(er.conversionUpdates||{}).interestedStudents||0}"/>
-          <input id="lostDropped" type="number" min="0" placeholder="Lost/Dropped" class="border border-gray-300 rounded p-2 text-sm" value="${(er.conversionUpdates||{}).lostDropped||0}"/>
-        </div>
-        <textarea id="studentUpdates" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Notes on student conversion activities">${er.studentUpdates||''}</textarea></div>
-      <div><h3 class="font-semibold mb-2">C. University Update Status</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
-          <input id="offersReceived" type="number" min="0" placeholder="Offers received" class="border border-gray-300 rounded p-2 text-sm" value="${(er.uniUpdates||{}).offersReceived||0}"/>
-          <input id="pendingResponses" type="number" min="0" placeholder="Pending responses" class="border border-gray-300 rounded p-2 text-sm" value="${(er.uniUpdates||{}).pendingResponses||0}"/>
-          <input id="applicationsSubmitted" type="number" min="0" placeholder="Apps submitted" class="border border-gray-300 rounded p-2 text-sm" value="${(er.uniUpdates||{}).applicationsSubmitted||0}"/>
-          <input id="escalatedUni" type="number" min="0" placeholder="Escalated" class="border border-gray-300 rounded p-2 text-sm" value="${(er.uniUpdates||{}).escalatedUni||0}"/>
-        </div>
-        <textarea id="uniStatus" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Notes">${er.uniStatus||''}</textarea></div>
-      <div><h3 class="font-semibold mb-2">D. Client Escalations Handled</h3>
-        <textarea id="escalationsHandled" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="3" placeholder="Issues resolved, urgent calls, complaints">${er.escalationsHandled||''}</textarea></div>
-      <div><h3 class="font-semibold mb-2">E. Pending Tasks for Tomorrow</h3>
-        <textarea id="pendingTomorrow" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="3" placeholder="Carry-forward tasks">${er.pendingTomorrow||''}</textarea></div>
-      <div><h3 class="font-semibold mb-2">F. Operational Challenges Faced Today</h3>
-        <textarea id="operationalChallenges" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Delays, system/process issues">${er.operationalChallenges||''}</textarea></div>
-      <div><h3 class="font-semibold mb-2">G. Support Required</h3>
-        <textarea id="supportNeededE" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="2" placeholder="Approvals, team support, escalation to management">${er.supportNeeded||''}</textarea></div>
-      <button onclick="submitEvening()" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700">
-        <i class="fas fa-check-circle mr-2"></i>Submit Evening Report & Close Day
-      </button>
-    </div>
-  `;
+function renderFollowups(el){
+  const callRows = (state.calls.length?state.calls:[['Anushan P.','+94 77 123 4567','CAS Hold & Refund','Outbound','12m 30s','Thasbiha S.','Follow Up Done'],['Casin F.','+94 76 234 5678','Visa Update','Outbound','08m 12s','Razan T.','Information Sent']]).map(c=>Array.isArray(c)?c:[c.name,c.phone,c.purpose,'Outbound',c.duration||'-','Thasbiha S.',c.outcome||'Logged']);
+  el.innerHTML = `${pageHead('Follow Ups & Calls Update','Track and manage follow ups, calls and client communication',`<button class="btn" onclick="exportReport('calls')"><i class="fas fa-download mr-2"></i>Export Report</button><button class="btn primary" onclick="logCall()">+ Log Call</button>`)}
+    <div class="grid-5 mb-4">${statCard('fa-phone','Total Calls Made','134','↑ 18 vs last month','green')}${statCard('fa-user-group','Clients Contacted','98','↑ 12 vs last month','blue')}${statCard('fa-calendar-check','Follow Ups Done','156','↑ 20 vs last month','orange')}${statCard('fa-clock','Pending Follow Ups','42','↓ 6 vs last month','purple')}${statCard('fa-check-circle','Conversion from Follow Ups','23.4%','↑ 2.6% vs last month','green')}</div>
+    <div class="grid-3"><div class="card pad"><div class="title mb-3">Follow Ups Trend</div><canvas id="fuChart" height="145"></canvas></div><div class="card pad"><div class="title mb-3">Follow Up Status</div><div class="relative w-36 h-36 mx-auto rounded-full grid place-items-center" style="background:conic-gradient(#16a34a 58%,#ff8a00 58% 84%,#115cff 84% 94%,#7657ff 94%)"><div class="w-24 h-24 bg-white rounded-full grid place-items-center"><b class="text-3xl">156</b></div></div></div><div class="card pad"><div class="title mb-3">Overdue Follow Ups</div>${[['Akeel S.','CAS Documents','05 Jul 2026','Thasbiha S.'],['Vaidehi N.','University Offer','04 Jul 2026','Umair N.'],['Miflan R.','Application Update','03 Jul 2026','Jinushiya J.'],['Shakya K.','Visa Documents','02 Jul 2026','Razan T.']].map(r=>`<div class="row"><div class="circle grid place-items-center !w-8 !h-8 font-black text-xs">${r[0][0]}</div><div class="flex-1"><div class="font-black">${r[0]}</div><div class="text-xs muted">${r[1]}</div></div>${badge('High')}</div>`).join('')}</div></div>
+    <div class="grid-2 mt-4"><div class="card pad"><div class="title mb-3">Recent Calls <button class="link">View All</button></div>${table(['Client','Phone','Purpose','Type','Duration','Called By','Outcome'],callRows.map(r=>`<tr>${r.map((c,i)=>`<td>${i===6?badge(c):esc(c)}</td>`).join('')}</tr>`))}</div><div class="card pad"><div class="title mb-3">Upcoming Follow Ups</div>${table(['Client','Follow Up For','Due Date','Assigned To','Priority'],[['Riskana F.','Offer Decision','09 Jul 2026','Thasbiha S.','High'],['Perushanth T.','Payment Confirmation','09 Jul 2026','Razan T.','High'],['Leneesha D.','Eligibility Check','10 Jul 2026','Jinushiya J.','Medium']].map(r=>`<tr>${r.map((c,i)=>`<td>${i===4?badge(c):esc(c)}</td>`).join('')}</tr>`))}</div></div><div class="card pad mt-4"><div class="title mb-3">Quick Actions</div><div class="flex gap-3 flex-wrap">${['Add Follow Up','Log Call','Send WhatsApp','Schedule Call','Add Note','View All Follow Ups'].map((x,i)=>`<button class="btn" onclick="${i===1?'logCall()':i===2?'sendWhatsApp()':`action('followup','${x} opened')`}"><i class="fas ${['fa-plus','fa-phone','fa-brands fa-whatsapp','fa-calendar','fa-note-sticky','fa-list'][i]} mr-2"></i>${x}</button>`).join('')}</div></div>`;
+  setTimeout(()=>{const c=$('fuChart'); if(c) new Chart(c,{type:'line',data:{labels:['2 Jun','9 Jun','16 Jun','23 Jun','30 Jun','8 Jul'],datasets:[{label:'Follow Ups Done',data:[86,98,112,128,136,156],borderColor:'#115cff',tension:.35}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}})},60);
 }
 
-async function submitEvening() {
-  const report = {
-    date: TODAY,
-    tasksCompleted: document.getElementById('tasksCompleted').value,
-    conversionUpdates: {
-      leadsContacted: +document.getElementById('leadsContacted').value || 0,
-      registrationsCompleted: +document.getElementById('registrationsCompleted').value || 0,
-      interestedStudents: +document.getElementById('interestedStudents').value || 0,
-      lostDropped: +document.getElementById('lostDropped').value || 0
-    },
-    studentUpdates: document.getElementById('studentUpdates').value,
-    uniUpdates: {
-      offersReceived: +document.getElementById('offersReceived').value || 0,
-      pendingResponses: +document.getElementById('pendingResponses').value || 0,
-      applicationsSubmitted: +document.getElementById('applicationsSubmitted').value || 0,
-      escalatedUni: +document.getElementById('escalatedUni').value || 0
-    },
-    uniStatus: document.getElementById('uniStatus').value,
-    escalationsHandled: document.getElementById('escalationsHandled').value,
-    pendingTomorrow: document.getElementById('pendingTomorrow').value,
-    operationalChallenges: document.getElementById('operationalChallenges').value,
-    supportNeeded: document.getElementById('supportNeededE').value
-  };
-  const res = await fetch('/api/staff-portal/evening-report/GG003', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(report) });
-  const j = await res.json();
-  if (j.success) { notify('Evening report submitted ✓ KPIs updated'); logPortalActivity('daily-report','Thasbiha submitted evening report',report); switchTab('dashboard'); }
-  else notify(j.error || 'Failed to submit evening report','error');
+function renderLearning(el){
+  el.innerHTML = `${pageHead('Learning','Grow your skills. Learn, track and achieve.',`<button class="btn" onclick="exportReport('learning')"><i class="fas fa-download mr-2"></i>Export Report</button>`)}
+    <div class="grid-6 mb-4">${statCard('fa-graduation-cap','Courses Enrolled','8','Active courses','blue')}${statCard('fa-book-open','Courses Completed','5','↑ 1 this month','green')}${statCard('fa-clock','Learning Hours','24h 30m','↑ 6h this month','purple')}${statCard('fa-bullseye','Certificates Earned','6','↑ 1 this month','orange')}${statCard('fa-star','My Score','86%','Good Performance','orange')}${statCard('fa-chart-line','Streak','12','Days in a row','cyan')}</div>
+    <div class="tabs"><button class="tab-chip active">Overview</button><button class="tab-chip">My Courses</button><button class="tab-chip">Learning Paths</button><button class="tab-chip">Certifications</button><button class="tab-chip">Resource Library</button></div>
+    <div class="grid-2"><div class="card pad"><div class="title mb-3">My Course Progress</div>${table(['Course','Progress','Status','Last Accessed'],[['UK Student Visa Process','85%','In Progress','08 Jul 2026'],['Advanced Counselling Skills','60%','In Progress','07 Jul 2026'],['University Applications Mastery','100%','Completed','04 Jul 2026'],['Documentation & Compliance','75%','In Progress','03 Jul 2026']].map(r=>`<tr><td><b>${r[0]}</b><div class="muted text-xs">GG Learning Hub</div></td><td>${r[1]}</td><td>${badge(r[2])}</td><td>${r[3]}</td></tr>`))}</div><div class="card pad"><div class="title mb-3">Upcoming Learning Sessions</div>${[['09 JUL','UK Visa Updates & Policy Changes','Razan T.','10:00 AM - 11:30 AM'],['11 JUL','Advanced Interview Techniques','Umair N.','02:00 PM - 03:30 PM'],['14 JUL','Student Case Study Discussion','Thasbiha S.','11:00 AM - 12:30 PM']].map(r=>`<div class="row"><div class="w-12 h-12 rounded-xl bg-blue-50 grid place-items-center font-black text-xs">${r[0]}</div><div class="flex-1"><div class="font-black">${r[1]}</div><div class="text-xs muted">Trainer: ${r[2]} · ${r[3]}</div></div><button class="btn !py-2" onclick="action('learning','Joined ${r[1]}')">Join</button></div>`).join('')}</div></div><div class="grid-3 mt-4"><div class="card pad"><div class="title mb-3">Recent Certificates</div>${['UK Student Visa Process Certification','Communication Excellence','Documentation & Compliance'].map(x=>`<div class="row"><i class="fas fa-trophy text-blue-600"></i><div class="flex-1 font-black">${x}</div><button class="link">Download</button></div>`).join('')}</div><div class="card pad"><div class="title mb-3">My Learning Paths</div>${progress('Admissions Expert Path',5,7,'#115cff')}${progress('Visa & Compliance Specialist',3,5,'#115cff')}${progress('Leadership Development',2,6,'#115cff')}</div><div class="card pad"><div class="title mb-3">Resource Library</div>${['UK Visa Sponsorship Guide 2026','CAS Requirements Checklist','Interview Tips for Students','University Intake Calendar (2026)'].map(x=>`<div class="row"><i class="far fa-file-lines text-red-500"></i><div class="flex-1 font-black">${x}</div><button class="link">↓</button></div>`).join('')}</div></div>`;
 }
 
-// ===== ADMISSIONS =====
-function renderAdmissions(el) {
-  el.innerHTML = `
-    <div class="bg-white rounded-xl shadow-sm p-6">
-      <h2 class="text-xl font-bold mb-4"><i class="fas fa-graduation-cap text-indigo-600 mr-2"></i>Admissions Pipeline</h2>
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        <div class="bg-blue-50 rounded p-3 text-center"><p class="text-2xl font-bold text-blue-700" id="aPipeInquiry">—</p><p class="text-xs">Inquiry</p></div>
-        <div class="bg-purple-50 rounded p-3 text-center"><p class="text-2xl font-bold text-purple-700" id="aPipeReg">—</p><p class="text-xs">Registered</p></div>
-        <div class="bg-yellow-50 rounded p-3 text-center"><p class="text-2xl font-bold text-yellow-700" id="aPipeApp">—</p><p class="text-xs">Applied</p></div>
-        <div class="bg-green-50 rounded p-3 text-center"><p class="text-2xl font-bold text-green-700" id="aPipeOffer">—</p><p class="text-xs">Offer</p></div>
-        <div class="bg-red-50 rounded p-3 text-center"><p class="text-2xl font-bold text-red-700" id="aPipeCAS">—</p><p class="text-xs">CAS/Visa</p></div>
-      </div>
-      <p class="text-sm text-gray-600">Drill-down to <a href="/applications" class="text-blue-600 underline">Applications module</a> for full case management. All admissions counts are pulled from live application data.</p>
-    </div>
-  `;
-  // Load pipeline counts
-  fetch('/api/applications').then(r=>r.json()).then(j=>{
-    const items = j.items || j.applications || j || [];
-    const arr = Array.isArray(items) ? items : Object.values(items);
-    const c = { inquiry:0, registered:0, applied:0, offer:0, cas:0 };
-    arr.forEach(a=>{
-      const s = String(a.status||a.stage||'').toLowerCase();
-      if (s.includes('cas')) c.cas++;
-      else if (s.includes('offer') || s.includes('co')) c.offer++;
-      else if (s.includes('applied') || s.includes('processing')) c.applied++;
-      else if (s.includes('reg')) c.registered++;
-      else c.inquiry++;
-    });
-    document.getElementById('aPipeInquiry').textContent = c.inquiry;
-    document.getElementById('aPipeReg').textContent = c.registered;
-    document.getElementById('aPipeApp').textContent = c.applied;
-    document.getElementById('aPipeOffer').textContent = c.offer;
-    document.getElementById('aPipeCAS').textContent = c.cas;
-  }).catch(()=>{});
+function renderDocuments(el){
+  el.innerHTML = `${pageHead('Documents','Store, organize and manage documents securely',`<button class="btn" onclick="exportReport('documents')"><i class="fas fa-download mr-2"></i>Export Report</button><button class="btn primary" onclick="uploadDoc()">Upload Document</button>`)}
+    <div class="grid-5 mb-4">${statCard('fa-file-lines','Total Documents','1,248','↑ 86 this month','blue')}${statCard('fa-cloud-arrow-up','Documents Uploaded','126','↑ 18 this month','green')}${statCard('fa-hourglass-half','Pending Review','32','↓ 6 this month','orange')}${statCard('fa-shield-check','Approved Documents','892','↑ 72 this month','purple')}${statCard('fa-triangle-exclamation','Expired Documents','14','View & Update','red')}</div>
+    <div class="grid-2"><div class="card pad"><div class="title mb-4">Recent Documents <button class="link">View All</button></div>${table(['Document','Category','Uploaded By','Uploaded On','Size','Status'],documents.map(r=>`<tr>${r.map((c,i)=>`<td>${i===5?badge(c):esc(c)}</td>`).join('')}</tr>`))}</div><div class="card pad"><div class="title mb-4">Pending Actions <button class="link">View All (32)</button></div>${table(['Document','Action Required','Due Date','Priority'],[['CAS Letter - Riskana F.','Review & Approve','09 Jul 2026','High'],['Passport Copy - Perushanth T.','Verify Document','09 Jul 2026','High'],['Financial Proof - Leneesha D.','Additional Info Required','10 Jul 2026','Medium'],['SOP - Jajinder S.','Review','10 Jul 2026','Medium']].map(r=>`<tr>${r.map((c,i)=>`<td>${i===3?badge(c):esc(c)}</td>`).join('')}</tr>`))}</div></div>
+    <div class="grid-3 mt-4"><div class="card pad"><div class="title mb-3">Document Categories</div>${['Admissions','Visa & Immigration','Finance & Payments','Offer Letters','Academic Documents','ID & Personal Documents','Others'].map((x,i)=>`<div class="row"><div class="stat-icon !w-9 !h-9 bg-blue-50 text-blue-600 !text-base"><i class="fas fa-folder"></i></div><div class="flex-1 font-black">${x}<div class="text-xs muted">${[342,286,198,156,112,96,58][i]} documents</div></div><i class="fas fa-chevron-right muted"></i></div>`).join('')}</div><div class="card pad"><div class="title mb-3">Storage & Usage</div><b class="text-3xl">12.4 GB</b> <span class="muted">/ 25 GB</span>${progress('PDF',4.8,12.4,'#ef233c')}${progress('Images',3.1,12.4,'#ff8a00')}${progress('Documents',2.6,12.4,'#115cff')}${progress('Spreadsheets',1.4,12.4,'#16a34a')}</div><div class="card pad"><div class="title mb-3">Quick Actions</div><div class="grid grid-cols-2 gap-3">${['Upload Document','Create Folder','Request Document','Share Document','Document Template','Open Google Drive'].map(x=>`<button class="btn" onclick="${x==='Upload Document'?'uploadDoc()':x==='Open Google Drive'?'openDrive()':`action('documents','${x} opened')`}">${x}</button>`).join('')}</div></div></div>`;
 }
 
-// ===== CONVERSION =====
-function renderConversion(el) {
-  const k = state.kpi.weekly || {};
-  el.innerHTML = `
-    <div class="bg-white rounded-xl shadow-sm p-6">
-      <h2 class="text-xl font-bold mb-4"><i class="fas fa-exchange-alt text-green-600 mr-2"></i>Lead → Student Conversion Tracker</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-blue-50 rounded p-4"><p class="text-3xl font-bold text-blue-700">${k.studentFollowUps||0}</p><p class="text-sm text-gray-600">Follow-Ups (week)</p></div>
-        <div class="bg-green-50 rounded p-4"><p class="text-3xl font-bold text-green-700">${k.registrationsConverted||0}</p><p class="text-sm text-gray-600">Conversions (week)</p></div>
-        <div class="bg-purple-50 rounded p-4"><p class="text-3xl font-bold text-purple-700">${k.applicationsSubmitted||0}</p><p class="text-sm text-gray-600">Applications</p></div>
-      </div>
-      <p class="text-sm text-gray-600 mb-3">Use the Lead Management page to log new conversions; this view auto-aggregates.</p>
-      <a href="/lead-management" class="inline-block px-4 py-2 bg-blue-600 text-white rounded">Open Lead Management →</a>
-    </div>
-  `;
+function renderOrganization(el){
+  el.innerHTML = `${pageHead('Organization','Manage structure, teams and people',`<button class="btn" onclick="exportReport('organization')"><i class="fas fa-download mr-2"></i>Export Report</button>`)}
+    <div class="grid-6 mb-4">${statCard('fa-users','Total Employees','12','Active Employees','blue')}${statCard('fa-building','Departments','6','Across Organization','green')}${statCard('fa-people-group','Teams','9','Active Teams','purple')}${statCard('fa-user-plus','New Hires','1','This Month','orange')}${statCard('fa-right-left','Resignations','0','This Month','cyan')}${statCard('fa-briefcase','Open Positions','2','View Vacancies','orange')}</div>
+    <div class="grid-3"><div class="card pad md:col-span-2"><div class="title mb-4">Organization Structure</div><div class="text-center"><div class="inline-flex items-center gap-3 border border-blue-200 bg-blue-50 rounded-xl px-6 py-3"><div class="avatar !w-9 !h-9">MN</div><div><b>Mohamed Nashif</b><div class="text-xs muted">CEO / Founder</div></div></div><div class="h-8 border-l border-slate-300 mx-auto w-0"></div><div class="inline-flex items-center gap-3 border border-emerald-200 bg-emerald-50 rounded-xl px-6 py-3"><div class="avatar !w-9 !h-9">NA</div><div><b>Nafees A.</b><div class="text-xs muted">COO</div></div></div><div class="grid grid-cols-5 gap-3 mt-8">${staff.slice(2,7).map(s=>`<div class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center"><div class="avatar !w-10 !h-10 mx-auto mb-2">${s[0][0]}</div><b>${s[0]}</b><div class="text-xs muted">${s[1]}</div></div>`).join('')}</div></div></div><div class="space-y-4"><div class="card pad"><div class="title mb-3">Departments</div>${['Admissions & HR','Business Development & Visa','Admissions','Counseling Team','Support & Operations','Finance & Accounts'].map((x,i)=>`<div class="row"><div class="stat-icon !w-9 !h-9 bg-blue-50 text-blue-600 !text-base"><i class="fas fa-building"></i></div><div class="flex-1 font-black">${x}<div class="text-xs muted">${[3,2,2,1,1,1][i]} Members</div></div><i class="fas fa-chevron-right muted"></i></div>`).join('')}</div><div class="card pad"><div class="title mb-3">Quick Actions</div><div class="grid grid-cols-2 gap-2">${['Add Employee','Add Department','Add Team','Open Positions','Organization Chart','Download Directory'].map(x=>`<button class="btn" onclick="action('organization','${x} opened')">${x}</button>`).join('')}</div></div></div></div><div class="card pad mt-4"><div class="title mb-3">Team Directory</div>${table(['Employee','Department','Designation','Email','Status'],staff.slice(2,7).map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[2]}</td><td>${r[1]}</td><td>${r[3]}</td><td>${badge('Active')}</td></tr>`))}</div>`;
 }
 
-// ===== INTERVIEW PREP =====
-function renderInterviews(el) {
-  el.innerHTML = `
-    <div class="bg-white rounded-xl shadow-sm p-6">
-      <div class="flex justify-between mb-4">
-        <h2 class="text-xl font-bold"><i class="fas fa-microphone-alt text-purple-600 mr-2"></i>Interview Preparation Tracker</h2>
-        <button onclick="addInterview()" class="px-4 py-2 bg-purple-600 text-white rounded text-sm"><i class="fas fa-plus mr-1"></i>Schedule Interview</button>
-      </div>
-      <table class="w-full text-sm border border-gray-200 rounded">
-        <thead class="bg-gray-100"><tr><th class="p-2 text-left">Student</th><th class="p-2 text-left">Type</th><th class="p-2 text-left">University</th><th class="p-2 text-left">Scheduled</th><th class="p-2 text-left">Status</th><th class="p-2"></th></tr></thead>
-        <tbody id="ivBody">
-          ${state.interviews.map(i=>`
-            <tr class="border-t border-gray-200">
-              <td class="p-2 font-medium">${i.studentName}</td>
-              <td class="p-2"><span class="px-2 py-0.5 text-xs rounded ${i.type==='Credibility'?'bg-yellow-100 text-yellow-800':i.type==='Visa'?'bg-red-100 text-red-800':'bg-blue-100 text-blue-800'}">${i.type}</span></td>
-              <td class="p-2">${i.university||'-'}</td>
-              <td class="p-2 text-xs">${i.scheduledFor||'-'}</td>
-              <td class="p-2"><span class="px-2 py-0.5 text-xs rounded bg-gray-100">${i.status||'planned'}</span></td>
-              <td class="p-2 text-right"><button onclick="delInterview('${i.id}')" class="text-red-600 text-xs"><i class="fas fa-trash"></i></button></td>
-            </tr>
-          `).join('') || '<tr><td colspan="6" class="p-4 text-center text-gray-500">No interviews scheduled</td></tr>'}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-async function addInterview() {
-  const studentName = prompt('Student name?');
-  if (!studentName) return;
-  const type = prompt('Type? (Credibility / Visa / Mock)', 'Mock');
-  const university = prompt('University (optional)?', '');
-  const scheduledFor = prompt('Scheduled for (e.g. 2026-05-15 10:00)?', '');
-  const res = await fetch('/api/staff-portal/interviews/GG003', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ studentName, type, university, scheduledFor, status:'planned' }) });
-  const j = await res.json();
-  if (j.success) switchTab('interviews');
-}
-async function delInterview(id) {
-  if (!confirm('Delete?')) return;
-  await fetch('/api/staff-portal/interviews/GG003/' + id, { method:'DELETE' });
-  switchTab('interviews');
+function renderAssets(el){
+  el.innerHTML = `${pageHead('Assets','Track and manage all company assets and resources',`<button class="btn" onclick="exportReport('assets')"><i class="fas fa-download mr-2"></i>Export Report</button>`)}
+    <div class="grid-6 mb-4">${statCard('fa-cube','Total Assets','68','All Assets','blue')}${statCard('fa-check-circle','Active Assets','61','89.7% of total','green')}${statCard('fa-screwdriver-wrench','Under Maintenance','4','5.9% of total','orange')}${statCard('fa-calendar-days','Expiring Warranty','6','8.8% of total','purple')}${statCard('fa-triangle-exclamation','Retired/Disposed','3','4.4% of total','red')}${statCard('fa-dollar-sign','Total Asset Value','LKR 18.75M','Book Value','blue')}</div>
+    <div class="grid-3"><div class="card pad md:col-span-2"><div class="title mb-3">Asset Overview</div>${table(['Asset Name','Asset ID','Category','Location','Purchase Date','Value','Status'],[['MacBook Pro 16”','AST-0001','IT Equipment','Head Office','12 Jan 2024','750,000','Active'],['HP LaserJet Pro','AST-0002','Office Equipment','Head Office','05 Feb 2024','220,000','Active'],['Dell 24” Monitor','AST-0003','IT Equipment','Head Office','05 Feb 2024','65,000','Active'],['Sony A7 IV Camera','AST-0005','Media Equipment','Marketing Dept.','15 Apr 2024','630,000','Under Maintenance']].map(r=>`<tr>${r.map((c,i)=>`<td>${i===6?badge(c):esc(c)}</td>`).join('')}</tr>`))}</div><div class="card pad"><div class="title mb-3">Upcoming Maintenance</div>${[['Sony A7 IV Camera','Lens Cleaning','10 Jul 2026','High'],['UPS System 3kVA','Battery Check','12 Jul 2026','High'],['Dell Server','Hardware Check','18 Jul 2026','Medium'],['Air Conditioner','Service','20 Jul 2026','Medium']].map(r=>`<div class="row"><div class="flex-1"><div class="font-black">${r[0]}</div><div class="text-xs muted">${r[1]} · ${r[2]}</div></div>${badge(r[3])}</div>`).join('')}</div></div><div class="grid-3 mt-4"><div class="card pad"><div class="title mb-3">Assets by Location</div><div class="relative w-32 h-32 mx-auto rounded-full grid place-items-center" style="background:conic-gradient(#115cff 62%,#16a34a 62% 75%,#ff8a00 75% 85%,#7657ff 85%)"><div class="w-20 h-20 bg-white rounded-full grid place-items-center font-black">68</div></div></div><div class="card pad"><div class="title mb-3">Asset Value & Depreciation</div><div class="bg-blue-50 rounded-xl p-4 mb-3"><b>LKR 18,750,000</b><div class="muted">Total Asset Value</div></div><div class="bg-emerald-50 rounded-xl p-4"><b>LKR 12,510,000</b><div class="muted">Net Book Value</div></div></div><div class="card pad"><div class="title mb-3">Recently Added Assets</div>${['Ergonomic Office Chair','Logitech C922 Webcam','Whiteboard (120x90)','Canon G7X Mark III','Wi-Fi Router'].map(x=>`<div class="row"><div class="font-black flex-1">${x}</div><span class="text-xs muted">08 Jul</span></div>`).join('')}</div></div>`;
 }
 
-// ===== ESCALATIONS =====
-function renderEscalations(el) {
-  el.innerHTML = `
-    <div class="bg-white rounded-xl shadow-sm p-6">
-      <div class="flex justify-between mb-4">
-        <h2 class="text-xl font-bold"><i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>Client Escalation & Complaint Handling</h2>
-        <button onclick="addEscalation()" class="px-4 py-2 bg-red-600 text-white rounded text-sm"><i class="fas fa-plus mr-1"></i>Log Escalation</button>
-      </div>
-      <div class="space-y-3">
-        ${state.escalations.map(e=>`
-          <div class="priority-${(e.priority||'P2').toLowerCase()} p-4 rounded">
-            <div class="flex justify-between">
-              <div>
-                <strong>${e.studentName}</strong>
-                <span class="ml-2 text-xs px-2 py-0.5 rounded bg-white">${e.priority||'P2'}</span>
-                <span class="ml-2 text-xs px-2 py-0.5 rounded ${e.status==='resolved'?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${e.status||'open'}</span>
-              </div>
-              <div class="flex gap-2">
-                ${e.status!=='resolved'?`<button onclick="resolveEscalation('${e.id}')" class="text-xs px-2 py-1 bg-green-600 text-white rounded">Resolve</button>`:''}
-                <button onclick="delEscalation('${e.id}')" class="text-xs px-2 py-1 bg-gray-600 text-white rounded"><i class="fas fa-trash"></i></button>
-              </div>
-            </div>
-            <p class="text-sm mt-2">${e.issue}</p>
-            <p class="text-xs text-gray-600 mt-1"><i class="fas fa-clock"></i> ${new Date(e.createdAt).toLocaleString()} ${e.resolvedAt?` · Resolved ${new Date(e.resolvedAt).toLocaleString()}`:''}</p>
-          </div>
-        `).join('') || '<p class="text-gray-500">No escalations logged.</p>'}
-      </div>
-    </div>
-  `;
-}
-async function addEscalation() {
-  const studentName = prompt('Student name?'); if (!studentName) return;
-  const priority = prompt('Priority? (P1/P2/P3)', 'P1');
-  const issue = prompt('Describe the issue/complaint:');
-  if (!issue) return;
-  await fetch('/api/staff-portal/escalations/GG003', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ studentName, priority, issue, status:'open' }) });
-  switchTab('escalations');
-}
-async function resolveEscalation(id) {
-  await fetch('/api/staff-portal/escalations/GG003/' + id + '/resolve', { method:'POST' });
-  switchTab('escalations');
-}
-async function delEscalation(id) {
-  if (!confirm('Delete?')) return;
-  await fetch('/api/staff-portal/escalations/GG003/' + id, { method:'DELETE' });
-  switchTab('escalations');
+function renderAI(el){
+  const history=get('tsAIHistory',[]);
+  el.innerHTML = `${pageHead('<i class="fas fa-wand-magic-sparkles text-blue-600 mr-2"></i>AI Assistant','Your smart assistant for insights, answers and productivity',`<button class="btn" onclick="exportReport('ai')"><i class="fas fa-download mr-2"></i>Export Report</button>`)}
+    <div class="grid-5 mb-4">${statCard('fa-comments','Questions Asked','124','↑ 18 vs last month','blue')}${statCard('fa-robot','Tasks Automated','56','↑ 12 vs last month','green')}${statCard('fa-lightbulb','Insights Generated','42','↑ 9 vs last month','purple')}${statCard('fa-clock','Time Saved','12h 36m','↑ 2h 45m','orange')}${statCard('fa-bullseye','Accuracy Rate','94.6%','Excellent','blue')}</div>
+    <div class="grid-2"><div class="card pad"><div class="title mb-3">How can I help you today?</div><h3 class="text-2xl font-black mb-2">Hello Thasbiha! 👋</h3><p class="muted mb-4">How can I assist you with GG CRM today?</p><div class="flex gap-2"><input id="aiInput" class="field" placeholder="Ask me anything…"><button class="btn primary" onclick="askAI()"><i class="fas fa-paper-plane"></i></button></div><div class="flex flex-wrap gap-2 mt-4">${['Today’s Summary','Pending Follow Ups','Application Pipeline','Visa Checklist'].map(x=>`<button class="btn" onclick="aiQuick('${x}')">${x}</button>`).join('')}</div></div><div class="card pad"><div class="title mb-3">Suggested for You <button class="link">View All</button></div>${[['Follow up with 5 high priority leads','You have 5 leads not followed up in 3+ days'],['CAS documents pending approval','3 applications are waiting for document approval'],['UK September intake update','12 universities have updated deadlines'],['Daily report not submitted','2 team members haven’t submitted today’s report']].map(r=>`<div class="row"><div class="stat-icon !w-10 !h-10 bg-red-50 text-red-500 !text-base"><i class="fas fa-users"></i></div><div class="flex-1"><div class="font-black">${r[0]}</div><div class="text-xs muted">${r[1]}</div></div><button class="btn !py-2">Open</button></div>`).join('')}</div></div><div class="grid-3 mt-4"><div class="card pad"><div class="title mb-3">AI Insights</div>${['Registrations are up 23% this week.','UK applications need attention.','High visa success rate.'].map(x=>`<div class="row"><i class="fas fa-chart-line text-emerald-600"></i><div>${x}</div></div>`).join('')}</div><div class="card pad"><div class="title mb-3">Chat History</div>${(history.length?history:['Show me today’s follow up list','Which applications are pending documents?','Top performing team members this month']).map(x=>`<div class="row"><div class="flex-1 font-black">${esc(x)}</div>${badge('Reports')}</div>`).join('')}<button class="btn w-full mt-3" onclick="clearAI()">Clear Chat History</button></div><div class="card pad"><div class="title mb-3">Smart Tools</div><div class="grid grid-cols-2 gap-3">${['Document Analyzer','Email Assistant','Student Profile Summary','University Matcher','Visa Checklist Generator','Report Generator'].map(x=>`<button class="btn text-left" onclick="aiQuick('${x}')">${x}</button>`).join('')}</div></div></div>`;
 }
 
-// ===== UNI COORD =====
-function renderUniCoord(el) {
-  el.innerHTML = `
-    <div class="bg-white rounded-xl shadow-sm p-6">
-      <div class="flex justify-between mb-4">
-        <h2 class="text-xl font-bold"><i class="fas fa-university text-indigo-600 mr-2"></i>University Coordination Log</h2>
-        <button onclick="addUniFU()" class="px-4 py-2 bg-indigo-600 text-white rounded text-sm"><i class="fas fa-plus mr-1"></i>Add Follow-Up</button>
-      </div>
-      <table class="w-full text-sm border border-gray-200 rounded">
-        <thead class="bg-gray-100"><tr><th class="p-2 text-left">University</th><th class="p-2 text-left">Student</th><th class="p-2 text-left">Type</th><th class="p-2 text-left">Days Open</th><th class="p-2 text-left">Status</th><th class="p-2"></th></tr></thead>
-        <tbody>
-          ${state.uniFollowUps.map(u=>`
-            <tr class="border-t border-gray-200">
-              <td class="p-2 font-medium">${u.university}</td>
-              <td class="p-2">${u.studentName}</td>
-              <td class="p-2"><span class="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700">${u.type}</span></td>
-              <td class="p-2 ${u.daysOpen>=7?'text-red-600 font-bold':''}">${u.daysOpen||0}</td>
-              <td class="p-2"><span class="text-xs px-2 py-0.5 rounded bg-gray-100">${u.status||'open'}</span></td>
-              <td class="p-2 text-right"><button onclick="delUniFU('${u.id}')" class="text-red-600 text-xs"><i class="fas fa-trash"></i></button></td>
-            </tr>
-          `).join('') || '<tr><td colspan="6" class="p-4 text-center text-gray-500">No follow-ups logged</td></tr>'}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-async function addUniFU() {
-  const university = prompt('University?'); if (!university) return;
-  const studentName = prompt('Student?'); if (!studentName) return;
-  const type = prompt('Type? (Offer / CAS / COE / Document / Deadline)', 'Offer');
-  await fetch('/api/staff-portal/uni-followups/GG003', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ university, studentName, type, status:'open' }) });
-  switchTab('uni-coord');
-}
-async function delUniFU(id) {
-  if (!confirm('Delete?')) return;
-  await fetch('/api/staff-portal/uni-followups/GG003/' + id, { method:'DELETE' });
-  switchTab('uni-coord');
+function renderNotifications(el){
+  const read=get('tsNotificationsRead',false);
+  el.innerHTML = `${pageHead('Notifications','Stay updated with important alerts and activities',`<button class="btn"><i class="far fa-calendar mr-2"></i>30 Jun – 8 Jul 2026</button><button class="btn">Filter <i class="fas fa-chevron-down ml-2"></i></button>`)}
+    <div class="grid-3"><div class="card md:col-span-2"><div class="pad border-b border-slate-100 flex justify-between"><div class="tabs !mb-0"><button class="tab-chip active">All</button><button class="tab-chip">Unread (12)</button><button class="tab-chip">Priority (8)</button><button class="tab-chip">Mentions (2)</button><button class="tab-chip">Archived</button></div><button class="link" onclick="markRead()">Mark all as read</button></div>${notifications.map(n=>`<div class="pad row !px-5"><div class="stat-icon !w-12 !h-12 bg-${n[5]}-50 text-${n[5]}-600 !text-lg"><i class="fas ${n[4]}"></i></div><div class="flex-1"><div class="font-black">${n[0]} ${n[0].includes('New')?badge('New'):''}</div><div class="muted">${n[1]}</div><div class="text-xs muted mt-2"><i class="far fa-folder mr-1"></i>${n[2]}</div></div><span class="text-xs muted">${n[3]}</span>${read?'':'<span class="w-2 h-2 bg-blue-600 rounded-full"></span>'}</div>`).join('')}<div class="pad text-center"><button class="link">Load more ↓</button></div></div><div class="space-y-4"><div class="card pad"><div class="title mb-3">Notification Settings <button class="link">View settings</button></div>${['Email Notifications','In-App Notifications','SMS Notifications','Sound Alerts'].map((x,i)=>`<div class="row"><div class="stat-icon !w-10 !h-10 bg-blue-50 text-blue-600 !text-base"><i class="fas fa-bell"></i></div><div class="flex-1"><div class="font-black">${x}</div><div class="text-xs muted">Receive notifications</div></div><button onclick="this.classList.toggle('bg-blue-600')" class="w-10 h-6 rounded-full ${i===2?'bg-slate-400':'bg-blue-600'}"></button></div>`).join('')}</div><div class="card pad"><div class="title mb-3">Priority Notifications <button class="link">View all</button></div>${['CAS documents pending approval for 3 students','UK September intake deadlines approaching','5 high priority leads not followed up','Visa interview scheduled for 2 students'].map((x,i)=>`<div class="row"><span class="w-2 h-2 rounded-full ${i<2?'bg-red-500':'bg-orange-500'}"></span><div class="flex-1 font-black text-sm">${x}</div></div>`).join('')}</div><div class="card pad"><div class="title mb-3">Recent Activity</div>${['Razan T. mentioned you in a comment','New document uploaded','Saleh M. replied to your message'].map(x=>`<div class="row"><div class="avatar !w-9 !h-9">${x[0]}</div><div class="font-black flex-1">${x}</div></div>`).join('')}</div></div></div>`;
 }
 
-// ===== KPI =====
-function renderKPI(el) {
-  const w = state.kpi.weekly || {}, m = state.kpi.monthly || {};
-  el.innerHTML = `
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="bg-white rounded-xl shadow-sm p-6">
-        <h3 class="font-semibold mb-4 text-gray-800"><i class="fas fa-calendar-week text-blue-600 mr-2"></i>Weekly KPIs</h3>
-        <div class="grid grid-cols-2 gap-3">
-          ${[
-            ['Student Follow-Ups', w.studentFollowUps||0, 'blue'],
-            ['Registrations Converted', w.registrationsConverted||0, 'green'],
-            ['Applications Submitted', w.applicationsSubmitted||0, 'purple'],
-            ['Offer Letters Received', w.offerLettersReceived||0, 'yellow'],
-            ['Interviews Completed', w.interviewsCompleted||0, 'pink'],
-            ['Pending Cases Reduced', w.pendingReduced||0, 'indigo'],
-            ['Escalations Resolved', w.escalationsResolved||0, 'red']
-          ].map(([l,v,c])=>`
-            <div class="bg-${c}-50 rounded p-3 border border-${c}-200">
-              <p class="text-xs text-gray-600">${l}</p>
-              <p class="text-2xl font-bold text-${c}-700">${v}</p>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-      <div class="bg-white rounded-xl shadow-sm p-6">
-        <h3 class="font-semibold mb-4 text-gray-800"><i class="fas fa-calendar-alt text-purple-600 mr-2"></i>Monthly KPIs</h3>
-        <div class="grid grid-cols-2 gap-3">
-          ${[
-            ['Total Conversions', m.totalConversions||0, 'green'],
-            ['Revenue Contribution', m.revenueContribution||0, 'yellow'],
-            ['Client Retention %', m.retentionRate||0, 'blue'],
-            ['App Success Ratio %', m.appSuccessRatio||0, 'purple'],
-            ['Operational Score', m.operationalScore||0, 'indigo'],
-            ['Team Support Score', m.teamSupportScore||0, 'pink']
-          ].map(([l,v,c])=>`
-            <div class="bg-${c}-50 rounded p-3 border border-${c}-200">
-              <p class="text-xs text-gray-600">${l}</p>
-              <p class="text-2xl font-bold text-${c}-700">${v}</p>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm p-6 mt-6">
-      <h3 class="font-semibold mb-3">KPI Trend</h3>
-      <canvas id="kpiTrend" height="80"></canvas>
-    </div>
-  `;
-  setTimeout(() => {
-    const ctx = document.getElementById('kpiTrend');
-    if (ctx) new Chart(ctx, {
-      type:'line',
-      data:{
-        labels: ['Mon','Tue','Wed','Thu','Fri','Sat'],
-        datasets:[
-          { label:'Conversions', data: w.dailyConversions || [0,0,0,0,0,0], borderColor:'#16a34a', tension:.3, fill:false },
-          { label:'Follow-ups', data: w.dailyFollowUps || [0,0,0,0,0,0], borderColor:'#2563eb', tension:.3, fill:false }
-        ]
-      },
-      options:{ responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}} }
-    });
-  }, 100);
+function renderCommunication(el){
+  const msgs=state.messages.length?state.messages:[['Dilshan Perera','Thank you! I have uploaded the documents as requested.','10:24 AM'],['Razan T.','Please share the latest update on the Hull refund case.','09:48 AM'],['Umair K.','Can you review this application before I submit?','09:20 AM']];
+  el.innerHTML = `${pageHead('Communication','All your messages and conversations in one place',`<button class="btn">30 Jun – 8 Jul 2026</button><button class="btn primary" onclick="newMessage()">New Message</button>`)}
+    <div class="grid-4"><div class="card pad"><div class="title mb-3">Conversations <button class="link" onclick="newMessage()">✎</button></div><input class="field mb-3" placeholder="Search conversations...">${msgs.map((m,i)=>`<button class="row w-full text-left ${i===0?'bg-blue-50 -mx-2 px-2 rounded-xl':''}" onclick="openConversation('${esc(m[0])}')"><div class="avatar !w-10 !h-10">${m[0][0]}</div><div class="flex-1"><div class="font-black">${m[0]}</div><div class="text-xs muted">${m[1]}</div></div><span class="text-xs text-blue-600">${m[2]}</span></button>`).join('')}</div><div class="card pad md:col-span-2"><div class="title mb-4"><span>Dilshan Perera <span class="pill greenp ml-2">Student</span></span><span><button class="icon-btn" onclick="action('video','Video call opened')"><i class="fas fa-video"></i></button> <button class="icon-btn" onclick="callNumber('+94771234567')"><i class="fas fa-phone"></i></button></span></div><div class="space-y-4 min-h-[390px]"><div class="max-w-[55%] bg-slate-100 rounded-2xl p-4"><b>DP</b><p class="mt-2">Assalamu Alaikum, Thasbiha, I have uploaded the requested documents.</p><div class="text-xs muted text-right">10:15 AM</div></div><div class="max-w-[55%] ml-auto bg-blue-50 rounded-2xl p-4"><p>Wa Alaikum Assalam Dilshan, I will review and update you.</p><div class="text-xs text-blue-600 text-right">10:17 AM ✓✓</div></div><div class="max-w-[55%] bg-slate-100 rounded-2xl p-4"><p>JazakAllah Khair!</p><div class="text-xs muted text-right">10:20 AM</div></div></div><div class="border border-slate-200 rounded-xl p-3"><textarea id="msgInput" class="field !border-0" placeholder="Type your message..."></textarea><div class="flex justify-between mt-2"><div class="flex gap-3 muted"><i class="fas fa-paperclip"></i><i class="far fa-face-smile"></i><i class="far fa-calendar"></i></div><button class="btn primary" onclick="sendMessage()">Send</button></div></div></div><div class="card pad"><div class="title mb-3">Conversation Details</div><div class="flex items-center gap-3 mb-4"><div class="avatar">DP</div><div><div class="font-black">Dilshan Perera</div><div class="muted text-xs">MSc International Business</div></div></div><div class="space-y-3 text-sm"><div>✉ dilshan.perera@gmail.com</div><div>☎ +94 77 123 4567</div><div>🎓 University of Sunderland, UK</div>${badge('Active Student')}</div><hr class="my-4"><div class="title mb-3">Quick Actions</div><button class="btn w-full mb-2" onclick="addTaskModal()">Create Task</button><button class="btn w-full" onclick="switchTab('followups')">Add Follow Up</button></div></div>`;
 }
 
-// ===== HR / ADMIN =====
-function renderHR(el) {
-  el.innerHTML = `
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="bg-white rounded-xl shadow-sm p-6">
-        <h3 class="font-semibold mb-3"><i class="fas fa-money-bill-wave text-green-600 mr-2"></i>Salary Preparation Support</h3>
-        <p class="text-sm text-gray-600 mb-3">Track payroll prep tasks for monthly salary processing.</p>
-        <a href="/finance-commission" class="inline-block px-4 py-2 bg-green-600 text-white rounded">Open Finance Module →</a>
-      </div>
-      <div class="bg-white rounded-xl shadow-sm p-6">
-        <h3 class="font-semibold mb-3"><i class="fas fa-clipboard-list text-blue-600 mr-2"></i>Operational Records</h3>
-        <p class="text-sm text-gray-600 mb-3">Documentation, reports, and operational logs.</p>
-        <a href="/reports" class="inline-block px-4 py-2 bg-blue-600 text-white rounded">Open Reports →</a>
-      </div>
-      <div class="bg-white rounded-xl shadow-sm p-6">
-        <h3 class="font-semibold mb-3"><i class="fas fa-user-clock text-purple-600 mr-2"></i>Leave Management</h3>
-        <a href="/leave-management" class="inline-block px-4 py-2 bg-purple-600 text-white rounded">Open Leave →</a>
-      </div>
-      <div class="bg-white rounded-xl shadow-sm p-6">
-        <h3 class="font-semibold mb-3"><i class="fas fa-shield-alt text-red-600 mr-2"></i>Red Flags / Risk Management</h3>
-        <a href="/red-flags" class="inline-block px-4 py-2 bg-red-600 text-white rounded">Open Red Flags →</a>
-      </div>
-    </div>
-  `;
+function renderProfile(el){
+  el.innerHTML = `${pageHead('Thasbiha Sulaiman','Team Members › Thasbiha Sulaiman — Profile',`<button class="btn" onclick="exportReport('profile')"><i class="fas fa-download mr-2"></i>Export Profile</button><button class="btn primary" onclick="editProfile()">Edit Profile</button>`)}
+    <div class="card pad mb-4"><div class="grid-3"><div class="flex gap-6"><div class="avatar !w-32 !h-32 !text-4xl">TS</div><div><h3 class="text-2xl font-black">Thasbiha Sulaiman ${badge('Head of Admissions / HR')}</h3><div class="space-y-3 mt-4 text-sm"><div><i class="far fa-envelope mr-2"></i>${USER.email}</div><div><i class="fas fa-phone mr-2"></i>${USER.phone}</div><div><i class="fas fa-location-dot mr-2"></i>Colombo, Sri Lanka</div><div><i class="far fa-calendar mr-2"></i>Joined on 01 Feb 2021</div><div><i class="far fa-id-card mr-2"></i>Employee ID: ${DISPLAY_EMP_ID}</div></div></div></div><div class="space-y-3 text-sm"><div><b>Department</b><span class="float-right">Admissions & HR</span></div><div><b>Reports To</b><span class="float-right">Nafees A. (COO)</span></div><div><b>Employment Type</b><span class="float-right">Full Time</span></div><div><b>Work Mode</b><span class="float-right">Office</span></div><div><b>Shift</b><span class="float-right">08:30 AM - 05:30 PM</span></div><div><b>Status</b><span class="float-right">${badge('Active')}</span></div></div><div><div class="font-black mb-3">About Thasbiha</div><p class="muted">Experienced admissions leader with 5+ years in international education consultancy. Skilled in admissions management, student counselling, team leadership and HR operations.</p><div class="flex gap-2 flex-wrap mt-4">${['Admissions Management','HR Operations','Student Counseling','Team Leadership','University Partnerships'].map(badge).join('')}</div></div></div></div>
+    <div class="tabs"><button class="tab-chip active">Overview</button><button class="tab-chip">Performance</button><button class="tab-chip">Attendance</button><button class="tab-chip">Tasks</button><button class="tab-chip">Documents</button><button class="tab-chip">Activity Log</button></div>
+    <div class="grid-3"><div class="card pad"><div class="title mb-3">Key Responsibilities</div>${['Manage end-to-end admissions process','Lead and support admissions team','Maintain university relationships and updates','Oversee HR operations and staff coordination','Ensure documentation accuracy and compliance','Monitor team performance and reports'].map(x=>`<div class="row"><i class="fas fa-check-circle text-emerald-600"></i><div>${x}</div></div>`).join('')}</div><div class="card pad"><div class="title mb-3">Current Goals</div>${progress('Monthly Registrations Target',15,20,'#115cff')}${progress('Student Satisfaction Score',4.6,5,'#10b981')}${progress('Document Accuracy Rate',98,100,'#0891b2')}${progress('Offer Response Time',18,24,'#10b981')}</div><div class="card pad"><div class="title mb-3">This Week Summary</div>${[['Leads Followed Up','28'],['Applications Submitted','14'],['Offers Received','7'],['Documents Processed','36'],['Calls Made','42'],['Meetings Held','6']].map(r=>`<div class="row"><div class="flex-1">${r[0]}</div><b>${r[1]}</b></div>`).join('')}</div></div>`;
 }
 
-// Initial load
-switchTab('dashboard');
+function renderSettings(el){
+  el.innerHTML = `${pageHead('Settings','Manage your preferences, account and system settings',`<button class="btn" onclick="exportReport('settings')"><i class="fas fa-download mr-2"></i>Export Settings</button>`)}
+    <div class="tabs"><button class="tab-chip active">My Settings</button><button class="tab-chip">Company Settings</button><button class="tab-chip">Users & Roles</button><button class="tab-chip">Notifications</button><button class="tab-chip">Integrations</button><button class="tab-chip">Data & Privacy</button><button class="tab-chip">Audit Logs</button></div>
+    <div class="grid-3"><div class="card pad md:col-span-2"><div class="title mb-4">Profile & Preferences</div><div class="grid-2"><div class="flex gap-4"><div class="avatar !w-24 !h-24 !text-2xl">TS</div><div><h3 class="text-xl font-black">Thasbiha Sulaiman</h3><div class="muted">${USER.role}</div><div class="mt-4 text-sm">${USER.email}<br>${USER.phone}</div></div></div><div class="grid-2 gap-3"><label>Language<select class="field"><option>English (US)</option></select></label><label>Timezone<select class="field"><option>(GMT+05:30) Colombo</option></select></label><label>Date Format<select class="field"><option>08 Jul 2026</option></select></label><label>Time Format<select class="field"><option>12 Hour</option></select></label><button class="btn primary col-span-2" onclick="saveSettings()">Save Changes</button></div></div></div><div class="space-y-4"><div class="card pad"><div class="title mb-3">Account & Plan</div><div class="space-y-3"><div>Plan <span class="float-right">${badge('Professional')}</span></div><div>Users <span class="float-right">12 / 25</span></div><div>Storage <span class="float-right">12.4 GB / 50 GB</span></div></div></div><div class="card pad"><div class="title mb-3">Security Overview</div><div class="space-y-3"><div>Last Login <span class="float-right">08 Jul 2026</span></div><div>Login IP <span class="float-right">103.21.45.67</span></div><div>Active Sessions <span class="float-right">2</span></div></div></div></div></div><div class="grid-3 mt-4">${['Appearance','Notifications','Dashboard Preferences','Password & Security','Two-Factor Authentication','Email Signature','Calendar Settings','Task & Work Preferences','Data Preferences'].map((x,i)=>`<div class="card pad"><div class="stat"><div class="stat-icon ${i%3===0?'bg-blue-50 text-blue-600':i%3===1?'bg-green-50 text-green-600':'bg-purple-50 text-purple-600'}"><i class="fas ${['fa-desktop','fa-bell','fa-table-cells','fa-shield','fa-lock','fa-pen','fa-calendar','fa-list-check','fa-database'][i]}"></i></div><div><div class="font-black">${x}</div><small>Manage ${x.toLowerCase()}.</small></div></div><button class="link mt-4" onclick="action('settings','${x} opened')">Manage →</button></div>`).join('')}</div>`;
+}
+
+let formTasks=[];
+function renderMorning(el){
+  const mp=state.morningPlan||{}; formTasks=(mp.priorityTasks&&mp.priorityTasks.length?mp.priorityTasks:baseTasks.slice(0,5).map(t=>({title:t.title,priority:t.priority,notes:t.cat})));
+  el.innerHTML = `${pageHead('Global Guidance — Daily plan','File this in the morning. KPIs calculate from your evening report based on these targets.')}
+    <div class="card pad space-y-5"><div><h3 class="font-black text-blue-600 mb-3">Admissions & Conversion</h3><div class="grid-2 gap-3"><input class="field" id="mpReg" placeholder="Registrations target today" value="${mp.registrationsTarget||4}"><input class="field" id="mpStudents" placeholder="Students to follow up" value="${mp.studentFollowUps||''}"><input class="field" id="mpPending" placeholder="Pending registrations" value="${mp.pendingRegistrations||''}"><input class="field" id="mpPriority" placeholder="Priority conversion cases" value="${mp.priorityCases||''}"></div></div><div><h3 class="font-black text-blue-600 mb-3">Top Tasks</h3><div id="morningTasks"></div><button class="link" onclick="addMorningTask()">+ Add task</button></div><div><h3 class="font-black text-blue-600 mb-3">Applications</h3><div class="grid-2 gap-3"><input class="field" id="mpApps" placeholder="Applications to submit" value="${mp.appsToSubmit||0}"><input class="field" id="mpOffers" placeholder="Offer letters to chase" value="${mp.offersToChase||0}"><input class="field" id="mpUnis" placeholder="Universities to follow up" value="${mp.uniFollowUps||''}"><input class="field" id="mpTarget" placeholder="Follow-ups planned target" value="${mp.followupTarget||''}"></div></div><div><h3 class="font-black text-blue-600 mb-3">HR & Operations</h3><div class="grid-2 gap-3"><input class="field" id="mpStaff" placeholder="Staff matters" value="${mp.staffMatters||''}"><input class="field" id="mpMeetings" placeholder="Meetings" value="${mp.meetings||''}"><input class="field" id="mpEvents" placeholder="Events" value="${mp.eventsTasks||''}"><input class="field" id="mpEsc" placeholder="Escalations" value="${mp.criticalEscalations||''}"></div></div><div><h3 class="font-black text-blue-600 mb-3">Management Support Needed</h3><div class="grid-2 gap-3"><input class="field" id="mpApprovals" placeholder="Pending approvals" value="${mp.pendingApprovals||''}"><input class="field" id="mpDecisions" placeholder="Urgent decisions" value="${mp.supportNeeded||''}"></div></div><button class="btn primary w-full" onclick="submitMorning()">Submit Global Guidance plan</button></div>`;
+  renderMorningTasks();
+}
+function renderMorningTasks(){ $('morningTasks').innerHTML=formTasks.map((t,i)=>`<div class="flex gap-2 mb-2"><select class="field !w-28" onchange="formTasks[${i}].priority=this.value"><option ${t.priority==='High'?'selected':''}>High</option><option ${t.priority==='Medium'?'selected':''}>Medium</option><option ${t.priority==='Low'?'selected':''}>Low</option></select><input class="field" value="${esc(t.title)}" oninput="formTasks[${i}].title=this.value"><input class="field" value="${esc(t.notes||'')}" oninput="formTasks[${i}].notes=this.value"><button class="btn red" onclick="formTasks.splice(${i},1);renderMorningTasks()">×</button></div>`).join(''); }
+function addMorningTask(){ formTasks.push({title:'',priority:'Medium',notes:''}); renderMorningTasks(); }
+async function submitMorning(){ const plan={date:TODAY,priorityTasks:formTasks.filter(t=>t.title),registrationsTarget:$('mpReg').value,studentFollowUps:$('mpStudents').value,pendingRegistrations:$('mpPending').value,priorityCases:$('mpPriority').value,appsToSubmit:$('mpApps').value,offersToChase:$('mpOffers').value,uniFollowUps:$('mpUnis').value,followupTarget:$('mpTarget').value,staffMatters:$('mpStaff').value,meetings:$('mpMeetings').value,eventsTasks:$('mpEvents').value,criticalEscalations:$('mpEsc').value,pendingApprovals:$('mpApprovals').value,supportNeeded:$('mpDecisions').value}; try{ const r=await fetch('/api/staff-portal/morning-plan/'+API_EMP_ID,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(plan)}); const j=await r.json(); if(!j.success) throw new Error(j.error); }catch(e){ set('tsMorningPlan',plan); } state.morningPlan=plan; action('morning-plan','Morning plan submitted',plan); switchTab('today'); }
+
+function renderEvening(el){
+  const er=state.eveningReport||{};
+  el.innerHTML = `${pageHead('Global Guidance — Evening report','File before logging out. KPI scorecard auto-fills from these numbers.')}
+    <div class="card pad space-y-5"><div class="grid-2 gap-4"><label>Completed Tasks *<textarea class="field" id="erDone">${er.tasksCompleted||''}</textarea></label><label>Pending Tasks<textarea class="field" id="erPending">${er.pendingTomorrow||''}</textarea></label><label>Reason for Delay<textarea class="field" id="erReason">${er.operationalChallenges||''}</textarea></label><label>Achievements<textarea class="field" id="erAch">${er.achievements||''}</textarea></label></div><h3 class="font-black">Today's Numbers</h3><div class="grid-4 gap-3">${['Registrations','Applications','Offers','CAS','COE','Visa updates','Calls','Meetings','Escalations resolved'].map((x,i)=>`<label>${x}<input type="number" min="0" class="field" id="erN${i}" value="${[12,18,7,4,2,5,8,3,2][i]}"></label>`).join('')}</div><div class="grid-2 gap-4"><label>Tomorrow Plan *<textarea class="field" id="erTomorrow">${er.tomorrowPlan||''}</textarea></label><label>Support Needed<textarea class="field" id="erSupport">${er.supportNeeded||''}</textarea></label></div><button class="btn primary w-full" onclick="submitEvening()">Submit report & check out</button></div>`;
+}
+async function submitEvening(){ const report={date:TODAY,tasksCompleted:$('erDone').value,pendingTomorrow:$('erPending').value,operationalChallenges:$('erReason').value,achievements:$('erAch').value,conversionUpdates:{registrationsCompleted:+$('erN0').value||0,applicationsSubmitted:+$('erN1').value||0,offersReceived:+$('erN2').value||0,cas:+$('erN3').value||0,coe:+$('erN4').value||0,visaUpdates:+$('erN5').value||0,calls:+$('erN6').value||0,meetings:+$('erN7').value||0,escalationsResolved:+$('erN8').value||0},tomorrowPlan:$('erTomorrow').value,supportNeeded:$('erSupport').value}; try{ const r=await fetch('/api/staff-portal/evening-report/'+API_EMP_ID,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(report)}); const j=await r.json(); if(!j.success) throw new Error(j.error); }catch(e){ set('tsEveningReport',report); } state.eveningReport=report; await checkOut(true); action('daily-report','Evening report submitted and checked out',report); switchTab('today'); }
+
+function addTaskModal(){ openModal('Add Task','<div class="space-y-3"><input id="newTaskTitle" class="field" placeholder="Task title"><select id="newTaskPriority" class="field"><option>High</option><option selected>Medium</option><option>Low</option></select><input id="newTaskDue" class="field" placeholder="Due time/date" value="Today"><button class="btn primary w-full" onclick="saveTask()">Save Task</button></div>','Create a role task for today'); }
+function saveTask(){ const title=$('newTaskTitle').value.trim(); if(!title) return toast('Task title is required','err'); state.tasks.push({id:'t'+Date.now(),title,cat:'Admissions',priority:$('newTaskPriority').value,due:$('newTaskDue').value,status:'Pending',assignee:'TS'}); set('tsTasks',state.tasks); closeModal(); action('task','Task created: '+title); switchTab('work'); }
+function editTask(id){ const t=state.tasks.find(x=>x.id===id); if(!t)return; const n=prompt('Update task title:',t.title); if(!n)return; t.title=n; set('tsTasks',state.tasks); action('task','Task updated: '+n); switchTab('work'); }
+function toggleTask(id){ const t=state.tasks.find(x=>x.id===id); if(!t)return; t.status=t.status==='Completed'?'Pending':'Completed'; set('tsTasks',state.tasks); action('task','Task '+(t.status==='Completed'?'completed':'reopened')+': '+t.title); switchTab('work'); }
+function groupTasks(){ toast('Tasks grouped by priority'); }
+function addTodo(){ const t=prompt('Add private to-do:'); if(!t)return; state.todos.push(t); set('tsTodos',state.todos); action('todo','Personal to-do added: '+t); switchTab('work'); }
+function removeTodo(i){ const t=state.todos.splice(i,1)[0]; set('tsTodos',state.todos); action('todo','Personal to-do completed: '+t); switchTab('work'); }
+async function checkIn(){ const mode=prompt('Work mode: Office, Remote or Field?','Office')||'Office'; const a={checkedIn:true,time:nowTime(),date:TODAY,mode,location:mode==='Office'?'Office - Colombo HQ':mode,ip:'Logged by browser'}; state.attendance=a; set('tsAttendance',a); try{await fetch('/api/v16l/attendance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:'thasbiha.s',employeeId:DISPLAY_EMP_ID,type:'check-in',mode,location:a.location})})}catch(e){} action('attendance','Checked in: '+mode,a); switchTab('morning'); }
+async function checkOut(fromReport=false){ if(!fromReport && !state.eveningReport){ toast('Please submit the daily report before check out','err'); return switchTab('evening'); } const a=state.attendance||{}; a.checkedIn=false; a.checkedOut=nowTime(); a.hours='8h 30m'; state.attendance=a; set('tsAttendance',a); try{await fetch('/api/v16l/attendance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:'thasbiha.s',employeeId:DISPLAY_EMP_ID,type:'check-out'})})}catch(e){} if(!fromReport) action('attendance','Checked out',a); }
+function applyLeave(){ openModal('Apply Leave','<div class="space-y-3"><select id="leaveType" class="field"><option>Annual Leave</option><option>Medical Leave</option><option>Personal Leave</option><option>Emergency Leave</option><option>Remote Work</option></select><input id="leaveDates" class="field" placeholder="Dates e.g. 15 Jul - 17 Jul 2026"><textarea id="leaveReason" class="field" placeholder="Reason"></textarea><button class="btn primary w-full" onclick="saveLeave()">Submit Leave Request</button></div>','Request goes to manager/COO'); }
+function saveLeave(){ action('leave','Leave requested: '+$('leaveType').value,{type:$('leaveType').value,dates:$('leaveDates').value,reason:$('leaveReason').value}); closeModal(); switchTab('leave'); }
+function logCall(){ openModal('Log Call','<div class="space-y-3"><input id="callName" class="field" placeholder="Client / student name"><input id="callPhone" class="field" placeholder="Phone number"><input id="callPurpose" class="field" placeholder="Purpose"><select id="callOutcome" class="field"><option>Follow Up Done</option><option>Information Sent</option><option>Docs Received</option><option>In Progress</option></select><button class="btn primary w-full" onclick="saveCall()">Save Call</button></div>','Calls can launch using tel: links; recording needs a telephony provider integration.'); }
+function saveCall(){ const c={name:$('callName').value,phone:$('callPhone').value,purpose:$('callPurpose').value,outcome:$('callOutcome').value,duration:'Logged',time:nowTime()}; state.calls.push(c); set('tsCalls',state.calls); action('call','Call logged: '+c.name,c); closeModal(); switchTab('followups'); }
+function callNumber(n){ action('call','Call started: '+n,{phone:n}); window.location.href='tel:'+String(n).replace(/[^\d+]/g,''); }
+function sendWhatsApp(){ const n=prompt('WhatsApp number:'); if(!n)return; window.open('https://wa.me/'+String(n).replace(/[^\d]/g,''),'_blank'); action('whatsapp','WhatsApp opened',{phone:n}); }
+function newMessage(){ openModal('New Message','<div class="space-y-3"><input id="newMsgTo" class="field" placeholder="To"><textarea id="newMsgBody" class="field" placeholder="Message"></textarea><button class="btn primary w-full" onclick="saveNewMessage()">Send Message</button></div>'); }
+function saveNewMessage(){ state.messages.push([$('newMsgTo').value,$('newMsgBody').value,nowTime()]); set('tsMessages',state.messages); closeModal(); action('message','Message sent to '+$('newMsgTo').value); switchTab('communication'); }
+function sendMessage(){ const m=$('msgInput').value.trim(); if(!m)return; state.messages.push(['Dilshan Perera',m,nowTime()]); set('tsMessages',state.messages); action('message','Message sent in conversation',{message:m}); switchTab('communication'); }
+function openConversation(name){ toast('Conversation opened: '+name); }
+function uploadDoc(){ const input=document.createElement('input'); input.type='file'; input.onchange=()=>{ const f=input.files[0]; if(f) action('document','Document uploaded: '+f.name,{name:f.name,size:f.size}); }; input.click(); }
+function openDrive(){ window.open('https://drive.google.com/drive/my-drive','_blank'); action('documents','Google Drive opened'); }
+function aiQuick(x){ const h=get('tsAIHistory',[]); h.unshift(x); set('tsAIHistory',h.slice(0,12)); action('ai','AI action: '+x); toast('AI prepared: '+x); }
+function askAI(){ const q=$('aiInput').value.trim(); if(!q)return; aiQuick(q); switchTab('ai'); }
+function clearAI(){ set('tsAIHistory',[]); action('ai','AI chat history cleared'); switchTab('ai'); }
+function markRead(){ set('tsNotificationsRead',true); action('notifications','All notifications marked as read'); switchTab('notifications'); }
+function editProfile(){ action('profile','Edit profile opened'); toast('Profile edit panel ready'); }
+function saveSettings(){ action('settings','Settings saved'); }
+function exportReport(type){ const data={type,user:USER,date:TODAY,tasks:state.tasks,todos:state.todos,attendance:state.attendance,kpi:state.kpi}; const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`thasbiha-${type}-${TODAY}.json`; a.click(); URL.revokeObjectURL(a.href); action('export',`Exported ${type} report`,{type}); }
+
+switchTab('today');
 </script>
-
 <script src="/static/rbac.js"></script>
 <script src="/static/document-upload.js"></script>
 </body>
