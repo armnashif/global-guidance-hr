@@ -10654,8 +10654,65 @@ function roleBanner() {
   </div>`;
 }
 
+function renderHRManagerModernDashboard() {
+  setTimeout(function(){
+    try {
+      document.body.classList.remove('calm-active');
+      var title = document.getElementById('topbarTitle');
+      if (title) title.textContent = 'HR Manager Portal';
+    } catch(e){}
+  }, 0);
+  var u = currentUser || {};
+  var today = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  var time = new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', hour12:false });
+  var staffCount = Math.max(0, Object.keys(USERS || {}).filter(function(k){ return ['superadmin','hr.manager'].indexOf(k) < 0; }).length);
+  var hrTasks = [
+    ['Review attendance exceptions','Attendance','High','Today, 10:00 AM','fa-clock'],
+    ['Check pending leave requests','Leave','High','Today, 11:30 AM','fa-calendar-check'],
+    ['Update employee records','Employees','Medium','Today, 01:00 PM','fa-id-card'],
+    ['Review HR documents and acknowledgements','Documents','Medium','Today, 02:30 PM','fa-folder-open'],
+    ['Follow up daily reports not submitted','Reports','Low','Today, 04:30 PM','fa-file-lines']
+  ];
+  var todoItems = ['Prepare HR handover notes','Check new staff onboarding files','Confirm employee document access','Update August leave tracker'];
+  var kpis = [
+    ['Attendance compliance','0 / '+staffCount,'Updates after staff check-ins','fa-user-check','green'],
+    ['Leave requests','0','No live pending requests yet','fa-calendar-minus','orange'],
+    ['Daily reports','0 / '+staffCount,'Waiting for submissions','fa-file-signature','blue'],
+    ['Employee documents','0','Waiting for uploads/reviews','fa-folder-open','purple']
+  ];
+  var css = '<style id="hrmDashCss">'
+    + '.hrm-page{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;color:var(--text);padding:2px 0 22px}'
+    + '.hrm-top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:18px}.hrm-title h1{font-size:28px;line-height:1.05;margin:0 0 7px;font-weight:900;letter-spacing:-.04em;color:var(--text)}.hrm-title p{margin:0;color:var(--muted);font-size:13px;font-weight:600}.hrm-actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}'
+    + '.hrm-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:12px;padding:10px 13px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(15,31,69,.05)}.hrm-btn:hover{background:var(--surface2)}.hrm-btn.primary{background:#115cff;border-color:#115cff;color:#fff}'
+    + '.hrm-grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:14px}.hrm-grid{display:grid;grid-template-columns:1.3fr .8fr .85fr;gap:14px;margin-bottom:14px}.hrm-grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:14px}'
+    + '.hrm-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:0 16px 42px rgba(15,31,69,.06);padding:17px}.hrm-kicker{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}'
+    + '.hrm-stat{display:flex;gap:13px;align-items:center}.hrm-icon{width:45px;height:45px;border-radius:15px;display:grid;place-items:center;font-size:17px}.hrm-stat b{font-size:24px;line-height:1;font-weight:900;display:block;color:var(--text)}.hrm-stat small{color:var(--muted);font-size:11px;font-weight:700}'
+    + '.hrm-blue{background:#eaf1ff;color:#115cff}.hrm-green{background:#eafbf3;color:#08a66a}.hrm-orange{background:#fff4e5;color:#ff8a00}.hrm-purple{background:#f2edff;color:#7657ff}.hrm-section{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}.hrm-section h2{margin:0;font-size:16px;font-weight:900;letter-spacing:-.02em}.hrm-link{border:0;background:transparent;color:#115cff;font-size:12px;font-weight:850;cursor:pointer}'
+    + '.hrm-row{display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--border);padding:11px 0}.hrm-row:last-child{border-bottom:0}.hrm-check{width:16px;height:16px;border:1.5px solid #a8b6cf;border-radius:5px;flex:0 0 auto}.hrm-row-title{font-weight:850;font-size:13px;color:var(--text)}.hrm-muted{color:var(--muted);font-size:11.5px;font-weight:650}.hrm-pill{border-radius:999px;padding:4px 8px;font-size:10.5px;font-weight:900;white-space:nowrap}.hrm-high{background:#fff0f2;color:#df2245}.hrm-medium{background:#fff4e5;color:#d66a00}.hrm-low{background:#eaf1ff;color:#0757ff}'
+    + '.hrm-empty{border:1px dashed var(--border);border-radius:14px;background:var(--surface2);padding:18px;text-align:center;color:var(--muted);font-weight:750;font-size:12px}.hrm-bar{height:7px;background:var(--surface2);border-radius:999px;overflow:hidden}.hrm-bar span{display:block;height:100%;border-radius:999px;background:#115cff}.hrm-quick{position:sticky;bottom:14px;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:18px;padding:13px 16px;box-shadow:0 20px 50px rgba(15,31,69,.12);display:flex;justify-content:space-between;gap:12px;align-items:center}.hrm-quick-list{display:flex;gap:10px;overflow:auto}.hrm-quick-item{border:0;background:transparent;min-width:84px;text-align:center;font-size:10.5px;font-weight:850;color:var(--text);cursor:pointer}.hrm-quick-item i{width:36px;height:36px;border-radius:13px;display:grid;place-items:center;margin:0 auto 6px;background:#eef4ff;color:#115cff}'
+    + '@media(max-width:1200px){.hrm-grid-4{grid-template-columns:repeat(2,1fr)}.hrm-grid{grid-template-columns:1fr}.hrm-grid-2{grid-template-columns:1fr}}@media(max-width:720px){.hrm-top{display:block}.hrm-actions{justify-content:flex-start;margin-top:14px}.hrm-grid-4{grid-template-columns:1fr}.hrm-quick{position:static;display:block}.hrm-quick-list{margin-top:12px}}'
+    + '</style>';
+  var kpiCards = kpis.map(function(x){ return '<div class="hrm-card"><div class="hrm-stat"><div class="hrm-icon hrm-'+x[4]+'"><i class="fas '+x[3]+'"></i></div><div><div class="hrm-kicker">'+ESC(x[0])+'</div><b>'+ESC(x[1])+'</b><small>'+ESC(x[2])+'</small></div></div></div>'; }).join('');
+  var taskRows = hrTasks.map(function(t){ return '<div class="hrm-row"><span class="hrm-check" role="checkbox" aria-label="'+ESC(t[0])+'"></span><i class="fas '+t[4]+' hrm-muted"></i><div style="flex:1;min-width:0"><div class="hrm-row-title">'+ESC(t[0])+'</div><div class="hrm-muted">'+ESC(t[1])+' · '+ESC(t[3])+'</div></div><span class="hrm-pill hrm-'+t[2].toLowerCase()+'">'+ESC(t[2])+'</span></div>'; }).join('');
+  var todoRows = todoItems.map(function(t){ return '<div class="hrm-row"><span class="hrm-check" role="checkbox" aria-label="'+ESC(t)+'"></span><div class="hrm-row-title">'+ESC(t)+'</div></div>'; }).join('');
+  var greeting = new Date().getHours()<12?'Morning':new Date().getHours()<17?'Afternoon':'Evening';
+  var quick = [
+    ['Check attendance','attendance','fa-clock'],['Process leave','leave','fa-calendar-check'],['Add employee','employees','fa-user-plus'],['Upload document','documents','fa-file-arrow-up'],['Create task','tasks','fa-list-check'],['Generate report','reports','fa-file-lines'],['AI Assistant','workspace','fa-wand-magic-sparkles']
+  ].map(function(q){ return '<button class="hrm-quick-item" onclick="nav(\\''+q[1]+'\\')"><i class="fas '+q[2]+'"></i>'+ESC(q[0])+'</button>'; }).join('');
+  return css + '<div class="hrm-page">'
+    + '<div class="hrm-top"><div class="hrm-title"><h1>Good '+greeting+', HR Manager 👋</h1><p>'+ESC(today)+' · '+ESC(time)+' · '+ESC(u.name || 'HR Manager Portal')+' · '+ESC(u.empId || 'GG005')+'</p></div><div class="hrm-actions"><button class="hrm-btn" onclick="nav(\\'employees\\')"><i class="fas fa-users"></i>Employee records</button><button class="hrm-btn" onclick="nav(\\'leave\\')"><i class="fas fa-calendar-check"></i>Leave</button><button class="hrm-btn primary" onclick="nav(\\'attendance\\')"><i class="fas fa-clock"></i>Attendance</button></div></div>'
+    + '<div class="hrm-grid-4">'+kpiCards+'</div>'
+    + '<div class="hrm-grid"><section class="hrm-card"><div class="hrm-section"><h2>HR tasks for today</h2><button class="hrm-link" onclick="nav(\\'tasks\\')">View all →</button></div>'+taskRows+'</section><section class="hrm-card"><div class="hrm-section"><h2>Personal to-do</h2><button class="hrm-link" onclick="nav(\\'myworkspace\\')">+ Add</button></div>'+todoRows+'</section><section class="hrm-card"><div class="hrm-section"><h2>Today’s HR calendar</h2><button class="hrm-link" onclick="nav(\\'myworkspace\\')">View calendar →</button></div><div class="hrm-empty">No live HR meetings synced yet. Connect Google Calendar from Settings.</div></section></div>'
+    + '<div class="hrm-grid-2"><section class="hrm-card"><div class="hrm-section"><h2>People & HR status</h2><button class="hrm-link" onclick="nav(\\'employees\\')">Open HR →</button></div><div class="hrm-row"><div style="flex:1"><div class="hrm-row-title">Staff records</div><div class="hrm-muted">Employee profiles, reporting manager, department and documents</div></div><span class="hrm-pill hrm-low">'+staffCount+' staff</span></div><div class="hrm-row"><div style="flex:1"><div class="hrm-row-title">Leave visibility</div><div class="hrm-muted">Staff only see own leave; CEO/HR approval views are controlled</div></div><span class="hrm-pill hrm-medium">Private</span></div></section><section class="hrm-card"><div class="hrm-section"><h2>HR KPI progress</h2><button class="hrm-link" onclick="nav(\\'performance\\')">View KPI →</button></div><div class="hrm-row"><div style="flex:1"><div class="hrm-row-title">Daily reports collected</div><div class="hrm-bar" style="margin-top:8px"><span style="width:0%"></span></div><div class="hrm-muted" style="margin-top:8px">0% — updates when staff submit reports</div></div></div><div class="hrm-row"><div style="flex:1"><div class="hrm-row-title">Document acknowledgements</div><div class="hrm-bar" style="margin-top:8px"><span style="width:0%;background:#08a66a"></span></div><div class="hrm-muted" style="margin-top:8px">Waiting for live document activity</div></div></div></section></div>'
+    + '<div class="hrm-quick"><strong>Quick Actions</strong><div class="hrm-quick-list">'+quick+'</div></div>'
+    + '</div>';
+}
+
 // ========== DASHBOARD ==========
 function renderDashboard() {
+  if (currentUser && currentUser.username === 'hr.manager' && typeof renderHRManagerModernDashboard === 'function') {
+    return renderHRManagerModernDashboard();
+  }
   // v16 Wave D — Calm Dashboard wraps the legacy role-specific dashboards.
   // The new top section is consistent for every user; the legacy detailed
   // dashboard is reachable via "Full report ↗" in the hero (preserved, not deleted).
