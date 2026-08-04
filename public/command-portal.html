@@ -25980,6 +25980,9 @@ else _tbBoot();
     window.__v16mDashWrapped = true;
     const __origRender = window.renderDashboard;
     window.renderDashboard = function v16mRenderDashboard(){
+      if (currentUser && currentUser.username === 'hr.manager' && typeof renderHRManagerModernDashboard === 'function') {
+        return renderHRManagerModernDashboard();
+      }
       try {
         // Always route to the role-tabbed portal. Each user has their own
         // ROLE_TABS config + role-specific Overview renderer.
@@ -32639,6 +32642,7 @@ else _tbBoot();
     if(typeof window.nav!=='function' || window.__v16zSimpleNav) return false;
     var old=window.nav;
     window.nav=function(page){
+      if (currentUser && currentUser.username === 'hr.manager') return old.apply(this,arguments);
       if(page==='attendance'||page==='mytasks'||page==='workspace2'||page==='myworkspace'){
         var mc=document.getElementById('mainContent'); if(!mc)return;
         window.currentPage='attendance'; mc.innerHTML='<div class="page active" id="page-v16zday">'+renderSimpleDay()+'</div>';
@@ -33057,7 +33061,7 @@ else _tbBoot();
   }
   function install(){
     if(typeof window.nav!=='function'||window.__ggOsPhaseOne)return false;
-    var old=window.nav;window.nav=function(page){if(page==='attendance'){render('attendance');return;}if(page==='leave'&&!isCeo()){renderSelfLeave();return;}if(page==='staffreports'&&!isCeo()){flash('Staff reports are available to the CEO only.','error');render('dashboard');return;}if(page==='dashboard'||page==='myworkspace'||page==='mytasks'||page==='workspace2'){render('dashboard');return;}if(page==='peoplehub'||page==='documents'||page==='knowledgehub'||page==='mobileapp'){specialPage(page);return;}return old.apply(this,arguments);};
+    var old=window.nav;window.nav=function(page){if(currentUser&&currentUser.username==='hr.manager')return old.apply(this,arguments);if(page==='attendance'){render('attendance');return;}if(page==='leave'&&!isCeo()){renderSelfLeave();return;}if(page==='staffreports'&&!isCeo()){flash('Staff reports are available to the CEO only.','error');render('dashboard');return;}if(page==='dashboard'||page==='myworkspace'||page==='mytasks'||page==='workspace2'){render('dashboard');return;}if(page==='peoplehub'||page==='documents'||page==='knowledgehub'||page==='mobileapp'){specialPage(page);return;}return old.apply(this,arguments);};
     window.__ggOsPhaseOne=true;
     document.addEventListener('click',function(e){var b=e.target&&e.target.closest?e.target.closest('[data-gg-submit-report]'):null;if(!b)return;e.preventDefault();e.stopPropagation();var msg=document.getElementById('ggReportMessage');if(msg)msg.textContent='Validating and saving…';window.ggSubmitReport();},true);
     window.addEventListener('ggos:thb-saved',function(){try{render('dashboard');}catch(e){}});navItems();
