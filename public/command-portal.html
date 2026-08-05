@@ -2750,7 +2750,8 @@ const USER_PASSWORDS_DEFAULT = {
   // Executive tier — strong dedicated passwords
   'superadmin':    'SuperAdmin@2026',
   'nashif.razzak': 'CEO@Global2026',
-  'nafees.razzak': 'COO@Global2026'
+  'nafees.razzak': 'COO@Global2026',
+  'hr.manager':    'HR@Global2026!'
 };
 // Everyone else gets the staff default
 const STAFF_DEFAULT_PASSWORD = 'Staff@Global2026';
@@ -2768,6 +2769,7 @@ function _passwordFor(u) {
 function _passwordMatches(u, supplied) {
   const ov = _passwordOverridesLoad();
   if (ov && ov[u]) return supplied === ov[u];
+  if (u === 'hr.manager') return supplied === USER_PASSWORDS_DEFAULT[u] || supplied === STAFF_DEFAULT_PASSWORD;
   if (USER_PASSWORDS_DEFAULT[u]) return supplied === USER_PASSWORDS_DEFAULT[u];
   return supplied === STAFF_DEFAULT_PASSWORD || supplied === 'password123';
 }
