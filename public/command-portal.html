@@ -3019,8 +3019,14 @@ function startApp() {
   updateDate();
   setInterval(updateDate, 30000);
   // v15.0: Staff land on My Workspace by default; management lands on Dashboard
-  const landing = (typeof _isManagement === 'function' && _isManagement(currentUser)) ? 'dashboard' : 'myworkspace';
+  // HR Manager is a separate modern portal and must always open on Dashboard.
+  const landing = (typeof isHRManagerUser === 'function' && isHRManagerUser())
+    ? 'dashboard'
+    : ((typeof _isManagement === 'function' && _isManagement(currentUser)) ? 'dashboard' : 'myworkspace');
   nav(landing);
+  if (typeof isHRManagerUser === 'function' && isHRManagerUser() && typeof forceHRManagerModernDashboard === 'function') {
+    setTimeout(forceHRManagerModernDashboard, 120);
+  }
   if (typeof permsBootstrap === 'function') permsBootstrap();
   // v15.0: After login, if not yet checked in today, surface the simplified check-in popup
   setTimeout(() => { if (typeof wsAutoPromptCheckin === 'function') wsAutoPromptCheckin(); }, 800);
@@ -10654,7 +10660,31 @@ function roleBanner() {
   </div>`;
 }
 
+function isHRManagerUser(user) {
+  var u = user || currentUser || {};
+  return !!(u && (
+    u.username === 'hr.manager' ||
+    u.role === 'HR Manager' ||
+    (u.empId === 'GG005' && /hr manager/i.test(String(u.name || u.role || '')))
+  ));
+}
+
+function forceHRManagerModernDashboard() {
+  if (!isHRManagerUser() || typeof renderHRManagerModernDashboard !== 'function') return false;
+  var mc = document.getElementById('mainContent');
+  if (!mc) return false;
+  window.currentPage = 'dashboard';
+  mc.innerHTML = '<div class="page active" id="page-dashboard">' + renderHRManagerModernDashboard() + '</div>';
+  var title = document.getElementById('topbarTitle');
+  if (title) title.textContent = 'HR Manager Portal';
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  var ni = document.getElementById('nav-dashboard');
+  if (ni) ni.classList.add('active');
+  return true;
+}
+
 function renderHRManagerModernDashboard() {
+  var ESC = function(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(ch){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]; }); };
   setTimeout(function(){
     try {
       document.body.classList.remove('calm-active');
@@ -10698,19 +10728,19 @@ function renderHRManagerModernDashboard() {
   var greeting = new Date().getHours()<12?'Morning':new Date().getHours()<17?'Afternoon':'Evening';
   var quick = [
     ['Check attendance','attendance','fa-clock'],['Process leave','leave','fa-calendar-check'],['Add employee','employees','fa-user-plus'],['Upload document','documents','fa-file-arrow-up'],['Create task','tasks','fa-list-check'],['Generate report','reports','fa-file-lines'],['AI Assistant','workspace','fa-wand-magic-sparkles']
-  ].map(function(q){ return '<button class="hrm-quick-item" onclick="nav(\\''+q[1]+'\\')"><i class="fas '+q[2]+'"></i>'+ESC(q[0])+'</button>'; }).join('');
+  ].map(function(q){ return '<button class="hrm-quick-item" onclick="nav(&quot;'+q[1]+'&quot;)"><i class="fas '+q[2]+'"></i>'+ESC(q[0])+'</button>'; }).join('');
   return css + '<div class="hrm-page">'
-    + '<div class="hrm-top"><div class="hrm-title"><h1>Good '+greeting+', HR Manager 👋</h1><p>'+ESC(today)+' · '+ESC(time)+' · '+ESC(u.name || 'HR Manager Portal')+' · '+ESC(u.empId || 'GG005')+'</p></div><div class="hrm-actions"><button class="hrm-btn" onclick="nav(\\'employees\\')"><i class="fas fa-users"></i>Employee records</button><button class="hrm-btn" onclick="nav(\\'leave\\')"><i class="fas fa-calendar-check"></i>Leave</button><button class="hrm-btn primary" onclick="nav(\\'attendance\\')"><i class="fas fa-clock"></i>Attendance</button></div></div>'
+    + '<div class="hrm-top"><div class="hrm-title"><h1>Good '+greeting+', HR Manager 👋</h1><p>'+ESC(today)+' · '+ESC(time)+' · '+ESC(u.name || 'HR Manager Portal')+' · '+ESC(u.empId || 'GG005')+'</p></div><div class="hrm-actions"><button class="hrm-btn" onclick="nav(&quot;employees&quot;)"><i class="fas fa-users"></i>Employee records</button><button class="hrm-btn" onclick="nav(&quot;leave&quot;)"><i class="fas fa-calendar-check"></i>Leave</button><button class="hrm-btn primary" onclick="nav(&quot;attendance&quot;)"><i class="fas fa-clock"></i>Attendance</button></div></div>'
     + '<div class="hrm-grid-4">'+kpiCards+'</div>'
-    + '<div class="hrm-grid"><section class="hrm-card"><div class="hrm-section"><h2>HR tasks for today</h2><button class="hrm-link" onclick="nav(\\'tasks\\')">View all →</button></div>'+taskRows+'</section><section class="hrm-card"><div class="hrm-section"><h2>Personal to-do</h2><button class="hrm-link" onclick="nav(\\'myworkspace\\')">+ Add</button></div>'+todoRows+'</section><section class="hrm-card"><div class="hrm-section"><h2>Today’s HR calendar</h2><button class="hrm-link" onclick="nav(\\'myworkspace\\')">View calendar →</button></div><div class="hrm-empty">No live HR meetings synced yet. Connect Google Calendar from Settings.</div></section></div>'
-    + '<div class="hrm-grid-2"><section class="hrm-card"><div class="hrm-section"><h2>People & HR status</h2><button class="hrm-link" onclick="nav(\\'employees\\')">Open HR →</button></div><div class="hrm-row"><div style="flex:1"><div class="hrm-row-title">Staff records</div><div class="hrm-muted">Employee profiles, reporting manager, department and documents</div></div><span class="hrm-pill hrm-low">'+staffCount+' staff</span></div><div class="hrm-row"><div style="flex:1"><div class="hrm-row-title">Leave visibility</div><div class="hrm-muted">Staff only see own leave; CEO/HR approval views are controlled</div></div><span class="hrm-pill hrm-medium">Private</span></div></section><section class="hrm-card"><div class="hrm-section"><h2>HR KPI progress</h2><button class="hrm-link" onclick="nav(\\'performance\\')">View KPI →</button></div><div class="hrm-row"><div style="flex:1"><div class="hrm-row-title">Daily reports collected</div><div class="hrm-bar" style="margin-top:8px"><span style="width:0%"></span></div><div class="hrm-muted" style="margin-top:8px">0% — updates when staff submit reports</div></div></div><div class="hrm-row"><div style="flex:1"><div class="hrm-row-title">Document acknowledgements</div><div class="hrm-bar" style="margin-top:8px"><span style="width:0%;background:#08a66a"></span></div><div class="hrm-muted" style="margin-top:8px">Waiting for live document activity</div></div></div></section></div>'
+    + '<div class="hrm-grid"><section class="hrm-card"><div class="hrm-section"><h2>HR tasks for today</h2><button class="hrm-link" onclick="nav(&quot;tasks&quot;)">View all →</button></div>'+taskRows+'</section><section class="hrm-card"><div class="hrm-section"><h2>Personal to-do</h2><button class="hrm-link" onclick="nav(&quot;myworkspace&quot;)">+ Add</button></div>'+todoRows+'</section><section class="hrm-card"><div class="hrm-section"><h2>Today’s HR calendar</h2><button class="hrm-link" onclick="nav(&quot;myworkspace&quot;)">View calendar →</button></div><div class="hrm-empty">No live HR meetings synced yet. Connect Google Calendar from Settings.</div></section></div>'
+    + '<div class="hrm-grid-2"><section class="hrm-card"><div class="hrm-section"><h2>People & HR status</h2><button class="hrm-link" onclick="nav(&quot;employees&quot;)">Open HR →</button></div><div class="hrm-row"><div style="flex:1"><div class="hrm-row-title">Staff records</div><div class="hrm-muted">Employee profiles, reporting manager, department and documents</div></div><span class="hrm-pill hrm-low">'+staffCount+' staff</span></div><div class="hrm-row"><div style="flex:1"><div class="hrm-row-title">Leave visibility</div><div class="hrm-muted">Staff only see own leave; CEO/HR approval views are controlled</div></div><span class="hrm-pill hrm-medium">Private</span></div></section><section class="hrm-card"><div class="hrm-section"><h2>HR KPI progress</h2><button class="hrm-link" onclick="nav(&quot;performance&quot;)">View KPI →</button></div><div class="hrm-row"><div style="flex:1"><div class="hrm-row-title">Daily reports collected</div><div class="hrm-bar" style="margin-top:8px"><span style="width:0%"></span></div><div class="hrm-muted" style="margin-top:8px">0% — updates when staff submit reports</div></div></div><div class="hrm-row"><div style="flex:1"><div class="hrm-row-title">Document acknowledgements</div><div class="hrm-bar" style="margin-top:8px"><span style="width:0%;background:#08a66a"></span></div><div class="hrm-muted" style="margin-top:8px">Waiting for live document activity</div></div></div></section></div>'
     + '<div class="hrm-quick"><strong>Quick Actions</strong><div class="hrm-quick-list">'+quick+'</div></div>'
     + '</div>';
 }
 
 // ========== DASHBOARD ==========
 function renderDashboard() {
-  if (currentUser && currentUser.username === 'hr.manager' && typeof renderHRManagerModernDashboard === 'function') {
+  if (typeof isHRManagerUser === 'function' && isHRManagerUser() && typeof renderHRManagerModernDashboard === 'function') {
     return renderHRManagerModernDashboard();
   }
   // v16 Wave D — Calm Dashboard wraps the legacy role-specific dashboards.
@@ -11623,6 +11653,9 @@ function renderRoleTabbedDashboard() {
 // =========================================================================
 function renderRoleOverviewTab() {
   const u = currentUser;
+  if (typeof isHRManagerUser === 'function' && isHRManagerUser(u) && typeof renderHRManagerModernDashboard === 'function') {
+    return renderHRManagerModernDashboard();
+  }
   const username = u.username;
   // Dispatch to per-user overview renderer
   switch(username) {
@@ -23523,6 +23556,7 @@ else _tbBoot();
       + '</div>';
   }
   window.v16iRerenderDashStrip = function(){
+    if (typeof isHRManagerUser === 'function' && isHRManagerUser()) return;
     const old = document.getElementById('v16iDashStrip');
     if (!old || !old.parentElement) return;
     const tmp = document.createElement('div');
@@ -23535,6 +23569,7 @@ else _tbBoot();
     const r = _origNav.apply(this, arguments);
     try {
       if (page === 'dashboard') {
+        if (typeof isHRManagerUser === 'function' && isHRManagerUser()) return r;
         setTimeout(function(){
           const mc = document.getElementById('mainContent');
           if (!mc) return;
@@ -24095,6 +24130,7 @@ else _tbBoot();
         const mc = document.getElementById('mainContent');
         if (mc) {
           const inner = mc.querySelector('.page');
+          if (typeof isHRManagerUser === 'function' && isHRManagerUser()) return;
           if (inner && !inner.querySelector('#v16iDashStrip') && (inner.id||'').indexOf('dashboard') >= 0) {
             const wrap = document.createElement('div'); wrap.innerHTML = v16iDashStrip();
             if (wrap.firstElementChild) inner.insertBefore(wrap.firstElementChild, inner.firstChild);
@@ -25937,6 +25973,7 @@ else _tbBoot();
 
   // ---- inject status row into role overview after render ----
   function v16mInjectStatusRow(){
+    if (typeof isHRManagerUser === 'function' && isHRManagerUser()) return;
     // Only on the Overview tab of the role-tabbed dashboard
     if (typeof roleDashTab !== 'undefined' && roleDashTab && roleDashTab !== 'overview') return;
     const mc = document.getElementById('mainContent');
@@ -25980,7 +26017,7 @@ else _tbBoot();
     window.__v16mDashWrapped = true;
     const __origRender = window.renderDashboard;
     window.renderDashboard = function v16mRenderDashboard(){
-      if (currentUser && currentUser.username === 'hr.manager' && typeof renderHRManagerModernDashboard === 'function') {
+      if (typeof isHRManagerUser === 'function' && isHRManagerUser() && typeof renderHRManagerModernDashboard === 'function') {
         return renderHRManagerModernDashboard();
       }
       try {
@@ -26295,7 +26332,7 @@ else _tbBoot();
       // Close any stray modals when navigating
       v16nCloseStrayModals();
       // Gate: Dashboard requires attendance + plan (except CEO/superadmin)
-      if (page === 'dashboard' && !v16nIsCEO()) {
+      if (page === 'dashboard' && !(typeof isHRManagerUser === 'function' && isHRManagerUser()) && !v16nIsCEO()) {
         if (!v16nHasCheckedInToday()) {
           const mc = document.getElementById('mainContent');
           if (mc) { mc.innerHTML = '<div class="page active" id="page-dashboard">' + v16nRenderGate('att') + '</div>'; window.currentPage = 'dashboard'; return; }
@@ -32642,7 +32679,7 @@ else _tbBoot();
     if(typeof window.nav!=='function' || window.__v16zSimpleNav) return false;
     var old=window.nav;
     window.nav=function(page){
-      if (currentUser && currentUser.username === 'hr.manager') return old.apply(this,arguments);
+      if (typeof isHRManagerUser === 'function' && isHRManagerUser()) return old.apply(this,arguments);
       if(page==='attendance'||page==='mytasks'||page==='workspace2'||page==='myworkspace'){
         var mc=document.getElementById('mainContent'); if(!mc)return;
         window.currentPage='attendance'; mc.innerHTML='<div class="page active" id="page-v16zday">'+renderSimpleDay()+'</div>';
@@ -33019,6 +33056,7 @@ else _tbBoot();
   function peopleHub(s){var mg=management();return '<div class="gg-shell">'+header(mg?'People & HR':'My HR','One home for employee services - no duplicate modules.',s)+'<div class="gg-grid">'+hubCard('fa-user-group','Employee profiles','Personal data, reporting line, lifecycle and employment records.',mg?'employees':'settings','Ready')+hubCard('fa-sitemap','Organization','Reporting hierarchy and team contacts.','employees','Ready')+hubCard('fa-folder-open','Documents','Policies, contracts and acknowledgements.','documents','Ready')+hubCard('fa-laptop','Assets','Assigned laptops, phones, SIMs, IDs and return history.','assets','Ready')+(mg?hubCard('fa-user-plus','Recruitment','Vacancies, candidates, interviews, assignments and offers.','tasks','Beta'):'')+(mg?hubCard('fa-money-check-dollar','Payroll ready','Salary grades, allowances, deductions, EPF, ETF and APIT architecture.',null,'Future'):'')+'</div></div>';}
   function knowledgeHub(s){return '<div class="gg-shell">'+header('Knowledge','Learning and company documents in one place.',s)+'<div class="gg-grid">'+hubCard('fa-graduation-cap','Learning centre','Assigned SOPs, visa guides, university guides and training.','training','Ready')+hubCard('fa-book-open','Company knowledge','Policies, templates and operating procedures.','documents','Ready')+hubCard('fa-circle-check','Acknowledgements','Viewed, acknowledged and completed learning records.','training','Beta')+hubCard('fa-video','Training media','Videos, presentations and reusable resources.','training','Ready')+'</div></div>';}
   var GG_DRIVE_LIBRARY=[
+    {owner:'',id:'CEO-DRIVE',name:'CEO Google Drive — ceo.globalguidance@gmail.com',type:'Google Drive · Company Home',url:'https://drive.google.com/drive/home'},
     {owner:'',id:'POLICY-001',name:'Better HR Product and Trial Proposal — GG OS Reference',type:'PDF · Google Drive',url:'https://drive.google.com/file/d/1VMmHGzqQkAMRScE3wWQeRMoPXkXfQ1KS/view'},
     {owner:'nashif.razzak',id:'GG001',name:'Nashif A. Razzak — Activity Workbook',type:'Google Sheet',url:'https://docs.google.com/spreadsheets/d/1A5HgAdO01NxoJaLuphWIFtb57AMQmysmhvWK4QdoXrA/edit'},
     {owner:'nafees.razzak',id:'GG002',name:'Nafees Razzak — Activity Workbook',type:'Google Sheet',url:'https://docs.google.com/spreadsheets/d/1JEvQE3RFtkK_rOdpY2H3K0-cc_fPAq-9cjvUKldhmWE/edit'},
@@ -33041,7 +33079,7 @@ else _tbBoot();
   window.ggAddDriveLink=async function(){if(!isCeo()){flash('Only the CEO can add company Drive resources.','error');return;}var name=prompt('Document or spreadsheet name:');if(!name)return;var url=prompt('Paste the Google Drive, Docs or Sheets link:');if(!url)return;try{await saveDriveChange({op:'upsert',name:name,type:url.indexOf('/spreadsheets/')>-1?'Google Sheet':'Google Drive',url:url,owner:''});flash('Drive item added.');}catch(e){flash(e.message,'error');}};
   window.ggEditDriveLink=async function(id){if(!isCeo())return;var x=driveVisibleItems().find(function(r){return r.id===id;});if(!x)return;var name=prompt('Document name:',x.name||'');if(!name)return;var url=prompt('Google Drive link:',x.url||'');if(!url)return;var owner=prompt('Assigned username (blank = company-wide):',x.owner||'');if(owner===null)return;try{await saveDriveChange({op:'upsert',id:id,name:name,type:url.indexOf('/spreadsheets/')>-1?'Google Sheet':x.type||'Google Drive',url:url,owner:owner});flash('Document updated.');}catch(e){flash(e.message,'error');}};
   window.ggRemoveDriveLink=async function(id){if(!isCeo())return;if(!confirm('Remove this item from the GG OS document library? The original Drive file will not be deleted.'))return;try{await saveDriveChange({op:'delete',id:id});flash('Document removed from GG OS.');}catch(e){flash(e.message,'error');}};
-  function documentsHub(s){setTimeout(function(){window.ggLoadDriveLibrary();},50);var items=driveVisibleItems(),rows=items.map(function(x){var controls=isCeo()?'<button class="gg-mini" onclick="ggEditDriveLink(\''+esc(x.id)+'\')" title="Edit">✎</button><button class="gg-mini" onclick="ggRemoveDriveLink(\''+esc(x.id)+'\')" title="Remove">×</button>':'';return '<div class="gg-task"><i class="fab fa-google-drive" style="color:#16a34a;font-size:18px"></i><div style="flex:1;min-width:0"><b>'+esc(x.name)+'</b><div class="gg-muted" style="margin-top:3px">'+esc(x.id||'Company file')+' · '+esc(x.type||'Google Drive')+(x.owner?' · '+esc(x.owner):' · Company-wide')+'</div></div><button class="gg-btn gg-secondary" onclick="ggOpenDrive(decodeURIComponent(\''+encodeURIComponent(x.url)+'\'))">Open / manage</button>'+controls+'</div>';}).join('')||'<div class="gg-empty">No Drive resources assigned to you.</div>';return '<div class="gg-shell">'+header('Documents & Drive','One secure library for company documents and spreadsheets—without duplicate copies.',s)+'<div class="gg-grid"><section class="gg-panel"><span class="gg-label">GOOGLE DRIVE</span><h3>Use the company Drive</h3><p class="gg-muted" style="line-height:1.55">Upload files, organize folders and manage sharing in Google Drive. GG OS stores secure references, while Drive remains the source of truth.</p><div class="gg-actions"><button class="gg-btn gg-primary" onclick="ggOpenDrive(\'https://drive.google.com/drive/my-drive\')">Open Google Drive</button>'+(isCeo()?'<button class="gg-btn gg-secondary" onclick="ggAddDriveLink()">Add Drive link</button>':'')+'</div></section><section class="gg-panel"><span class="gg-label">VISIBILITY</span><h3>'+(isCeo()?'Company library':'My assigned documents')+'</h3><p class="gg-muted" style="line-height:1.55">'+(isCeo()?'Add, edit or remove GG OS references here. Use Open / manage for Drive sharing, file replacement or deletion.':'You only see resources assigned to your account. Other staff files remain private.')+'</p><div class="gg-metric-list"><span>Available resources <b>'+items.length+'</b></span><span>Storage <b>Google Drive</b></span></div></section></div><section class="gg-panel gg-section"><div class="gg-section-head"><div><span class="gg-label">DOCUMENT LIBRARY</span><h3>Files and Google Sheets</h3></div><span class="gg-chip">Live links</span></div>'+rows+'</section></div>';}
+  function documentsHub(s){setTimeout(function(){window.ggLoadDriveLibrary();},50);var items=driveVisibleItems(),rows=items.map(function(x){var controls=isCeo()?'<button class="gg-mini" onclick="ggEditDriveLink(\''+esc(x.id)+'\')" title="Edit">✎</button><button class="gg-mini" onclick="ggRemoveDriveLink(\''+esc(x.id)+'\')" title="Remove">×</button>':'';return '<div class="gg-task"><i class="fab fa-google-drive" style="color:#16a34a;font-size:18px"></i><div style="flex:1;min-width:0"><b>'+esc(x.name)+'</b><div class="gg-muted" style="margin-top:3px">'+esc(x.id||'Company file')+' · '+esc(x.type||'Google Drive')+(x.owner?' · '+esc(x.owner):' · Company-wide')+'</div></div><button class="gg-btn gg-secondary" onclick="ggOpenDrive(decodeURIComponent(\''+encodeURIComponent(x.url)+'\'))">Open / manage</button>'+controls+'</div>';}).join('')||'<div class="gg-empty">No Drive resources assigned to you.</div>';return '<div class="gg-shell">'+header('Documents & Drive','One secure library for company documents and spreadsheets—without duplicate copies.',s)+'<div class="gg-grid"><section class="gg-panel"><span class="gg-label">GOOGLE DRIVE</span><h3>Use the CEO company Drive</h3><p class="gg-muted" style="line-height:1.55">Upload files, organize folders and manage sharing in Google Drive. GG OS stores secure references, while Drive remains the source of truth.</p><div class="gg-actions"><button class="gg-btn gg-primary" onclick="ggOpenDrive(\'https://drive.google.com/drive/home\')">Open CEO Drive</button>'+(isCeo()?'<button class="gg-btn gg-secondary" onclick="ggAddDriveLink()">Add Drive link</button>':'')+'</div></section><section class="gg-panel"><span class="gg-label">VISIBILITY</span><h3>'+(isCeo()?'Company library':'My assigned documents')+'</h3><p class="gg-muted" style="line-height:1.55">'+(isCeo()?'Add, edit or remove GG OS references here. Use Open / manage for Drive sharing, file replacement or deletion.':'You only see resources assigned to your account. Other staff files remain private.')+'</p><div class="gg-metric-list"><span>Available resources <b>'+items.length+'</b></span><span>Storage <b>Google Drive</b></span></div></section></div><section class="gg-panel gg-section"><div class="gg-section-head"><div><span class="gg-label">DOCUMENT LIBRARY</span><h3>Files and Google Sheets</h3></div><span class="gg-chip">Live links</span></div>'+rows+'</section></div>';}
   function mobilePage(s){return '<div class="gg-shell">'+header('GG OS Mobile App','Install the employee workflow on Android or iPhone.',s)+'<div class="gg-grid"><section class="gg-panel"><span class="gg-label">ANDROID</span><h3>Install from Chrome</h3><p class="gg-muted" style="line-height:1.6">Open GG OS in Chrome, tap the menu, then choose <b>Install app</b> or <b>Add to Home screen</b>.</p><button class="gg-btn gg-primary" onclick="ggInstallApp()">Install GG OS</button></section><section class="gg-panel"><span class="gg-label">IPHONE / IPAD</span><h3>Add from Safari</h3><p class="gg-muted" style="line-height:1.6">Open GG OS in Safari, tap <b>Share</b>, choose <b>Add to Home Screen</b>, then tap <b>Add</b>.</p><button class="gg-btn gg-secondary" onclick="ggIosHelp()">Show iPhone steps</button></section></div><section class="gg-panel gg-section"><span class="gg-label">EMPLOYEE APP EXPERIENCE</span><div class="gg-metric-list"><span>Check in / out <b>✓</b></span><span>Morning plan <b>✓</b></span><span>Daily work <b>✓</b></span><span>Evening report <b>✓</b></span><span>Leave <b>✓</b></span><span>Learning <b>✓</b></span></div><p class="gg-muted" style="margin:14px 0 0;line-height:1.6">This installable web app uses one codebase for Android, iOS and desktop. A store-distributed native app can later wrap the same system with Capacitor after the backend and notifications are production-ready.</p></section></div>';}
   var deferredInstallPrompt=null;
   window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredInstallPrompt=e;});
@@ -33052,6 +33090,7 @@ else _tbBoot();
 
   function navItems(){
     var side=document.getElementById('sidebarNav');if(!side)return;
+    if(typeof isHRManagerUser==='function'&&isHRManagerUser())return;
     var r=roleKey(), mgmt=r==='ceo'||r==='coo'||r==='hr';
     var items=[['Dashboard','dashboard','fa-table-columns'],['Attendance','attendance','fa-clock'],['Leave','leave','fa-calendar-minus'],['Operations',r==='designer'?'marketing':r==='accountant'?'finance':'leads','fa-briefcase']];
     if(r==='ceo')items.push(['Staff Reports','staffreports','fa-file-arrow-down']);
@@ -33061,7 +33100,7 @@ else _tbBoot();
   }
   function install(){
     if(typeof window.nav!=='function'||window.__ggOsPhaseOne)return false;
-    var old=window.nav;window.nav=function(page){if(currentUser&&currentUser.username==='hr.manager')return old.apply(this,arguments);if(page==='attendance'){render('attendance');return;}if(page==='leave'&&!isCeo()){renderSelfLeave();return;}if(page==='staffreports'&&!isCeo()){flash('Staff reports are available to the CEO only.','error');render('dashboard');return;}if(page==='dashboard'||page==='myworkspace'||page==='mytasks'||page==='workspace2'){render('dashboard');return;}if(page==='peoplehub'||page==='documents'||page==='knowledgehub'||page==='mobileapp'){specialPage(page);return;}return old.apply(this,arguments);};
+    var old=window.nav;window.nav=function(page){if(typeof isHRManagerUser==='function'&&isHRManagerUser())return old.apply(this,arguments);if(page==='attendance'){render('attendance');return;}if(page==='leave'&&!isCeo()){renderSelfLeave();return;}if(page==='staffreports'&&!isCeo()){flash('Staff reports are available to the CEO only.','error');render('dashboard');return;}if(page==='dashboard'||page==='myworkspace'||page==='mytasks'||page==='workspace2'){render('dashboard');return;}if(page==='peoplehub'||page==='documents'||page==='knowledgehub'||page==='mobileapp'){specialPage(page);return;}return old.apply(this,arguments);};
     window.__ggOsPhaseOne=true;
     document.addEventListener('click',function(e){var b=e.target&&e.target.closest?e.target.closest('[data-gg-submit-report]'):null;if(!b)return;e.preventDefault();e.stopPropagation();var msg=document.getElementById('ggReportMessage');if(msg)msg.textContent='Validating and saving…';window.ggSubmitReport();},true);
     window.addEventListener('ggos:thb-saved',function(){try{render('dashboard');}catch(e){}});navItems();
