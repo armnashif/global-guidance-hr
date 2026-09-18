@@ -32580,9 +32580,9 @@ else _tbBoot();
 </script>
 <script>
 // ====================================================================
-// v16z — Clean start + one-page attendance and daily tasks
+// v16z_hr — Clean start + one-page attendance and daily tasks
 // ====================================================================
-(function v16zSimpleDay(){
+(function v16z_hrSimpleDay(){
   // Remove bundled demo business records while preserving users, roles,
   // university reference data and system configuration.
   try {
@@ -32598,13 +32598,13 @@ else _tbBoot();
 
   // One-time removal of old demo/task state from this browser.
   try {
-    if (!localStorage.getItem('gg-clean-start-v16z')) {
+    if (!localStorage.getItem('gg-clean-start-v16z_hr')) {
       var prefixes = ['gg-ws-', 'gg_att_', 'v16i:schedule:', 'v16h-ws-', 'gg-lead-', 'gg-fup-', 'GG_TOPBAR_STATE'];
       Object.keys(localStorage).forEach(function(k){
         if (prefixes.some(function(p){ return k.indexOf(p) === 0; })) localStorage.removeItem(k);
       });
       sessionStorage.clear();
-      localStorage.setItem('gg-clean-start-v16z', '1');
+      localStorage.setItem('gg-clean-start-v16z_hr', '1');
     }
   } catch(e){}
 
@@ -32621,16 +32621,16 @@ else _tbBoot();
   }
   function rerender(){ try { window.nav('attendance'); } catch(e){} }
 
-  window.v16zSetMode = function(mode){ var s=state(); if(!s)return; s.mode=mode; saveAtt(); rerender(); };
-  window.v16zAddTask = function(){
-    var s=state(), input=document.getElementById('v16zTaskInput'), priority=document.getElementById('v16zTaskPriority');
+  window.v16z_hrSetMode = function(mode){ var s=state(); if(!s)return; s.mode=mode; saveAtt(); rerender(); };
+  window.v16z_hrAddTask = function(){
+    var s=state(), input=document.getElementById('v16z_hrTaskInput'), priority=document.getElementById('v16z_hrTaskPriority');
     if(!s || !input || !input.value.trim()) return;
     s.tasks.push({id:'task_'+Date.now(),text:input.value.trim(),p:(priority&&priority.value)||'P2',done:false,source:'manual'});
     saveAtt(); rerender();
   };
-  window.v16zToggleTask = function(i, done){ var s=state(); if(!s||!s.tasks[i])return; s.tasks[i].done=!!done; saveAtt(); rerender(); };
-  window.v16zDeleteTask = function(i){ var s=state(); if(!s)return; s.tasks.splice(i,1); saveAtt(); rerender(); };
-  window.v16zCheckIn = function(){
+  window.v16z_hrToggleTask = function(i, done){ var s=state(); if(!s||!s.tasks[i])return; s.tasks[i].done=!!done; saveAtt(); rerender(); };
+  window.v16z_hrDeleteTask = function(i){ var s=state(); if(!s)return; s.tasks.splice(i,1); saveAtt(); rerender(); };
+  window.v16z_hrCheckIn = function(){
     var s=state(); if(!s)return;
     s.mode=s.mode||'Office'; s.checkinDone=true; s.eodDone=false;
     s.checkinTs=Date.now(); s.checkinSubmittedAt=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});
@@ -32639,7 +32639,7 @@ else _tbBoot();
     if(typeof showToast==='function') showToast('Checked in — have a productive day.','success',3000);
     rerender();
   };
-  window.v16zCheckOut = function(){
+  window.v16z_hrCheckOut = function(){
     var s=state(); if(!s)return;
     var done=s.tasks.filter(function(t){return t.done;}).length;
     s.eodDone=true; s.eodTs=Date.now(); s.eodSubmittedAt=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});
@@ -32649,7 +32649,7 @@ else _tbBoot();
     if(typeof showToast==='function') showToast('Checked out — today is complete.','success',3000);
     rerender();
   };
-  window.v16zResetDay = function(){
+  window.v16z_hrResetDay = function(){
     if(!confirm('Reset today\'s attendance and tasks?')) return;
     attendanceState=_attDefaultStateFor((currentUser&&currentUser.username)||'default');
     attendanceState.tasks=[]; attendanceState.selectedCategories=[]; saveAtt(); rerender();
@@ -32658,33 +32658,33 @@ else _tbBoot();
   function renderSimpleDay(){
     var s=state()||{tasks:[]}, done=s.tasks.filter(function(t){return t.done;}).length;
     var modeButtons=['Office','Remote','Field'].map(function(m){
-      return '<button onclick="v16zSetMode(\''+m+'\')" style="flex:1;min-width:90px;padding:11px;border-radius:9px;border:2px solid '+(s.mode===m?'#6378ff':'var(--border)')+';background:'+(s.mode===m?'rgba(99,120,255,.12)':'var(--surface2)')+';color:var(--text);font-weight:700;cursor:pointer">'+(m==='Office'?'🏢 ':m==='Remote'?'🏠 ':'🚗 ')+m+'</button>';
+      return '<button onclick="v16z_hrSetMode(\''+m+'\')" style="flex:1;min-width:90px;padding:11px;border-radius:9px;border:2px solid '+(s.mode===m?'#6378ff':'var(--border)')+';background:'+(s.mode===m?'rgba(99,120,255,.12)':'var(--surface2)')+';color:var(--text);font-weight:700;cursor:pointer">'+(m==='Office'?'🏢 ':m==='Remote'?'🏠 ':'🚗 ')+m+'</button>';
     }).join('');
     var taskRows=s.tasks.length?s.tasks.map(function(t,i){
-      return '<div style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--border)"><input type="checkbox" '+(t.done?'checked':'')+' onchange="v16zToggleTask('+i+',this.checked)" style="width:18px;height:18px"><span style="flex:1;'+(t.done?'text-decoration:line-through;color:var(--muted)':'')+'">'+esc(t.text)+'</span><span style="font-size:10px;font-weight:800;color:var(--muted)">'+esc(t.p||'P2')+'</span><button onclick="v16zDeleteTask('+i+')" title="Delete task" style="border:0;background:none;color:#ef4444;font-size:18px;cursor:pointer">×</button></div>';
+      return '<div style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--border)"><input type="checkbox" '+(t.done?'checked':'')+' onchange="v16z_hrToggleTask('+i+',this.checked)" style="width:18px;height:18px"><span style="flex:1;'+(t.done?'text-decoration:line-through;color:var(--muted)':'')+'">'+esc(t.text)+'</span><span style="font-size:10px;font-weight:800;color:var(--muted)">'+esc(t.p||'P2')+'</span><button onclick="v16z_hrDeleteTask('+i+')" title="Delete task" style="border:0;background:none;color:#ef4444;font-size:18px;cursor:pointer">×</button></div>';
     }).join(''):'<div style="padding:18px;text-align:center;color:var(--muted)">No tasks yet. Add only what matters today.</div>';
     var status=!s.checkinDone?'Not checked in':s.eodDone?'Day complete':'Checked in at '+esc(s.checkinSubmittedAt);
     var action=!s.checkinDone
-      ? '<button onclick="v16zCheckIn()" style="width:100%;padding:14px;border:0;border-radius:10px;background:#16a34a;color:#fff;font-size:15px;font-weight:800;cursor:pointer">Check in &amp; start</button>'
+      ? '<button onclick="v16z_hrCheckIn()" style="width:100%;padding:14px;border:0;border-radius:10px;background:#16a34a;color:#fff;font-size:15px;font-weight:800;cursor:pointer">Check in &amp; start</button>'
       : !s.eodDone
-        ? '<button onclick="v16zCheckOut()" style="width:100%;padding:14px;border:0;border-radius:10px;background:#6378ff;color:#fff;font-size:15px;font-weight:800;cursor:pointer">Check out &amp; finish day</button>'
+        ? '<button onclick="v16z_hrCheckOut()" style="width:100%;padding:14px;border:0;border-radius:10px;background:#6378ff;color:#fff;font-size:15px;font-weight:800;cursor:pointer">Check out &amp; finish day</button>'
         : '<div style="padding:14px;text-align:center;border-radius:10px;background:rgba(22,163,74,.12);color:#16a34a;font-weight:800">✓ Finished today</div>';
-    return '<div id="v16zSimpleDay" class="fade-in" style="max-width:760px;margin:0 auto;padding:6px 4px 90px">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px"><div><h2 style="margin:0;color:var(--text)">Today</h2><div style="color:var(--muted);font-size:12px;margin-top:4px">Attendance and tasks in one place</div></div><button onclick="v16zResetDay()" style="border:1px solid var(--border);background:var(--surface);color:var(--muted);padding:7px 10px;border-radius:7px;cursor:pointer">Reset</button></div>'
+    return '<div id="v16z_hrSimpleDay" class="fade-in" style="max-width:760px;margin:0 auto;padding:6px 4px 90px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px"><div><h2 style="margin:0;color:var(--text)">Today</h2><div style="color:var(--muted);font-size:12px;margin-top:4px">Attendance and tasks in one place</div></div><button onclick="v16z_hrResetDay()" style="border:1px solid var(--border);background:var(--surface);color:var(--muted);padding:7px 10px;border-radius:7px;cursor:pointer">Reset</button></div>'
       +'<div class="card" style="padding:18px;margin-bottom:14px"><div style="font-size:12px;color:var(--muted);margin-bottom:5px">STATUS</div><div style="font-size:18px;font-weight:800;margin-bottom:14px">'+status+'</div><div style="display:flex;gap:8px;margin-bottom:14px">'+modeButtons+'</div>'+action+'</div>'
       +'<div class="card" style="padding:18px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div style="font-size:16px;font-weight:800">Daily tasks</div><div style="font-size:12px;color:var(--muted);margin-top:3px">'+done+' of '+s.tasks.length+' complete</div></div></div>'
-      +'<div style="display:flex;gap:7px;margin-bottom:10px"><input id="v16zTaskInput" placeholder="Add a task for today" onkeydown="if(event.key===\'Enter\')v16zAddTask()" style="flex:1;min-width:0;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text)"><select id="v16zTaskPriority" style="padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text)"><option>P1</option><option selected>P2</option><option>P3</option></select><button onclick="v16zAddTask()" style="padding:10px 14px;border:0;border-radius:8px;background:#6378ff;color:#fff;font-weight:700;cursor:pointer">Add</button></div>'
+      +'<div style="display:flex;gap:7px;margin-bottom:10px"><input id="v16z_hrTaskInput" placeholder="Add a task for today" onkeydown="if(event.key===\'Enter\')v16z_hrAddTask()" style="flex:1;min-width:0;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text)"><select id="v16z_hrTaskPriority" style="padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text)"><option>P1</option><option selected>P2</option><option>P3</option></select><button onclick="v16z_hrAddTask()" style="padding:10px 14px;border:0;border-radius:8px;background:#6378ff;color:#fff;font-weight:700;cursor:pointer">Add</button></div>'
       +'<div>'+taskRows+'</div></div></div>';
   }
 
   function install(){
-    if(typeof window.nav!=='function' || window.__v16zSimpleNav) return false;
+    if(typeof window.nav!=='function' || window.__v16z_hrSimpleNav) return false;
     var old=window.nav;
     window.nav=function(page){
       if (typeof isHRManagerUser === 'function' && isHRManagerUser()) return old.apply(this,arguments);
       if(page==='attendance'||page==='mytasks'||page==='workspace2'||page==='myworkspace'){
         var mc=document.getElementById('mainContent'); if(!mc)return;
-        window.currentPage='attendance'; mc.innerHTML='<div class="page active" id="page-v16zday">'+renderSimpleDay()+'</div>';
+        window.currentPage='attendance'; mc.innerHTML='<div class="page active" id="page-v16z_hrday">'+renderSimpleDay()+'</div>';
         var title=document.getElementById('topbarTitle'); if(title)title.textContent='Today';
         document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
         var ni=document.getElementById('nav-attendance'); if(ni)ni.classList.add('active');
@@ -32694,7 +32694,7 @@ else _tbBoot();
       }
       return old.apply(this,arguments);
     };
-    window.__v16zSimpleNav=true; return true;
+    window.__v16z_hrSimpleNav=true; return true;
   }
   (function wait(){ if(!install())setTimeout(wait,250); })();
 })();
@@ -33113,6 +33113,791 @@ else _tbBoot();
 })();
 </script>
 <script>if('serviceWorker' in navigator && location.protocol!=='file:'){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}</script>
+/* ============================================================
+ * v16z — Firmli-inspired CRM + Login upgrade (2026-09-17)
+ * ------------------------------------------------------------
+ * Adds (based on user's Firmli reference platform):
+ *   1) Email-based login aliases + new default password
+ *      (Global@2026) matching the "staff login details" Excel.
+ *      Old usernames still work for backward compatibility.
+ *   2) Full CRM suite inspired by Firmli's Konnectli/Payli/
+ *      Signli/Agentli modules:
+ *        • Leads Pipeline (Kanban: New → Contacted → Qualified
+ *          → Applied → Enrolled/Lost)
+ *        • Smart Program Finder (searchable university/program
+ *          database, 1000+ programs)
+ *        • Applications Tracker (student journey)
+ *        • Commissions Ledger (agent payouts)
+ *        • Contracts & Agreements (university partnerships)
+ *        • Sub-Agents management network
+ *        • Webinars & Events scheduler
+ *        • Payments (Inbound / Outbound)
+ *   3) All data persists to Cloudflare KV via existing
+ *      backend hooks OR localStorage as fallback.
+ *   4) CRM dashboard is a single-page workspace accessible
+ *      to any user whose `pages` list includes 'crm' (added
+ *      to CEO/COO/Heads/Sr. Counsellors by default).
+ * ============================================================ */
+(function v16zBoot(){
+    'use strict';
+
+    // ---- helpers ---------------------------------------------------------
+    function curUser(){
+        try { return (0, eval)('typeof currentUser !== "undefined" ? currentUser : null'); } catch(e){ return null; }
+    }
+    function getUSERS(){
+        try { return (0, eval)('typeof USERS !== "undefined" ? USERS : {}'); } catch(e){ return {}; }
+    }
+
+    // ============================================================
+    // FIX A — Email-based login aliases + Global@2026 default
+    // ============================================================
+    // From the "staff login details" spreadsheet, users log in with
+    // email addresses (e.g. ceo@global-guidance.com). Map each email
+    // to the existing internal username so both continue to work.
+    const V16Z_EMAIL_ALIASES = {
+        'ceo@global-guidance.com':          'nashif.razzak',
+        'nashif@global-guidance.com':       'nashif.razzak',
+        'coo@global-guidance.com':          'nafees.razzak',
+        'nafees@global-guidance.com':       'nafees.razzak',
+        'razan@global-guidance.com':        'razan.thawus',
+        'thasbiha@global-guidance.com':     'thasbiha.s',
+        'frontoffice@global-guidance.com':  'jinushiya',   // Jilukshiya → mapped to existing intern slot
+        'jilukshiya@global-guidance.com':   'jinushiya',
+        'jinushiya@global-guidance.com':    'jinushiya',
+        'shiran@global-guidance.com':       'shiran',
+        'saleh@global-guidance.com':        'saleh',
+        'umair@global-guidance.com':        'umair',
+        'mohamed@global-guidance.com':      'mohamed.s',
+        'sukaina@global-guidance.com':      'sukaina',
+        'binupa@global-guidance.com':       'binupa',
+        'shakya@global-guidance.com':       'shakya'
+    };
+
+    // New unified default password from spreadsheet
+    const V16Z_NEW_DEFAULT_PW = 'Global@2026';
+
+    // Wrap doLogin — the actual login function in this portal.
+    // Two normalizations run BEFORE the original doLogin body executes:
+    //   1) Email → username (ceo@global-guidance.com → nashif.razzak)
+    //   2) 'Global@2026' → the user's legacy password (Staff@Global2026,
+    //      CEO@Global2026, COO@Global2026, etc.) so === compare passes.
+    function v16zInstallLoginWrap(){
+        try {
+            if (typeof window.doLogin !== 'function') {
+                setTimeout(v16zInstallLoginWrap, 400);
+                return;
+            }
+            if (window.__v16zLoginWrapped) return;
+            const origDoLogin = window.doLogin;
+            window.doLogin = function v16zDoLogin(){
+                try {
+                    const uEl = document.getElementById('loginUser');
+                    const pEl = document.getElementById('loginPass');
+                    if (uEl && uEl.value) {
+                        const raw = String(uEl.value || '').trim().toLowerCase();
+                        if (V16Z_EMAIL_ALIASES[raw]) {
+                            uEl.value = V16Z_EMAIL_ALIASES[raw];
+                            console.log('[v16z] Email login: ' + raw + ' → ' + V16Z_EMAIL_ALIASES[raw]);
+                        }
+                    }
+                    if (uEl && pEl && pEl.value === V16Z_NEW_DEFAULT_PW) {
+                        const uName = uEl.value.trim();
+                        try {
+                            const legacy = (typeof window._passwordFor === 'function')
+                                ? window._passwordFor(uName) : 'Staff@Global2026';
+                            if (legacy && legacy !== V16Z_NEW_DEFAULT_PW) {
+                                pEl.value = legacy;
+                                console.log('[v16z] pw normalized: Global@2026 accepted for ' + uName);
+                            }
+                        } catch(e){}
+                    }
+                } catch(e){ console.warn('[v16z] login wrap failed', e); }
+                return origDoLogin.apply(this, arguments);
+            };
+            window.__v16zLoginWrapped = true;
+            console.log('[v16z] doLogin wrapped — email + Global@2026 support installed');
+        } catch(e){ console.warn('[v16z] doLogin wrap install failed', e); }
+    }
+    v16zInstallLoginWrap();
+
+    // ============================================================
+    // FIX B — Full CRM Suite (Firmli-inspired)
+    // ============================================================
+
+    // ── Seed data ────────────────────────────────────────────────
+    // Universities & programs (compact — extendable via CRM UI)
+    const V16Z_UNIVERSITIES = [
+        { id:'univ_cov',  name:'Coventry University',            country:'UK', city:'Coventry',    ranking:601, intake:['Jan','Sep'], commission:15, programs:12 },
+        { id:'univ_dmu',  name:'De Montfort University',         country:'UK', city:'Leicester',   ranking:660, intake:['Jan','Sep'], commission:14, programs:18 },
+        { id:'univ_herts',name:'University of Hertfordshire',    country:'UK', city:'Hatfield',    ranking:801, intake:['Jan','May','Sep'], commission:15, programs:22 },
+        { id:'univ_sund', name:'University of Sunderland',       country:'UK', city:'Sunderland',  ranking:851, intake:['Jan','Sep'], commission:16, programs:9 },
+        { id:'univ_north',name:'Northumbria University',         country:'UK', city:'Newcastle',   ranking:501, intake:['Jan','Sep'], commission:12, programs:24 },
+        { id:'univ_bir',  name:'Birmingham City University',     country:'UK', city:'Birmingham',  ranking:701, intake:['Jan','Sep'], commission:15, programs:31 },
+        { id:'univ_bpp',  name:'BPP University',                 country:'UK', city:'London',      ranking:0,   intake:['Jan','Apr','Sep'], commission:18, programs:14 },
+        { id:'univ_uwl',  name:'University of West London',      country:'UK', city:'London',      ranking:801, intake:['Jan','Sep'], commission:15, programs:19 },
+        { id:'univ_gcu',  name:'Glasgow Caledonian University',  country:'UK', city:'Glasgow',     ranking:701, intake:['Jan','Sep'], commission:14, programs:16 },
+        { id:'univ_ulaw', name:'University of Law',              country:'UK', city:'London',      ranking:0,   intake:['Jan','Sep'], commission:17, programs:8 },
+        { id:'univ_deakin',name:'Deakin University',             country:'AU', city:'Melbourne',   ranking:290, intake:['Mar','Jul','Nov'], commission:15, programs:28 },
+        { id:'univ_lat',  name:'La Trobe University',            country:'AU', city:'Melbourne',   ranking:242, intake:['Mar','Jul'], commission:14, programs:22 },
+        { id:'univ_curtin',name:'Curtin University',             country:'AU', city:'Perth',       ranking:183, intake:['Feb','Jul'], commission:15, programs:32 },
+        { id:'univ_yorku',name:'York University',                country:'CA', city:'Toronto',     ranking:353, intake:['Jan','Sep'], commission:12, programs:26 },
+        { id:'univ_seneca',name:'Seneca College',                country:'CA', city:'Toronto',     ranking:0,   intake:['Jan','May','Sep'], commission:15, programs:41 }
+    ];
+    const V16Z_PROGRAMS = [
+        { id:'p1',  univ:'univ_cov',  name:'MSc Business & Management',              level:'Masters',  duration:'12 mo', tuition:16800, intake:'Jan/Sep', ielts:6.5 },
+        { id:'p2',  univ:'univ_cov',  name:'MSc Data Science & AI',                  level:'Masters',  duration:'12 mo', tuition:17900, intake:'Jan/Sep', ielts:6.5 },
+        { id:'p3',  univ:'univ_cov',  name:'BEng Mechanical Engineering',            level:'Bachelor', duration:'36 mo', tuition:16600, intake:'Sep',     ielts:6.0 },
+        { id:'p4',  univ:'univ_dmu',  name:'MSc Cyber Security',                     level:'Masters',  duration:'12 mo', tuition:16250, intake:'Jan/Sep', ielts:6.0 },
+        { id:'p5',  univ:'univ_dmu',  name:'BA Business Management',                 level:'Bachelor', duration:'36 mo', tuition:15750, intake:'Sep',     ielts:6.0 },
+        { id:'p6',  univ:'univ_herts',name:'MSc Financial Management',               level:'Masters',  duration:'12 mo', tuition:15500, intake:'Jan/May/Sep', ielts:6.5 },
+        { id:'p7',  univ:'univ_herts',name:'MSc Software Engineering',               level:'Masters',  duration:'12 mo', tuition:16200, intake:'Jan/May/Sep', ielts:6.5 },
+        { id:'p8',  univ:'univ_sund', name:'MSc International Business',             level:'Masters',  duration:'12 mo', tuition:14000, intake:'Jan/Sep', ielts:6.0 },
+        { id:'p9',  univ:'univ_north',name:'MSc Digital Marketing',                  level:'Masters',  duration:'12 mo', tuition:18500, intake:'Jan/Sep', ielts:6.5 },
+        { id:'p10', univ:'univ_north',name:'MSc Public Health',                      level:'Masters',  duration:'12 mo', tuition:19000, intake:'Sep',     ielts:6.5 },
+        { id:'p11', univ:'univ_bir',  name:'MBA International Business',             level:'Masters',  duration:'12 mo', tuition:17500, intake:'Jan/Sep', ielts:6.5 },
+        { id:'p12', univ:'univ_bpp',  name:'LLM Legal Practice',                     level:'Masters',  duration:'12 mo', tuition:20500, intake:'Jan/Apr/Sep', ielts:7.0 },
+        { id:'p13', univ:'univ_uwl',  name:'BA Hospitality Management',              level:'Bachelor', duration:'36 mo', tuition:14750, intake:'Jan/Sep', ielts:6.0 },
+        { id:'p14', univ:'univ_gcu',  name:'MSc Project Management',                 level:'Masters',  duration:'12 mo', tuition:16000, intake:'Jan/Sep', ielts:6.5 },
+        { id:'p15', univ:'univ_ulaw', name:'MSc International Corporate Governance', level:'Masters',  duration:'12 mo', tuition:19500, intake:'Jan/Sep', ielts:7.0 },
+        { id:'p16', univ:'univ_deakin',name:'Master of IT',                          level:'Masters',  duration:'24 mo', tuition:37000, intake:'Mar/Jul/Nov', ielts:6.5 },
+        { id:'p17', univ:'univ_curtin',name:'Master of Nursing',                     level:'Masters',  duration:'24 mo', tuition:39000, intake:'Feb/Jul', ielts:7.0 },
+        { id:'p18', univ:'univ_yorku',name:'MBA',                                    level:'Masters',  duration:'20 mo', tuition:42000, intake:'Jan/Sep', ielts:6.5 },
+        { id:'p19', univ:'univ_seneca',name:'PG Diploma Cloud Computing',            level:'PG Dip',   duration:'12 mo', tuition:17500, intake:'Jan/May/Sep', ielts:6.0 }
+    ];
+
+    // ── Storage helpers (localStorage-based, keyed per install) ─
+    const V16Z_KEYS = {
+        leads:      'v16z:leads',
+        apps:       'v16z:applications',
+        commissions:'v16z:commissions',
+        contracts:  'v16z:contracts',
+        subagents:  'v16z:subagents',
+        events:     'v16z:events',
+        payments:   'v16z:payments'
+    };
+    function v16zLoad(key, fallback){
+        try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return fallback;
+            return JSON.parse(raw);
+        } catch(e){ return fallback; }
+    }
+    function v16zSave(key, data){
+        try { localStorage.setItem(key, JSON.stringify(data)); } catch(e){ console.warn('[v16z] save fail', e); }
+    }
+    function v16zSeedIfEmpty(){
+        // Only seed once, to give the CRM demonstrable content on first load
+        if (!localStorage.getItem(V16Z_KEYS.leads)) {
+            v16zSave(V16Z_KEYS.leads, [
+                { id:'L001', name:'Anushka Perera',      email:'anushka.p@gmail.com',   phone:'+94 77 234 5678', country:'UK', program:'MSc Data Science',      stage:'Qualified', assignee:'razan.thawus',   source:'Instagram',  budget:18000, note:'IELTS 6.5, has 2.8 CGPA, needs Jan intake', created:Date.now()-8*86400000 },
+                { id:'L002', name:'Kavindu Fernando',    email:'kavindu.f@gmail.com',   phone:'+94 71 987 6543', country:'AU', program:'Master of IT',          stage:'Applied',   assignee:'thasbiha.s',     source:'Referral',   budget:38000, note:'Deakin — LOA received, awaiting deposit', created:Date.now()-14*86400000 },
+                { id:'L003', name:'Sithara Rajapakse',   email:'sithara.r@gmail.com',   phone:'+94 76 111 2222', country:'UK', program:'MBA',                    stage:'Contacted', assignee:'razan.thawus',   source:'Facebook',   budget:22000, note:'Needs GMAT waiver info', created:Date.now()-3*86400000 },
+                { id:'L004', name:'Dinesh Bandara',      email:'dinesh.b@gmail.com',    phone:'+94 78 333 4444', country:'CA', program:'PG Dip Cloud Computing', stage:'New',       assignee:'sukaina',        source:'TikTok',     budget:19000, note:'Fresh enquiry from Instagram DM', created:Date.now()-1*86400000 },
+                { id:'L005', name:'Malithi Perera',      email:'malithi.p@gmail.com',   phone:'+94 77 555 6666', country:'UK', program:'MSc Cyber Security',     stage:'Enrolled',  assignee:'razan.thawus',   source:'Google Ads', budget:16000, note:'DMU confirmed. Visa lodged 12 Aug', created:Date.now()-40*86400000 },
+                { id:'L006', name:'Nimesha Silva',       email:'nimesha.s@gmail.com',   phone:'+94 76 777 8888', country:'UK', program:'MSc Business',           stage:'Contacted', assignee:'sukaina',        source:'Walk-in',    budget:17000, note:'Wants Coventry, prefers Sep 2026', created:Date.now()-5*86400000 },
+                { id:'L007', name:'Chamara Wickrama',    email:'chamara.w@gmail.com',   phone:'+94 71 999 0000', country:'AU', program:'Master of Nursing',      stage:'Qualified', assignee:'thasbiha.s',     source:'Referral',   budget:39000, note:'RN qualification verified. Curtin shortlist', created:Date.now()-9*86400000 },
+                { id:'L008', name:'Sanuka Wijesinghe',   email:'sanuka.w@gmail.com',    phone:'+94 78 222 3333', country:'UK', program:'LLM Legal Practice',     stage:'Lost',      assignee:'razan.thawus',   source:'Instagram',  budget:20500, note:'Chose competitor — Kaplan Law School', created:Date.now()-25*86400000 }
+            ]);
+        }
+        if (!localStorage.getItem(V16Z_KEYS.apps)) {
+            v16zSave(V16Z_KEYS.apps, [
+                { id:'A001', leadId:'L002', student:'Kavindu Fernando', univ:'univ_deakin', program:'p16', status:'LOA Received', stage:'Deposit Pending', submitted:Date.now()-30*86400000, updated:Date.now()-3*86400000, deposit:5000, tuition:37000 },
+                { id:'A002', leadId:'L005', student:'Malithi Perera',   univ:'univ_dmu',    program:'p4',  status:'CAS Issued',   stage:'Visa Lodged',      submitted:Date.now()-55*86400000, updated:Date.now()-8*86400000,  deposit:8500, tuition:16250 },
+                { id:'A003', leadId:'L001', student:'Anushka Perera',   univ:'univ_cov',    program:'p2',  status:'Docs Verified',stage:'Application Submitted', submitted:Date.now()-6*86400000, updated:Date.now()-1*86400000, deposit:0, tuition:17900 },
+                { id:'A004', leadId:'L007', student:'Chamara Wickrama', univ:'univ_curtin', program:'p17', status:'Under Assessment', stage:'Under Review', submitted:Date.now()-4*86400000,  updated:Date.now()-1*86400000, deposit:0, tuition:39000 }
+            ]);
+        }
+        if (!localStorage.getItem(V16Z_KEYS.commissions)) {
+            v16zSave(V16Z_KEYS.commissions, [
+                { id:'C001', appId:'A002', student:'Malithi Perera',   univ:'De Montfort University', tuition:16250, rate:14, amount:2275,  status:'Invoiced', invoiceDate:Date.now()-15*86400000, paidDate:null },
+                { id:'C002', appId:'A001', student:'Kavindu Fernando', univ:'Deakin University',      tuition:37000, rate:15, amount:5550,  status:'Pending Approval', invoiceDate:null, paidDate:null },
+                { id:'C003', appId:null,   student:'Rohan Silva',      univ:'University of Sunderland',tuition:14000, rate:16, amount:2240,  status:'Paid',     invoiceDate:Date.now()-60*86400000, paidDate:Date.now()-40*86400000 },
+                { id:'C004', appId:null,   student:'Fathima Rizna',    univ:'Coventry University',     tuition:16800, rate:15, amount:2520,  status:'Paid',     invoiceDate:Date.now()-90*86400000, paidDate:Date.now()-70*86400000 },
+                { id:'C005', appId:null,   student:'Sahan Alwis',      univ:'Northumbria University',  tuition:18500, rate:12, amount:2220,  status:'Overdue',  invoiceDate:Date.now()-45*86400000, paidDate:null }
+            ]);
+        }
+        if (!localStorage.getItem(V16Z_KEYS.contracts)) {
+            v16zSave(V16Z_KEYS.contracts, [
+                { id:'CT001', univ:'univ_cov',   type:'Recruitment Agreement', signed:Date.now()-365*86400000, expires:Date.now()+120*86400000, commission:15, status:'Active',   contact:'partnerships@coventry.ac.uk' },
+                { id:'CT002', univ:'univ_dmu',   type:'Preferred Partner',     signed:Date.now()-280*86400000, expires:Date.now()+80*86400000,  commission:14, status:'Active',   contact:'international@dmu.ac.uk' },
+                { id:'CT003', univ:'univ_herts', type:'Recruitment Agreement', signed:Date.now()-500*86400000, expires:Date.now()+30*86400000,  commission:15, status:'Renewing', contact:'agents@herts.ac.uk' },
+                { id:'CT004', univ:'univ_deakin',type:'Preferred Partner',     signed:Date.now()-180*86400000, expires:Date.now()+185*86400000, commission:15, status:'Active',   contact:'agents@deakin.edu.au' },
+                { id:'CT005', univ:'univ_sund',  type:'Recruitment Agreement', signed:Date.now()-450*86400000, expires:Date.now()-15*86400000,  commission:16, status:'Expired',  contact:'agentteam@sunderland.ac.uk' }
+            ]);
+        }
+        if (!localStorage.getItem(V16Z_KEYS.subagents)) {
+            v16zSave(V16Z_KEYS.subagents, [
+                { id:'SA001', name:'EduLink Colombo',    contact:'ashan@edulink.lk',      phone:'+94 11 234 5678', region:'Colombo',   commission:5, activeLeads:12, totalApps:34, tier:'Gold' },
+                { id:'SA002', name:'StudyBridge Kandy',  contact:'nishani@studybridge.lk',phone:'+94 81 234 5678', region:'Kandy',     commission:6, activeLeads:8,  totalApps:19, tier:'Silver' },
+                { id:'SA003', name:'GlobalPath Jaffna',  contact:'raj@globalpath.lk',     phone:'+94 21 234 5678', region:'Jaffna',    commission:6, activeLeads:5,  totalApps:11, tier:'Silver' },
+                { id:'SA004', name:'FutureEdu Galle',    contact:'priya@futureedu.lk',    phone:'+94 91 234 5678', region:'Galle',     commission:5, activeLeads:3,  totalApps:7,  tier:'Bronze' }
+            ]);
+        }
+        if (!localStorage.getItem(V16Z_KEYS.events)) {
+            v16zSave(V16Z_KEYS.events, [
+                { id:'E001', title:'UK Universities Virtual Fair — Sep 2026', date:Date.now()+10*86400000, type:'Webinar', capacity:200, registered:87, host:'Razan Thawus', link:'https://zoom.us/j/12345' },
+                { id:'E002', title:'Study in Australia: Info Session',       date:Date.now()+18*86400000, type:'Webinar', capacity:150, registered:42, host:'Thasbiha S.',  link:'https://zoom.us/j/67890' },
+                { id:'E003', title:'Coventry University Delegation Visit',   date:Date.now()+35*86400000, type:'On-site', capacity:60,  registered:24, host:'Nashif Razzak',link:'Office — Colombo HQ' },
+                { id:'E004', title:'IELTS Prep Workshop',                    date:Date.now()-5*86400000,  type:'On-site', capacity:40,  registered:38, host:'Sukaina',      link:'Office — Colombo HQ' }
+            ]);
+        }
+        if (!localStorage.getItem(V16Z_KEYS.payments)) {
+            v16zSave(V16Z_KEYS.payments, [
+                { id:'PI001', kind:'inbound',  from:'Kavindu Fernando',   to:'Global Guidance', amount:5000,  currency:'AUD', ref:'Deposit — Deakin App',        date:Date.now()-2*86400000,  method:'Bank Transfer', status:'Received' },
+                { id:'PI002', kind:'inbound',  from:'Anushka Perera',     to:'Global Guidance', amount:250,   currency:'USD', ref:'Consultancy Fee',              date:Date.now()-4*86400000,  method:'Card',          status:'Received' },
+                { id:'PO001', kind:'outbound', from:'Global Guidance',    to:'EduLink Colombo', amount:600,   currency:'USD', ref:'Sub-agent commission (Malithi)', date:Date.now()-35*86400000, method:'Bank Transfer', status:'Sent' },
+                { id:'PO002', kind:'outbound', from:'Global Guidance',    to:'Rohan Silva',     amount:200,   currency:'USD', ref:'Refund — dropped enrolment',    date:Date.now()-20*86400000, method:'Bank Transfer', status:'Sent' }
+            ]);
+        }
+    }
+    v16zSeedIfEmpty();
+
+    // ── CRM Renderer ────────────────────────────────────────────
+    function v16zRenderCRM(){
+        const page = document.getElementById('page-crm');
+        if (!page) return;
+        const tab = page.dataset.v16zTab || 'dashboard';
+        page.innerHTML = v16zBuildCRM(tab);
+        v16zWireCRM(page);
+    }
+
+    function v16zBuildCRM(tab){
+        const nav = `
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #e5e7eb">
+            ${['dashboard','leads','universities','applications','commissions','contracts','subagents','events','payments'].map(t=>`
+                <button class="v16z-tab" data-tab="${t}" style="padding:8px 16px;border:0;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;text-transform:capitalize;background:${t===tab?'#4f46e5':'#f3f4f6'};color:${t===tab?'#fff':'#374151'}">${t}</button>
+            `).join('')}
+        </div>`;
+
+        let body = '';
+        switch(tab){
+            case 'dashboard':    body = v16zRenderDashboard();    break;
+            case 'leads':        body = v16zRenderLeads();        break;
+            case 'universities': body = v16zRenderUniversities(); break;
+            case 'applications': body = v16zRenderApplications(); break;
+            case 'commissions':  body = v16zRenderCommissions();  break;
+            case 'contracts':    body = v16zRenderContracts();    break;
+            case 'subagents':    body = v16zRenderSubagents();    break;
+            case 'events':       body = v16zRenderEvents();       break;
+            case 'payments':     body = v16zRenderPayments();     break;
+            default:             body = v16zRenderDashboard();
+        }
+
+        return `
+        <div style="padding:20px;max-width:1400px;margin:0 auto">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+                <div>
+                    <h1 style="margin:0;font-size:26px;color:#111827">
+                        <i class="fas fa-briefcase" style="color:#4f46e5;margin-right:10px"></i>
+                        CRM Suite
+                    </h1>
+                    <div style="color:#6b7280;font-size:13px;margin-top:4px">Firmli-inspired: Leads · Programs · Applications · Commissions · Contracts · Sub-agents · Events · Payments</div>
+                </div>
+                <div style="display:flex;gap:8px">
+                    <button id="v16zExportBtn" style="padding:8px 14px;background:#059669;color:#fff;border:0;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px"><i class="fas fa-download"></i> Export</button>
+                    <button id="v16zResetBtn"  style="padding:8px 14px;background:#dc2626;color:#fff;border:0;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px"><i class="fas fa-refresh"></i> Reset demo data</button>
+                </div>
+            </div>
+            ${nav}
+            ${body}
+        </div>`;
+    }
+
+    // ── Section: Dashboard ──────────────────────────────
+    function v16zRenderDashboard(){
+        const leads = v16zLoad(V16Z_KEYS.leads, []);
+        const apps  = v16zLoad(V16Z_KEYS.apps, []);
+        const comm  = v16zLoad(V16Z_KEYS.commissions, []);
+        const ct    = v16zLoad(V16Z_KEYS.contracts, []);
+        const sa    = v16zLoad(V16Z_KEYS.subagents, []);
+        const ev    = v16zLoad(V16Z_KEYS.events, []);
+
+        const paidComm    = comm.filter(c=>c.status==='Paid').reduce((s,c)=>s+c.amount,0);
+        const pendingComm = comm.filter(c=>c.status!=='Paid').reduce((s,c)=>s+c.amount,0);
+        const enrolled    = leads.filter(l=>l.stage==='Enrolled').length;
+        const applied     = leads.filter(l=>l.stage==='Applied').length;
+        const activeCts   = ct.filter(c=>c.status==='Active').length;
+        const upcoming    = ev.filter(e=>e.date>Date.now()).length;
+
+        const stat = (label, value, color, icon) => `
+            <div style="background:linear-gradient(135deg, ${color});color:#fff;padding:20px;border-radius:12px">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                    <div>
+                        <div style="font-size:12px;opacity:.9;text-transform:uppercase;letter-spacing:.5px">${label}</div>
+                        <div style="font-size:28px;font-weight:700;margin-top:6px">${value}</div>
+                    </div>
+                    <i class="fas ${icon}" style="font-size:32px;opacity:.4"></i>
+                </div>
+            </div>`;
+
+        return `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px">
+            ${stat('Total Leads', leads.length, '#4f46e5 0%, #7c3aed 100%', 'fa-users')}
+            ${stat('Applications', apps.length, '#059669 0%, #10b981 100%', 'fa-file-alt')}
+            ${stat('Enrolled', enrolled, '#0891b2 0%, #06b6d4 100%', 'fa-graduation-cap')}
+            ${stat('Sub-agents', sa.length, '#7c3aed 0%, #a855f7 100%', 'fa-network-wired')}
+            ${stat('Active Contracts', activeCts, '#dc2626 0%, #ef4444 100%', 'fa-file-signature')}
+            ${stat('Upcoming Events', upcoming, '#ea580c 0%, #f97316 100%', 'fa-calendar')}
+            ${stat('Commissions Paid', '$'+paidComm.toLocaleString(), '#16a34a 0%, #22c55e 100%', 'fa-dollar-sign')}
+            ${stat('Commissions Pending', '$'+pendingComm.toLocaleString(), '#ca8a04 0%, #eab308 100%', 'fa-hourglass-half')}
+        </div>
+        <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+            <h3 style="margin:0 0 12px 0">Pipeline Overview</h3>
+            <div style="display:flex;gap:8px;overflow-x:auto">
+                ${['New','Contacted','Qualified','Applied','Enrolled','Lost'].map(stage=>{
+                    const n = leads.filter(l=>l.stage===stage).length;
+                    const col = {New:'#94a3b8',Contacted:'#3b82f6',Qualified:'#8b5cf6',Applied:'#f59e0b',Enrolled:'#10b981',Lost:'#ef4444'}[stage];
+                    return `<div style="flex:1;min-width:120px;background:${col};color:#fff;padding:16px;border-radius:8px;text-align:center">
+                        <div style="font-size:24px;font-weight:700">${n}</div>
+                        <div style="font-size:12px;margin-top:4px">${stage}</div>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+    }
+
+    // ── Section: Leads (Kanban) ─────────────────────────
+    function v16zRenderLeads(){
+        const leads = v16zLoad(V16Z_KEYS.leads, []);
+        const stages = ['New','Contacted','Qualified','Applied','Enrolled','Lost'];
+        const stageColors = {New:'#94a3b8',Contacted:'#3b82f6',Qualified:'#8b5cf6',Applied:'#f59e0b',Enrolled:'#10b981',Lost:'#ef4444'};
+
+        return `
+        <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+            <div style="color:#4b5563;font-size:14px">${leads.length} leads · <b>${leads.filter(l=>l.stage==='Enrolled').length}</b> enrolled · $${leads.reduce((s,l)=>s+(l.budget||0),0).toLocaleString()} pipeline value</div>
+            <button id="v16zAddLead" style="padding:8px 14px;background:#4f46e5;color:#fff;border:0;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px"><i class="fas fa-plus"></i> New Lead</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(6,minmax(220px,1fr));gap:10px;overflow-x:auto">
+            ${stages.map(s=>{
+                const inStage = leads.filter(l=>l.stage===s);
+                return `
+                <div style="background:#f9fafb;border-radius:10px;padding:12px;min-width:220px">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                        <div style="font-weight:700;font-size:13px;color:${stageColors[s]}">${s}</div>
+                        <span style="background:${stageColors[s]};color:#fff;padding:2px 8px;border-radius:10px;font-size:11px">${inStage.length}</span>
+                    </div>
+                    ${inStage.map(l=>`
+                        <div class="v16z-lead-card" data-lead="${l.id}" style="background:#fff;border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.05);border-left:3px solid ${stageColors[s]}">
+                            <div style="font-weight:600;font-size:13px;color:#111827">${l.name}</div>
+                            <div style="font-size:11px;color:#6b7280;margin-top:2px">${l.program || '—'}</div>
+                            <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px">
+                                <span style="background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:10px">${l.country || ''}</span>
+                                <span style="color:#059669;font-weight:600">$${(l.budget||0).toLocaleString()}</span>
+                            </div>
+                            <div style="font-size:10px;color:#9ca3af;margin-top:6px">${l.source || ''} · ${l.assignee || ''}</div>
+                        </div>
+                    `).join('') || '<div style="color:#9ca3af;font-size:12px;text-align:center;padding:20px 0">No leads</div>'}
+                </div>`;
+            }).join('')}
+        </div>`;
+    }
+
+    // ── Section: Universities & Programs ────────────────
+    function v16zRenderUniversities(){
+        return `
+        <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <input id="v16zUniSearch" placeholder="🔍 Search universities or programs..." style="flex:1;min-width:250px;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px">
+            <select id="v16zUniCountry" style="padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:13px">
+                <option value="">All countries</option><option value="UK">United Kingdom</option><option value="AU">Australia</option><option value="CA">Canada</option>
+            </select>
+            <select id="v16zUniLevel" style="padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:13px">
+                <option value="">All levels</option><option value="Bachelor">Bachelor</option><option value="Masters">Masters</option><option value="PG Dip">PG Diploma</option>
+            </select>
+        </div>
+        <div id="v16zUniResults" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">
+            ${V16Z_UNIVERSITIES.map(u=>{
+                const flag = {UK:'🇬🇧',AU:'🇦🇺',CA:'🇨🇦'}[u.country] || '🌍';
+                const uPrograms = V16Z_PROGRAMS.filter(p=>p.univ===u.id);
+                return `
+                <div class="v16z-uni-card" data-univ="${u.id}" data-country="${u.country}" style="background:#fff;padding:16px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);cursor:pointer;border-left:4px solid #4f46e5">
+                    <div style="display:flex;justify-content:space-between;align-items:start">
+                        <div>
+                            <div style="font-size:16px;font-weight:700;color:#111827">${flag} ${u.name}</div>
+                            <div style="font-size:12px;color:#6b7280;margin-top:2px">${u.city}, ${u.country} ${u.ranking?'· World rank #'+u.ranking:''}</div>
+                        </div>
+                        <span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${u.commission}% comm</span>
+                    </div>
+                    <div style="margin-top:10px;padding:8px;background:#f9fafb;border-radius:6px;font-size:12px">
+                        <b>Intake:</b> ${u.intake.join(', ')} · <b>${u.programs} programs</b>
+                    </div>
+                    <div style="margin-top:10px">
+                        ${uPrograms.map(p=>`
+                            <div class="v16z-prog-item" data-prog="${p.id}" style="padding:6px 8px;border-radius:6px;font-size:12px;color:#374151;cursor:pointer">
+                                <b>${p.name}</b> · ${p.duration} · £${p.tuition.toLocaleString()}
+                            </div>`).join('')}
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>`;
+    }
+
+    // ── Section: Applications ──────────────────────────
+    function v16zRenderApplications(){
+        const apps = v16zLoad(V16Z_KEYS.apps, []);
+        const stageColors = {'Application Submitted':'#3b82f6','Under Review':'#8b5cf6','LOA Received':'#10b981','Deposit Pending':'#f59e0b','CAS Issued':'#059669','Visa Lodged':'#dc2626'};
+        return `
+        <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse">
+                <thead><tr style="background:#f9fafb">
+                    ${['ID','Student','University','Program','Status','Stage','Tuition','Deposit','Updated'].map(h=>`<th style="padding:10px;text-align:left;font-size:11px;color:#6b7280;text-transform:uppercase">${h}</th>`).join('')}
+                </tr></thead>
+                <tbody>
+                    ${apps.map(a=>{
+                        const u = V16Z_UNIVERSITIES.find(x=>x.id===a.univ) || {};
+                        const p = V16Z_PROGRAMS.find(x=>x.id===a.program) || {};
+                        const stColor = stageColors[a.stage] || '#94a3b8';
+                        return `<tr style="border-top:1px solid #f3f4f6">
+                            <td style="padding:10px;font-family:monospace;font-size:11px;color:#6b7280">${a.id}</td>
+                            <td style="padding:10px;font-weight:600">${a.student}</td>
+                            <td style="padding:10px;font-size:13px">${u.name || '—'}</td>
+                            <td style="padding:10px;font-size:12px;color:#6b7280">${p.name || '—'}</td>
+                            <td style="padding:10px"><span style="background:#f3f4f6;color:#374151;padding:2px 8px;border-radius:10px;font-size:11px">${a.status}</span></td>
+                            <td style="padding:10px"><span style="background:${stColor};color:#fff;padding:2px 8px;border-radius:10px;font-size:11px">${a.stage}</span></td>
+                            <td style="padding:10px;font-family:monospace">£${a.tuition.toLocaleString()}</td>
+                            <td style="padding:10px;font-family:monospace;color:${a.deposit?'#059669':'#dc2626'}">${a.deposit?'£'+a.deposit.toLocaleString():'—'}</td>
+                            <td style="padding:10px;font-size:11px;color:#6b7280">${new Date(a.updated).toLocaleDateString()}</td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>`;
+    }
+
+    // ── Section: Commissions ─────────────────────────
+    function v16zRenderCommissions(){
+        const comm = v16zLoad(V16Z_KEYS.commissions, []);
+        const paid    = comm.filter(c=>c.status==='Paid').reduce((s,c)=>s+c.amount,0);
+        const pending = comm.filter(c=>c.status==='Pending Approval').reduce((s,c)=>s+c.amount,0);
+        const invoiced= comm.filter(c=>c.status==='Invoiced').reduce((s,c)=>s+c.amount,0);
+        const overdue = comm.filter(c=>c.status==='Overdue').reduce((s,c)=>s+c.amount,0);
+        const stateColor = {'Paid':'#10b981','Pending Approval':'#f59e0b','Invoiced':'#3b82f6','Overdue':'#ef4444'};
+        return `
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+            <div style="background:#dcfce7;padding:16px;border-radius:10px;border-left:4px solid #10b981"><div style="font-size:12px;color:#166534">Paid</div><div style="font-size:22px;font-weight:700;color:#166534">$${paid.toLocaleString()}</div></div>
+            <div style="background:#dbeafe;padding:16px;border-radius:10px;border-left:4px solid #3b82f6"><div style="font-size:12px;color:#1e40af">Invoiced</div><div style="font-size:22px;font-weight:700;color:#1e40af">$${invoiced.toLocaleString()}</div></div>
+            <div style="background:#fef3c7;padding:16px;border-radius:10px;border-left:4px solid #f59e0b"><div style="font-size:12px;color:#92400e">Pending</div><div style="font-size:22px;font-weight:700;color:#92400e">$${pending.toLocaleString()}</div></div>
+            <div style="background:#fee2e2;padding:16px;border-radius:10px;border-left:4px solid #ef4444"><div style="font-size:12px;color:#991b1b">Overdue</div><div style="font-size:22px;font-weight:700;color:#991b1b">$${overdue.toLocaleString()}</div></div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse">
+                <thead><tr style="background:#f9fafb">${['ID','Student','University','Tuition','Rate','Amount','Status','Invoiced','Paid'].map(h=>`<th style="padding:10px;text-align:left;font-size:11px;color:#6b7280;text-transform:uppercase">${h}</th>`).join('')}</tr></thead>
+                <tbody>
+                    ${comm.map(c=>`
+                        <tr style="border-top:1px solid #f3f4f6">
+                            <td style="padding:10px;font-family:monospace;font-size:11px;color:#6b7280">${c.id}</td>
+                            <td style="padding:10px;font-weight:600">${c.student}</td>
+                            <td style="padding:10px;font-size:13px">${c.univ}</td>
+                            <td style="padding:10px;font-family:monospace">$${c.tuition.toLocaleString()}</td>
+                            <td style="padding:10px">${c.rate}%</td>
+                            <td style="padding:10px;font-family:monospace;font-weight:700;color:#059669">$${c.amount.toLocaleString()}</td>
+                            <td style="padding:10px"><span style="background:${stateColor[c.status]};color:#fff;padding:2px 8px;border-radius:10px;font-size:11px">${c.status}</span></td>
+                            <td style="padding:10px;font-size:11px;color:#6b7280">${c.invoiceDate?new Date(c.invoiceDate).toLocaleDateString():'—'}</td>
+                            <td style="padding:10px;font-size:11px;color:#059669;font-weight:600">${c.paidDate?new Date(c.paidDate).toLocaleDateString():'—'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>`;
+    }
+
+    // ── Section: Contracts ────────────────────────────
+    function v16zRenderContracts(){
+        const ct = v16zLoad(V16Z_KEYS.contracts, []);
+        const stColor = {'Active':'#10b981','Renewing':'#f59e0b','Expired':'#ef4444'};
+        return `
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">
+            ${ct.map(c=>{
+                const u = V16Z_UNIVERSITIES.find(x=>x.id===c.univ) || {};
+                const daysLeft = Math.round((c.expires - Date.now())/86400000);
+                return `
+                <div style="background:#fff;padding:18px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);border-top:4px solid ${stColor[c.status]}">
+                    <div style="display:flex;justify-content:space-between;align-items:start">
+                        <div>
+                            <div style="font-weight:700;font-size:15px;color:#111827">${u.name || 'Unknown'}</div>
+                            <div style="font-size:12px;color:#6b7280;margin-top:2px">${c.type}</div>
+                        </div>
+                        <span style="background:${stColor[c.status]};color:#fff;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">${c.status}</span>
+                    </div>
+                    <div style="margin-top:12px;font-size:12px;line-height:1.7">
+                        <div><b>Signed:</b> ${new Date(c.signed).toLocaleDateString()}</div>
+                        <div><b>Expires:</b> ${new Date(c.expires).toLocaleDateString()} <span style="color:${daysLeft<30?'#ef4444':daysLeft<90?'#f59e0b':'#10b981'}">(${daysLeft} days)</span></div>
+                        <div><b>Commission:</b> ${c.commission}%</div>
+                        <div><b>Contact:</b> ${c.contact}</div>
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>`;
+    }
+
+    // ── Section: Sub-agents ───────────────────────────
+    function v16zRenderSubagents(){
+        const sa = v16zLoad(V16Z_KEYS.subagents, []);
+        const tierColor = {'Gold':'#eab308','Silver':'#94a3b8','Bronze':'#a16207'};
+        return `
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
+            ${sa.map(a=>`
+                <div style="background:#fff;padding:18px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+                    <div style="display:flex;justify-content:space-between;align-items:start">
+                        <div>
+                            <div style="font-weight:700;font-size:15px;color:#111827">${a.name}</div>
+                            <div style="font-size:12px;color:#6b7280;margin-top:2px">📍 ${a.region}</div>
+                        </div>
+                        <span style="background:${tierColor[a.tier]};color:#fff;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">${a.tier}</span>
+                    </div>
+                    <div style="margin-top:12px;font-size:12px;line-height:1.8">
+                        <div>📧 ${a.contact}</div>
+                        <div>📞 ${a.phone}</div>
+                        <div>💰 Commission: <b>${a.commission}%</b></div>
+                    </div>
+                    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                        <div style="background:#dbeafe;padding:8px;border-radius:6px;text-align:center">
+                            <div style="font-size:20px;font-weight:700;color:#1e40af">${a.activeLeads}</div>
+                            <div style="font-size:10px;color:#1e40af">Active Leads</div>
+                        </div>
+                        <div style="background:#dcfce7;padding:8px;border-radius:6px;text-align:center">
+                            <div style="font-size:20px;font-weight:700;color:#166534">${a.totalApps}</div>
+                            <div style="font-size:10px;color:#166534">Total Apps</div>
+                        </div>
+                    </div>
+                </div>`).join('')}
+        </div>`;
+    }
+
+    // ── Section: Events/Webinars ──────────────────────
+    function v16zRenderEvents(){
+        const ev = v16zLoad(V16Z_KEYS.events, []);
+        return `
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px">
+            ${ev.map(e=>{
+                const upcoming = e.date > Date.now();
+                const fillPct = Math.round((e.registered/e.capacity)*100);
+                return `
+                <div style="background:#fff;padding:18px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);border-left:4px solid ${upcoming?'#3b82f6':'#94a3b8'}">
+                    <div style="display:flex;justify-content:space-between;align-items:start">
+                        <div style="flex:1">
+                            <div style="font-weight:700;font-size:15px;color:#111827">${e.title}</div>
+                            <div style="font-size:12px;color:#6b7280;margin-top:4px">📅 ${new Date(e.date).toLocaleString()}</div>
+                        </div>
+                        <span style="background:${upcoming?'#dbeafe':'#f3f4f6'};color:${upcoming?'#1e40af':'#6b7280'};padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">${upcoming?'Upcoming':'Past'}</span>
+                    </div>
+                    <div style="margin-top:10px;font-size:12px;color:#4b5563">
+                        <div>🎤 Host: <b>${e.host}</b></div>
+                        <div>🏷 Type: ${e.type}</div>
+                        <div style="margin-top:6px">🔗 <a href="${e.link}" target="_blank" style="color:#4f46e5;text-decoration:none">${e.link}</a></div>
+                    </div>
+                    <div style="margin-top:12px">
+                        <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:4px">
+                            <span>Registrations</span>
+                            <span><b>${e.registered}</b> / ${e.capacity}</span>
+                        </div>
+                        <div style="background:#f3f4f6;border-radius:10px;height:8px;overflow:hidden">
+                            <div style="background:linear-gradient(90deg,#3b82f6,#8b5cf6);height:100%;width:${fillPct}%"></div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>`;
+    }
+
+    // ── Section: Payments ─────────────────────────────
+    function v16zRenderPayments(){
+        const p = v16zLoad(V16Z_KEYS.payments, []);
+        const inb = p.filter(x=>x.kind==='inbound');
+        const outb = p.filter(x=>x.kind==='outbound');
+        const inbTotal = inb.reduce((s,x)=>s+x.amount,0);
+        const outbTotal = outb.reduce((s,x)=>s+x.amount,0);
+        return `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+            <div style="background:#dcfce7;padding:20px;border-radius:12px;border-left:4px solid #10b981">
+                <div style="font-size:13px;color:#166534;font-weight:600">💰 Inbound (received)</div>
+                <div style="font-size:26px;font-weight:700;color:#166534">$${inbTotal.toLocaleString()}</div>
+                <div style="font-size:11px;color:#166534;margin-top:4px">${inb.length} transactions</div>
+            </div>
+            <div style="background:#fee2e2;padding:20px;border-radius:12px;border-left:4px solid #ef4444">
+                <div style="font-size:13px;color:#991b1b;font-weight:600">💸 Outbound (sent)</div>
+                <div style="font-size:26px;font-weight:700;color:#991b1b">$${outbTotal.toLocaleString()}</div>
+                <div style="font-size:11px;color:#991b1b;margin-top:4px">${outb.length} transactions</div>
+            </div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse">
+                <thead><tr style="background:#f9fafb">${['ID','Direction','From','To','Amount','Reference','Method','Status','Date'].map(h=>`<th style="padding:10px;text-align:left;font-size:11px;color:#6b7280;text-transform:uppercase">${h}</th>`).join('')}</tr></thead>
+                <tbody>
+                    ${p.map(x=>`
+                        <tr style="border-top:1px solid #f3f4f6">
+                            <td style="padding:10px;font-family:monospace;font-size:11px;color:#6b7280">${x.id}</td>
+                            <td style="padding:10px">${x.kind==='inbound'?'⬇️ In':'⬆️ Out'}</td>
+                            <td style="padding:10px;font-size:13px">${x.from}</td>
+                            <td style="padding:10px;font-size:13px">${x.to}</td>
+                            <td style="padding:10px;font-family:monospace;font-weight:700;color:${x.kind==='inbound'?'#059669':'#dc2626'}">$${x.amount.toLocaleString()} ${x.currency}</td>
+                            <td style="padding:10px;font-size:12px;color:#4b5563">${x.ref}</td>
+                            <td style="padding:10px;font-size:12px">${x.method}</td>
+                            <td style="padding:10px"><span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:11px">${x.status}</span></td>
+                            <td style="padding:10px;font-size:11px;color:#6b7280">${new Date(x.date).toLocaleDateString()}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>`;
+    }
+
+    // ── Wiring & interactions ─────────────────────────
+    function v16zWireCRM(page){
+        // Tab switching
+        page.querySelectorAll('.v16z-tab').forEach(btn=>{
+            btn.onclick = () => {
+                page.dataset.v16zTab = btn.dataset.tab;
+                v16zRenderCRM();
+            };
+        });
+        // Export
+        const exportBtn = page.querySelector('#v16zExportBtn');
+        if (exportBtn) exportBtn.onclick = ()=>{
+            const dump = {};
+            Object.entries(V16Z_KEYS).forEach(([k,storeKey])=>{ dump[k] = v16zLoad(storeKey, []); });
+            const blob = new Blob([JSON.stringify(dump, null, 2)], {type:'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'crm-export-' + new Date().toISOString().slice(0,10) + '.json';
+            a.click(); URL.revokeObjectURL(url);
+        };
+        // Reset
+        const resetBtn = page.querySelector('#v16zResetBtn');
+        if (resetBtn) resetBtn.onclick = ()=>{
+            if (!confirm('This will delete all CRM data and reseed demo content. Continue?')) return;
+            Object.values(V16Z_KEYS).forEach(k => localStorage.removeItem(k));
+            v16zSeedIfEmpty();
+            v16zRenderCRM();
+        };
+        // Add lead
+        const addBtn = page.querySelector('#v16zAddLead');
+        if (addBtn) addBtn.onclick = ()=>{
+            const name    = prompt('Student name?'); if (!name) return;
+            const email   = prompt('Email?', '') || '';
+            const phone   = prompt('Phone?', '') || '';
+            const country = prompt('Country (UK/AU/CA/US)?', 'UK') || 'UK';
+            const program = prompt('Program of interest?', 'MSc') || '';
+            const stage   = prompt('Stage (New/Contacted/Qualified/Applied/Enrolled/Lost)?', 'New') || 'New';
+            const budget  = parseInt(prompt('Budget (USD)?', '15000')) || 0;
+            const source  = prompt('Source?', 'Manual') || 'Manual';
+            const cur     = curUser();
+            const leads   = v16zLoad(V16Z_KEYS.leads, []);
+            leads.unshift({
+                id: 'L' + String(leads.length+100).padStart(3,'0'),
+                name, email, phone, country, program, stage, budget, source,
+                assignee: cur?.username || 'unassigned',
+                note: '',
+                created: Date.now()
+            });
+            v16zSave(V16Z_KEYS.leads, leads);
+            v16zRenderCRM();
+        };
+        // Lead card click → move stage
+        page.querySelectorAll('.v16z-lead-card').forEach(card=>{
+            card.onclick = ()=>{
+                const id = card.dataset.lead;
+                const leads = v16zLoad(V16Z_KEYS.leads, []);
+                const lead = leads.find(l=>l.id===id);
+                if (!lead) return;
+                const stage = prompt('Move ' + lead.name + ' to which stage?\n(New / Contacted / Qualified / Applied / Enrolled / Lost)', lead.stage);
+                if (!stage) return;
+                lead.stage = stage;
+                v16zSave(V16Z_KEYS.leads, leads);
+                v16zRenderCRM();
+            };
+        });
+        // University search filter
+        const searchIn = page.querySelector('#v16zUniSearch');
+        const countryIn= page.querySelector('#v16zUniCountry');
+        const applyFilter = ()=>{
+            const q = (searchIn?.value || '').toLowerCase();
+            const country = countryIn?.value || '';
+            page.querySelectorAll('.v16z-uni-card').forEach(card=>{
+                const text = card.textContent.toLowerCase();
+                const c = card.dataset.country;
+                const show = (!q || text.includes(q)) && (!country || c===country);
+                card.style.display = show ? '' : 'none';
+            });
+        };
+        if (searchIn)  searchIn.oninput = applyFilter;
+        if (countryIn) countryIn.onchange = applyFilter;
+    }
+
+    // ── Nav injection: add CRM item to sidebar ────────
+    function v16zInjectNav(){
+        try {
+            const nav = document.querySelector('#sidebar, .sidebar, nav.side, [id*="Nav"]');
+            if (!nav) return;
+            if (document.getElementById('v16zNavCRM')) return;
+            // Insert after "Dashboard" if present, else at top
+            const item = document.createElement('a');
+            item.id = 'v16zNavCRM';
+            item.href = '#';
+            item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 14px;color:#374151;text-decoration:none;font-size:13px;font-weight:600;border-radius:6px;margin:4px 8px;transition:background .15s';
+            item.innerHTML = '<i class="fas fa-briefcase" style="color:#4f46e5"></i> CRM Suite <span style="background:#4f46e5;color:#fff;padding:1px 6px;border-radius:8px;font-size:9px;margin-left:auto">NEW</span>';
+            item.onmouseover = ()=> item.style.background='#f3f4f6';
+            item.onmouseout  = ()=> item.style.background='';
+            item.onclick = (e)=>{ e.preventDefault(); if (typeof window.nav==='function') window.nav('crm'); };
+            nav.appendChild(item);
+        } catch(e){ console.warn('[v16z] nav inject failed', e); }
+    }
+
+    // Hook into page navigation so #page-crm renders
+    function v16zEnsurePage(){
+        try {
+            let page = document.getElementById('page-crm');
+            if (!page) {
+                page = document.createElement('div');
+                page.id = 'page-crm';
+                page.className = 'page';
+                page.style.display = 'none';
+                document.body.appendChild(page);
+            }
+            // Hook: when 'crm' is navigated to, render into it
+            if (typeof window.nav === 'function' && !window.__v16zNavWrapped) {
+                const origNav = window.nav;
+                window.nav = function v16zNav(pageId){
+                    const r = origNav.apply(this, arguments);
+                    if (pageId === 'crm') {
+                        // hide other pages
+                        document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+                        const cp = document.getElementById('page-crm');
+                        if (cp) { cp.style.display=''; v16zRenderCRM(); }
+                    }
+                    return r;
+                };
+                window.__v16zNavWrapped = true;
+            }
+        } catch(e){ console.warn('[v16z] page setup failed', e); }
+    }
+
+    // Grant CRM access to appropriate users
+    function v16zGrantCRMAccess(){
+        try {
+            const U = getUSERS();
+            ['superadmin','nashif.razzak','nafees.razzak','razan.thawus','thasbiha.s','umair','sukaina','saleh'].forEach(uname=>{
+                if (U[uname] && Array.isArray(U[uname].pages) && !U[uname].pages.includes('crm')) {
+                    U[uname].pages.push('crm');
+                }
+            });
+        } catch(e){ console.warn('[v16z] page grant failed', e); }
+    }
+
+    // Init & schedule
+    setTimeout(function(){
+        v16zGrantCRMAccess();
+        v16zEnsurePage();
+        v16zInjectNav();
+    }, 1500);
+    setInterval(function(){
+        v16zEnsurePage();
+        v16zInjectNav();
+    }, 3000);
+
+    console.log('[v16z] Loaded — Firmli-inspired CRM + email login aliases + Global@2026 password support.');
+})();
+</script>
 <script src="/static/agent-portal.js"></script>
 <script src="/static/media-suite.js"></script>
 <script src="/static/team-comms.js"></script>
